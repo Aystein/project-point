@@ -1,6 +1,7 @@
 const webpack = require("webpack");
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
+const CopyWebpackPlugin = require("copy-webpack-plugin");
 /*
  * SplitChunksPlugin is enabled by default and replaced
  * deprecated CommonsChunkPlugin. It automatically identifies modules which
@@ -25,18 +26,34 @@ module.exports = {
         loader: "ts-loader",
         exclude: ["/node_modules/"],
       },
+      {
+        test: /\.css$/i,
+        use: ["style-loader", "css-loader"],
+      },
+      {
+        test: /\.(png|svg|jpg|jpeg|gif)$/i,
+        type: 'asset/resource',
+      },
     ],
   },
-  resolve: { extensions: [".ts"] },
+  resolve: {
+    extensions: [".tsx", ".ts", ".jsx", ".js", "..."],
+  },
   output: {
     chunkFilename: "[name].js",
     filename: "[name].js",
   },
-
+  experiments: {
+    syncWebAssembly: true,
+    topLevelAwait: true
+  },
   mode: "development",
   plugins: [
     new HtmlWebpackPlugin({
       template: "index.html",
+    }),
+    new CopyWebpackPlugin({
+      patterns: [{ from: "WebAssembly" }],
     }),
   ],
   devtool: "source-map",

@@ -1,7 +1,12 @@
 {
     "compilerOptions": {
-      "module": "ESNext",
-      "noImplicitAny": true,
+      "target": "es2017",
+      "lib": [
+        "dom",
+        "dom.iterable",
+        "esnext"
+      ],
+      "noImplicitAny": false,
       "removeComments": true,
       "preserveConstEnums": true,
       "sourceMap": true,
@@ -10,7 +15,10 @@
       "outDir": "./dist",
       "rootDir": ".",
       "allowSyntheticDefaultImports": true,
-      "jsx": "react-jsx"
+      "jsx": "react-jsx",
+      "module": "esnext",
+      "strict": false,
+      "esModuleInterop": true
     },
     "include": ["src"]
   }

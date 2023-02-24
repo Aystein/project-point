@@ -1,0 +1,50 @@
+# general things to ignore
+/.tscache
+/.eslintcache
+/.idea
+/build/
+/dist/tsBuildInfoFile
+/dist_python/
+/lib/
+*.egg-info/
+*.py[cod]
+__pycache__/
+*.so
+*~
+*.log
+*.pot
+*.pyc
+*.swp
+*.lock
+/.awcache
+/local_cache/*
+# due to using tox and pytest
+.tox
+.cache
+node_modules/
+/src/**/*.js
+/tests/**/*.js
+/.cache-loader
+.yo-rc-workspace.json
+package-lock.json/
+yarn.lock
+/dist/
+/bundles/
+
+# yarn
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+
+# env
+/.venv*/
+
+# dev stack
+/projection-space-explorer
+
+# VScode settings
+/.vscode/

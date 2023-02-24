@@ -3,5 +3,8 @@
     "version": "1.0.0",
     "description": "My Library",
     "author": "",
-    "license": "ISC"
+    "license": "ISC",
+    "devDependencies": {
+        "@types/d3-scale": "^4.0.2"
+    }
 }
