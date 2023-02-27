@@ -1,30 +1,41 @@
-import { valueGetters } from "@mantine/core/lib/Box/style-system-props/value-getters/value-getters";
 import { useElementSize } from "@mantine/hooks";
-import userEvent from "@testing-library/user-event";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { SpatialModel } from "../Store/ModelSlice";
 import { normalizeWheel } from "./Util";
 import { WebGLRenderer } from "./WebGLRenderer";
 import { scaleLinear } from "d3-scale";
+import { useVisContext, VisProvider } from "./Context";
 
-{
-  // domain ... initial domain
-  // zoom ... zoom
-  // pan ... pan
+type ColumnTemp = {
+  values: number[];
+  domain: number[];
+}
+
+interface GlobalConfig {
+  pointSize: number;
 }
 
 export function Scatterplot({
   xKey,
   yKey,
   model,
+  color,
+  size,
+  opacity,
+  globalConfig = { pointSize: 16 },
 }: {
-  xKey: string;
-  yKey: string;
+  xKey: string | ColumnTemp;
+  yKey: string | ColumnTemp;
   model: SpatialModel;
+  color?: string[];
+  size?: number[];
+  opacity?: number[];
+  globalConfig: GlobalConfig;
 }) {
   const [renderer, setRenderer] = useState<WebGLRenderer>();
 
-  const { ref, width, height } = useElementSize();
+  const { ref, width, height, registerRenderFunction } = useVisContext();
+
   const [domains, setDomains] = useState({
     x: [0, 50],
     y: [0, 50],
@@ -35,7 +46,13 @@ export function Scatterplot({
     y: 0,
   });
 
+  const render = (renderer: WebGLRenderer) => {
+    
+  }
+
   const handleScroll = (event: React.UIEvent<HTMLCanvasElement, UIEvent>) => {
+    event.nativeEvent.preventDefault();
+
     const normalized = normalizeWheel(event);
 
     // @ts-ignore
@@ -53,7 +70,7 @@ export function Scatterplot({
     const S0_x = scaleLinear().domain(L0_x).range([0, width]);
     const d0x = S0_x.invert(px);
 
-    const k = Math.max(0.1, transform.k * (1 + diff));
+    const k = Math.max(0.1, transform.k * (1 - diff));
 
     const L1_x = [transform.x + x[0] * k, transform.y + x[1] * k];
     const S1_x = scaleLinear().domain(L1_x).range([0, width]);
@@ -64,17 +81,14 @@ export function Scatterplot({
 
     setTransform({
       k,
-      x: transform.x + dxdiff,
+      x: transform.x - dxdiff,
       y: transform.y,
     });
-
-    console.log(k);
   };
-
-  const [] = useState();
 
   useEffect(() => {
     setRenderer(new WebGLRenderer(ref.current));
+    registerRenderFunction(render);
   }, []);
 
   useEffect(() => {
@@ -86,11 +100,6 @@ export function Scatterplot({
 
   useEffect(() => {
     if (!renderer || !domains) return;
-
-    console.log(
-      transform.x + transform.k * domains.x[0],
-      transform.x + transform.k * domains.x[1]
-    );
 
     renderer.updateBounds(
       [
@@ -107,10 +116,7 @@ export function Scatterplot({
     const x = model.spatial.map((row) => row[xKey]);
     const y = model.spatial.map((row) => row[yKey]);
 
-    console.log(x, y);
-    console.log("RENDER");
-
-    renderer.initialize(x, y, model.bounds);
+    renderer.initialize(x, y, model.bounds, color, size, opacity);
     renderer.renderer.render(renderer.scene, renderer.camera);
   }, [setRenderer, ref, model, renderer]);
 
@@ -122,13 +128,17 @@ export function Scatterplot({
     renderer.renderer.render(renderer.scene, renderer.camera);
   }, [width, height, renderer]);
 
-  return (
-    <canvas
-      onWheel={handleScroll}
-      style={{ width: "100%", height: "100%" }}
-      width={width}
-      height={height}
-      ref={ref}
-    ></canvas>
-  );
+  return null;
+}
+
+export function TestLayer() {
+  const {xDomain, yDomain, width, height} = useVisContext();
+
+  const ref = React.useRef();
+
+  React.useEffect(() => {
+
+  }, []);
+
+  return null;
 }

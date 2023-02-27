@@ -2,14 +2,18 @@ import * as THREE from "three";
 import { Boundaries, VectorLike } from "../Interfaces";
 // @ts-ignore
 import Test from "../Assets/square_white.png";
+import * as d3 from 'd3-scale';
+import { SVGLoader } from 'three/addons/loaders/SVGLoader.js';
 
-console.log(Test);
+console.log(SVGLoader);
 
 const fragment = `
 precision mediump float;
 
-uniform vec3 color;
 uniform sampler2D atlas;
+
+uniform float spritesPerRow;
+uniform float spritesPerColumn;
 
 varying vec4 vColor;
 varying float vType;
@@ -17,15 +21,20 @@ varying float vShow;
 varying float vSelected;
 
 void main() {
-    //discard;
     gl_FragColor = vColor;
 
     //if (vShow <= 0.1) {
     //  discard;
     //}
 
-    gl_FragColor = gl_FragColor * texture2D(atlas, gl_PointCoord);
-    //gl_FragColor = gl_FragColor * texture2D(atlas, vec2(vType * 0.25, 0.75) + gl_PointCoord * 0.25);
+    float xs = 1.0 / spritesPerRow;
+    float xy = 1.0 / spritesPerColumn;
+
+    float r = float(int(vType) / int(spritesPerRow)) * xy;
+    float c = mod(vType, spritesPerRow) * xs;
+    
+    // gl_FragColor = gl_FragColor * texture2D(atlas, gl_PointCoord);
+    gl_FragColor = gl_FragColor * texture2D(atlas, gl_PointCoord * vec2(xs, xy) + vec2(c, r));
 
     //if (vSelected > 0.5) {
     //vec4 border = texture2D(atlas, vec2(vType * 0.25, 0.5) + gl_PointCoord * 0.25);
@@ -43,16 +52,14 @@ uniform float scale;
 
 uniform float frameTime;
 
-attribute vec4 color;
-
 // Attributes of point sprites
 attribute float size;
-
+attribute vec4 col;
 attribute float type;
 attribute float show;
 attribute float selected;
+
 attribute vec3 position;
-attribute vec3 frame1;
 attribute vec3 frame2;
 
 // Varying of point sprites
@@ -67,12 +74,13 @@ float map(float s, float  a1, float  a2, float  b1, float  b2)
 }
 
 void main() {
-    vColor = color;
-    //vType = type;
+    vColor = col;
+    vType = type;
     vShow = show;
+    vSelected = selected;
     gl_PointSize = size;
     
-    gl_Position = vec4(map(mix(frame1.x, frame2.x, frameTime), domain.x, domain.y, -1.0, 1.0), map(mix(frame1.y, frame2.y, frameTime), domain.z, domain.w, -1.0, 1.0), frame1.z, 1.0);
+    gl_Position = vec4(map(mix(position.x, frame2.x, frameTime), domain.x, domain.y, -1.0, 1.0), map(mix(position.y, frame2.y, frameTime), domain.z, domain.w, -1.0, 1.0), position.z, 1.0);
 }
 `;
 
@@ -84,7 +92,6 @@ export class WebGLRenderer {
   material!: THREE.ShaderMaterial;
 
   frame1Buffer: THREE.Float32BufferAttribute;
-  frame2Buffer: THREE.Float32BufferAttribute;
 
   createFakeTexture() {
     const width = 512;
@@ -92,7 +99,7 @@ export class WebGLRenderer {
 
     const size = width * height;
     const data = new Uint8Array(4 * size);
-    const color = new THREE.Color(0xffffff);
+    const color = new THREE.Color(0xff0000);
 
     const r = Math.floor(color.r * 255);
     const g = Math.floor(color.g * 255);
@@ -114,6 +121,8 @@ export class WebGLRenderer {
         zoom: { value: 1.0 },
         color: { value: new THREE.Color(0xffffff) },
         scale: { value: 1.0 },
+        spritesPerRow: { value: 2 },
+        spritesPerColumn: { value: 2 },
         atlas: {
           value: texture,
         },
@@ -137,6 +146,7 @@ export class WebGLRenderer {
     this.renderer = new THREE.WebGLRenderer({
       canvas,
     });
+    this.renderer.setPixelRatio(window.devicePixelRatio);
 
     this.createFakeTexture();
 
@@ -184,76 +194,55 @@ export class WebGLRenderer {
     });
   }
 
-  initialize(x: number[], y: number[], bounds: Boundaries) {
+  initialize(x: number[], y: number[], bounds: Boundaries, color?: string[], size?: number[], opacity?: number[]) {
     const vertices = new Array<number>(x.length * 3);
 
-    const colors = new Float32Array(x.length * 4);
-    const sizes = new Float32Array(x.length);
-    const types = new Float32Array(x.length);
-    const show = new Float32Array(x.length);
-    const selected = new Float32Array(x.length);
-    const frame1 = new Float32Array(x.length * 3);
+    const colors = new THREE.Float32BufferAttribute(new Float32Array(x.length * 4), 4)
+
+    const sizes = new THREE.Float32BufferAttribute(new Float32Array(x.length), 1);
+    const types = new THREE.Float32BufferAttribute(new Float32Array(x.length), 1);
+    const show = new THREE.Float32BufferAttribute(new Float32Array(x.length), 1);
+    const selected = new THREE.Float32BufferAttribute(new Float32Array(x.length), 1);
+    const frame1 = new THREE.Float32BufferAttribute(new Float32Array(x.length * 3), 3);
     const frame2 = new Float32Array(x.length * 3);
 
     x.forEach((v, i) => {
-      vertices[i * 3 + 0] = x[i];
-      vertices[i * 3 + 1] = y[i];
-      vertices[i * 3 + 2] = 0.0;
-
-      frame1[i * 3 + 0] = x[i];
-      frame1[i * 3 + 1] = y[i];
-      frame1[i * 3 + 2] = 0.0;
+      frame1.setXYZ(i, x[i], y[i], 0.0);
 
       frame2[i * 3 + 0] = x[i] + 10;
       frame2[i * 3 + 1] = y[i] + 10;
       frame2[i * 3 + 2] = 0.0;
 
-      show[i] = 1.0;
-      types[i] = 2.0;
-      selected[i] = 0.0;
-      sizes[i] = 9.0;
-      colors[i * 4 + 0] = 1.0;
-      colors[i * 4 + 1] = 1.0;
-      colors[i * 4 + 2] = 1.0;
-      colors[i * 4 + 3] = 1.0;
+      show.setX(i, 1.0);
+      types.setX(i, i);
+      selected.setX(i, 0.0);
+      sizes.setX(i, size ? 9.0 * size[i] : 9.0);
+
+      if (color) {
+        const tc = new THREE.Color(color[i])
+        colors.setXYZW(i, tc.r, tc.g, tc.b, 1);
+      } else {
+        colors.setXYZW(i, 1, 1, 1, 1);
+      }
+
+      if (opacity) {
+        colors.setW(i, opacity[i]);
+      }
+
     });
 
-    const posAtt = new THREE.Float32BufferAttribute(vertices, 3);
-    posAtt.usage = THREE.StreamDrawUsage;
+    this.geometry.setAttribute("position", frame1);
 
-    this.geometry.setAttribute("position", posAtt);
-
-    this.frame1Buffer = new THREE.Float32BufferAttribute(frame1, 3);
-    this.geometry.setAttribute("frame1", this.frame1Buffer);
+    this.frame1Buffer = frame1;
 
     this.frame2Buffer = new THREE.Float32BufferAttribute(frame2, 3);
     this.geometry.setAttribute("frame2", this.frame2Buffer);
 
-    this.geometry.setAttribute(
-      "size",
-      new THREE.Float32BufferAttribute(sizes, 1)
-    );
-    this.geometry.setAttribute(
-      "color",
-      new THREE.Float32BufferAttribute(colors, 4)
-    );
-
-    this.geometry.setAttribute(
-      "types",
-      new THREE.Float32BufferAttribute(types, 1)
-    );
-    this.geometry.setAttribute(
-      "show",
-      new THREE.Float32BufferAttribute(show, 1)
-    );
-    this.geometry.setAttribute(
-      "selected",
-      new THREE.Float32BufferAttribute(selected, 1)
-    );
-
-    // create a buffer with color data
-
-    //
+    this.geometry.setAttribute("size", sizes);
+    this.geometry.setAttribute("col", colors);
+    this.geometry.setAttribute("type", types);
+    this.geometry.setAttribute("show", show);
+    this.geometry.setAttribute("selected", selected);
 
     this.camera.position.z = 5;
     this.updateBounds([bounds.minX, bounds.maxX], [bounds.minY, bounds.maxY]);

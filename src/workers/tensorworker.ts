@@ -47,6 +47,6 @@ model.fit(xs, ys).then(async () => {
   const saveResult = await model.save("localstorage://nn");
     model.predict
   for (const d in model.nodesByDepth) {
-    console.log(model.getLayer().getConfig().);
+    //console.log(model.getLayer().getConfig().);
   }
 });
