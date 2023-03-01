@@ -3,7 +3,8 @@ import { ComponentStory, ComponentMeta } from '@storybook/react';
 
 import { Button } from './Button';
 import { Scatterplot } from '../WebGL/Scatterplot';
-import { VisProvider } from '../WebGL/Context';
+import { LassoSelectionPlugin } from '../WebGL/Plugins/LassoSelectionPlugin';
+import { VisProvider } from "../WebGL/VisualizationContext";
 
 const model = {
   oid: "spatial",
@@ -35,8 +36,11 @@ export default {
 // More on component templates: https://storybook.js.org/docs/react/writing-stories/introduction#using-args
 const Template: ComponentStory<typeof Scatterplot> = (args) => <div style={{
   width: 600,
-  height: 400
-}}><VisProvider><Scatterplot {...args} /></VisProvider></div>;
+  height: 400,
+  resize: 'both',
+  padding: 20,
+  overflow: 'auto',
+}}><VisProvider><Scatterplot {...args} /><LassoSelectionPlugin /></VisProvider></div>;
 
 export const Primary = Template.bind({});
 // More on args: https://storybook.js.org/docs/react/writing-stories/args

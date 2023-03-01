@@ -85,7 +85,6 @@ void main() {
 `;
 
 export class WebGLRenderer {
-  renderer!: THREE.WebGLRenderer;
   scene!: THREE.Scene;
   camera!: THREE.OrthographicCamera;
   geometry!: THREE.BufferGeometry;
@@ -140,14 +139,10 @@ export class WebGLRenderer {
     texture.needsUpdate = true;
   }
 
-  constructor(canvas) {
+  constructor() {
     this.scene = new THREE.Scene();
     this.camera = new THREE.OrthographicCamera(-50, 50, 150, -150, 0, 1000);
-    this.renderer = new THREE.WebGLRenderer({
-      canvas,
-    });
-    this.renderer.setPixelRatio(window.devicePixelRatio);
-
+    
     this.createFakeTexture();
 
     new THREE.ImageBitmapLoader().load(
@@ -156,7 +151,6 @@ export class WebGLRenderer {
         const texture2 = new THREE.CanvasTexture(bitmap);
         this.material.uniforms["atlas"].value = texture2;
         this.material.needsUpdate = true;
-        this.renderer.render(this.scene, this.camera);
       },
       undefined,
       () => {
@@ -168,15 +162,8 @@ export class WebGLRenderer {
 
     const points = new THREE.Points(this.geometry, this.material);
 
+    console.log("created scene");
     this.scene.add(points);
-  }
-
-  frame() {
-    this.renderer.render(this.scene, this.camera);
-  }
-
-  setSize(width: number, height: number) {
-    this.renderer.setSize(width, height, false);
   }
 
   updateBounds(xdomain: number[], ydomain: number[]) {

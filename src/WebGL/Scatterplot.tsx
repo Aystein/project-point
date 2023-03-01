@@ -4,12 +4,13 @@ import { SpatialModel } from "../Store/ModelSlice";
 import { normalizeWheel } from "./Util";
 import { WebGLRenderer } from "./WebGLRenderer";
 import { scaleLinear } from "d3-scale";
-import { useVisContext, VisProvider } from "./Context";
+import { useVisContext, VisProvider } from "./VisualizationContext";
+import * as React from "react";
 
 type ColumnTemp = {
   values: number[];
   domain: number[];
-}
+};
 
 interface GlobalConfig {
   pointSize: number;
@@ -32,9 +33,10 @@ export function Scatterplot({
   opacity?: number[];
   globalConfig: GlobalConfig;
 }) {
-  const [renderer, setRenderer] = useState<WebGLRenderer>();
+  const [myRenderer, setRenderer] = useState<WebGLRenderer>();
 
-  const { ref, width, height, registerRenderFunction } = useVisContext();
+  const { ref, width, height, registerRenderFunction, requestFrame } =
+    useVisContext();
 
   const [domains, setDomains] = useState({
     x: [0, 50],
@@ -46,9 +48,18 @@ export function Scatterplot({
     y: 0,
   });
 
-  const render = (renderer: WebGLRenderer) => {
-    
-  }
+  const render = (renderer: THREE.WebGLRenderer) => {
+    //renderer.render()
+    console.log(myRenderer);
+    if (!myRenderer) {
+      return;
+    }
+    console.log("render);");
+    renderer.render(myRenderer.scene, myRenderer.camera);
+  };
+
+  const renderRef = React.useRef(render);
+  renderRef.current = render;
 
   const handleScroll = (event: React.UIEvent<HTMLCanvasElement, UIEvent>) => {
     event.nativeEvent.preventDefault();
@@ -87,9 +98,12 @@ export function Scatterplot({
   };
 
   useEffect(() => {
-    setRenderer(new WebGLRenderer(ref.current));
-    registerRenderFunction(render);
+    setRenderer(new WebGLRenderer());
+    registerRenderFunction((renderer) => renderRef.current(renderer));
+    setTimeout(() => requestFrame(), 500);
   }, []);
+
+  console.log(myRenderer);
 
   useEffect(() => {
     setDomains({
@@ -99,46 +113,25 @@ export function Scatterplot({
   }, [model]);
 
   useEffect(() => {
-    if (!renderer || !domains) return;
+    if (!myRenderer || !domains) return;
 
-    renderer.updateBounds(
+    myRenderer.updateBounds(
       [
         transform.x + transform.k * domains.x[0],
         transform.x + transform.k * domains.x[1],
       ],
       domains.y
     );
-    renderer.frame();
-  }, [domains, renderer, transform]);
+  }, [domains, myRenderer, transform]);
 
   useEffect(() => {
-    if (!model || !renderer) return;
+    if (!model || !myRenderer) return;
     const x = model.spatial.map((row) => row[xKey]);
     const y = model.spatial.map((row) => row[yKey]);
 
-    renderer.initialize(x, y, model.bounds, color, size, opacity);
-    renderer.renderer.render(renderer.scene, renderer.camera);
-  }, [setRenderer, ref, model, renderer]);
-
-  useEffect(() => {
-    if (!renderer) {
-      return;
-    }
-    renderer.setSize(width, height);
-    renderer.renderer.render(renderer.scene, renderer.camera);
-  }, [width, height, renderer]);
-
-  return null;
-}
-
-export function TestLayer() {
-  const {xDomain, yDomain, width, height} = useVisContext();
-
-  const ref = React.useRef();
-
-  React.useEffect(() => {
-
-  }, []);
+    myRenderer.initialize(x, y, model.bounds, color, size, opacity);
+    requestFrame();
+  }, [setRenderer, ref, model, myRenderer]);
 
   return null;
 }
