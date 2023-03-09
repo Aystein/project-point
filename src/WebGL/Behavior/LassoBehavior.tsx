@@ -1,16 +1,27 @@
 import * as React from "react";
-import { LexicalCommand, CommandListener, MOUSE_DRAG, MOUSE_DRAGGING, MOUSE_DRAG_END } from "../Commands";
+import { LexicalCommand, CommandListener, MOUSE_DRAG, MOUSE_DRAGGING, MOUSE_DRAG_END, MOUSE_HOVER } from "../Commands";
 import { useVisContext } from "../VisualizationContext";
 
-function useMouseDrag(
-  command: LexicalCommand<MouseEvent>,
-  callback: CommandListener<MouseEvent>,
+export function useMouseDrag<T>(
+  command: LexicalCommand<T>,
+  callback: CommandListener<T>,
   deps: React.DependencyList
 ) {
   const { vis } = useVisContext();
 
   React.useEffect(() => {
     return vis.registerCommand(command, callback, 1);
+  }, deps);
+}
+
+export function implementMouseHover(
+  callback: CommandListener<MouseEvent>,
+  deps: React.DependencyList
+) {
+  const { vis } = useVisContext();
+
+  React.useEffect(() => {
+    return vis.registerCommand(MOUSE_HOVER, callback, 1);
   }, deps);
 }
 

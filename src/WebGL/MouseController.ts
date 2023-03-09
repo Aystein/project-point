@@ -1,5 +1,6 @@
 import { element } from "prop-types";
 import { DOMElement } from "react";
+import { DragEvent as GDragEvent } from "./Commands";
 
 const LEFT_BUTTON = 0;
 const RIGHT_BUTTON = 2;
@@ -24,11 +25,14 @@ export class MouseController {
 
   private mousePosition = { x: 0, y: 0 };
 
+  private prevX = 0;
+  private prevY = 0;
+
   onDragStart: (event: MouseEvent, button: number, initial) => void;
 
   onDragEnd: (event: MouseEvent, button: number) => void;
 
-  onDragMove: (event: MouseEvent, button: number) => void;
+  onDragMove: (event: GDragEvent, button: number) => void;
 
   onContext: (event: MouseEvent, button: number) => void;
 
@@ -38,15 +42,18 @@ export class MouseController {
 
   onMouseLeave: (event: MouseEvent) => void;
 
+  onMouseWheel: (event: MouseEvent) => void;
+
   attachContext: {
     rootElement: HTMLElement,
     mouseDown,
     mouseLeave,
     mouseUp,
-    mouseMove
+    mouseMove,
+    mouseWheel
   };
 
-  constructor() {}
+  constructor() { }
 
   get currentMousePosition() {
     return this.mousePosition;
@@ -54,17 +61,19 @@ export class MouseController {
 
   attach(element: HTMLElement) {
     this.attachContext = {
-        mouseDown: (event) => this.mouseDown(event),
-        mouseUp: (event) => this.mouseUp(event),
-        mouseMove: (event) => this.mouseMove(event),
-        mouseLeave: (event) => this.mouseLeave(event),
-        rootElement: element,
+      mouseDown: (event) => this.mouseDown(event),
+      mouseUp: (event) => this.mouseUp(event),
+      mouseMove: (event) => this.mouseMove(event),
+      mouseLeave: (event) => this.mouseLeave(event),
+      mouseWheel: (event) => this.mouseWheel(event),
+      rootElement: element,
     }
 
     element.addEventListener('mousedown', this.attachContext.mouseDown)
     element.addEventListener('mouseup', this.attachContext.mouseUp)
     element.addEventListener('mousemove', this.attachContext.mouseMove)
-    element.addEventListener('mousedown', this.attachContext.mouseLeave)
+    element.addEventListener('mouseleave', this.attachContext.mouseLeave)
+    element.addEventListener('wheel', this.attachContext.mouseWheel)
   }
 
   detach() {
@@ -72,6 +81,7 @@ export class MouseController {
     this.attachContext.rootElement.removeEventListener('mousemove', this.attachContext.mouseMove)
     this.attachContext.rootElement.removeEventListener('mouseup', this.attachContext.mouseUp)
     this.attachContext.rootElement.removeEventListener('mouseleave', this.attachContext.mouseLeave)
+    this.attachContext.rootElement.removeEventListener('wheel', this.attachContext.mouseWheel)
   }
 
   mouseLeave(event: MouseEvent) {
@@ -136,13 +146,23 @@ export class MouseController {
     }
   }
 
+  mouseWheel(event: MouseEvent) {
+    if (this.onMouseWheel) {
+      this.onMouseWheel(event);
+    }
+  }
+
   mouseMove(event: MouseEvent) {
     const mousePosition = { x: event.offsetX, y: event.offsetY };
     this.mousePosition = mousePosition;
 
     if (this.mode === Mode.Drag) {
       if (this.onDragMove) {
-        this.onDragMove(event, this.pressedButton);
+        this.onDragMove({
+          movementX: event.screenX - this.prevX,
+          movementY: event.screenY - this.prevY,
+          button: event.button,
+        }, this.pressedButton);
       }
     } else if (this.onMouseMove) {
       this.onMouseMove(event);
@@ -154,5 +174,8 @@ export class MouseController {
         this.mode = Mode.Drag;
       }
     }
+
+    this.prevX = event.screenX;
+    this.prevY = event.screenY;
   }
 }

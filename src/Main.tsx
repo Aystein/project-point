@@ -4,7 +4,7 @@ import { Model, modelAdapter } from "./Store/ModelSlice";
 import { Selectors } from "./Store/Selectors";
 import { viewAdapter, ViewState } from "./Store/ViewSlice";
 import { isEntityId } from "./Util";
-import { Scatterplot } from "./WebGL/Scatterplot";
+import { Scatterplot } from "./WebGL/Scatter/Scatterplot";
 
 function MainView({ data, view }: { data: DataState; view: ViewState }) {
   let { workspace } = view.attributes;

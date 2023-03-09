@@ -1,11 +1,11 @@
 import * as THREE from "three";
-import { Boundaries, VectorLike } from "../Interfaces";
+import { Boundaries, VectorLike } from "../../Interfaces";
 // @ts-ignore
-import Test from "../Assets/square_white.png";
-import * as d3 from 'd3-scale';
-import { SVGLoader } from 'three/addons/loaders/SVGLoader.js';
+import Test from "../../Assets/square_white.png";
+import { OrthographicCamera } from "three";
 
-console.log(SVGLoader);
+const HOVER_SCALE = 1.25;
+const BASE_SIZE = 20;
 
 const fragment = `
 precision mediump float;
@@ -46,11 +46,9 @@ void main() {
 
 const vertex = `
 // Vertex shader of the particle mesh.
-uniform vec4 domain;
-uniform float zoom;
-uniform float scale;
-
 uniform float frameTime;
+
+uniform mat4 projectionMatrix;
 
 // Attributes of point sprites
 attribute float size;
@@ -80,7 +78,7 @@ void main() {
     vSelected = selected;
     gl_PointSize = size;
     
-    gl_Position = vec4(map(mix(position.x, frame2.x, frameTime), domain.x, domain.y, -1.0, 1.0), map(mix(position.y, frame2.y, frameTime), domain.z, domain.w, -1.0, 1.0), position.z, 1.0);
+    gl_Position = projectionMatrix * mix(vec4(position.x, position.y, 0.0, 1.0), vec4(frame2.x, frame2.y, 0.0, 1.0), frameTime);
 }
 `;
 
@@ -91,6 +89,10 @@ export class WebGLRenderer {
   material!: THREE.ShaderMaterial;
 
   frame1Buffer: THREE.Float32BufferAttribute;
+
+  sizeAttribute: THREE.Float32BufferAttribute;
+
+  hover: number = null;
 
   createFakeTexture() {
     const width = 512;
@@ -117,21 +119,17 @@ export class WebGLRenderer {
 
     this.material = new THREE.RawShaderMaterial({
       uniforms: {
-        zoom: { value: 1.0 },
         color: { value: new THREE.Color(0xffffff) },
-        scale: { value: 1.0 },
         spritesPerRow: { value: 2 },
         spritesPerColumn: { value: 2 },
         atlas: {
           value: texture,
         },
         frameTime: { value: 0.0 },
-        domain: { value: new THREE.Vector4(0, 50, 0, 50) },
       },
       transparent: true,
       vertexShader: vertex,
       fragmentShader: fragment,
-      alphaTest: 0.0,
     });
 
     // used the buffer to create a DataTexture
@@ -142,6 +140,7 @@ export class WebGLRenderer {
   constructor() {
     this.scene = new THREE.Scene();
     this.camera = new THREE.OrthographicCamera(-50, 50, 150, -150, 0, 1000);
+    //this.camera = new THREE.Camera();
     
     this.createFakeTexture();
 
@@ -162,15 +161,15 @@ export class WebGLRenderer {
 
     const points = new THREE.Points(this.geometry, this.material);
 
-    console.log("created scene");
     this.scene.add(points);
   }
 
+  setInterpolation(value: number) {
+    this.material.uniforms["frameTime"] = { value };
+  }
+
   updateBounds(xdomain: number[], ydomain: number[]) {
-    this.material.uniforms["domain"] = {
-      value: new THREE.Vector4(xdomain[0], xdomain[1], ydomain[0], ydomain[1]),
-    };
-    this.material.uniformsNeedUpdate = true;
+    this.camera = new OrthographicCamera(xdomain[0], xdomain[1], ydomain[0], ydomain[1], -1, 1);
   }
 
   setPositions(positions: VectorLike[]) {
@@ -181,29 +180,50 @@ export class WebGLRenderer {
     });
   }
 
-  initialize(x: number[], y: number[], bounds: Boundaries, color?: string[], size?: number[], opacity?: number[]) {
-    const vertices = new Array<number>(x.length * 3);
+  /**
+   * Hovers an element in the scatter visualization
+   * 
+   * @param index the index of the element to hover
+   */
+  setHover(index: number) {
+    if (this.hover === index) {
+      return;
+    }
+    
+    if (this.hover !== null) {
+      this.sizeAttribute.setX(this.hover, this.sizeAttribute.getX(this.hover) / HOVER_SCALE);
+    }
 
+    this.hover = index;
+
+    if (this.hover !== null) {
+      this.sizeAttribute.setX(this.hover, this.sizeAttribute.getX(this.hover) * HOVER_SCALE);
+    }
+
+    this.sizeAttribute.needsUpdate = true;
+  }
+
+
+
+  initialize(x: number[], x2: number[], y: number[], bounds: Boundaries, color?: string[], size?: number[], opacity?: number[]) {
     const colors = new THREE.Float32BufferAttribute(new Float32Array(x.length * 4), 4)
 
-    const sizes = new THREE.Float32BufferAttribute(new Float32Array(x.length), 1);
+    this.sizeAttribute = new THREE.Float32BufferAttribute(new Float32Array(x.length), 1);
     const types = new THREE.Float32BufferAttribute(new Float32Array(x.length), 1);
     const show = new THREE.Float32BufferAttribute(new Float32Array(x.length), 1);
     const selected = new THREE.Float32BufferAttribute(new Float32Array(x.length), 1);
-    const frame1 = new THREE.Float32BufferAttribute(new Float32Array(x.length * 3), 3);
-    const frame2 = new Float32Array(x.length * 3);
+    const position = new THREE.Float32BufferAttribute(new Float32Array(x.length * 3), 3);
+    const position2 = new THREE.Float32BufferAttribute(new Float32Array(x.length * 3), 3);
 
     x.forEach((v, i) => {
-      frame1.setXYZ(i, x[i], y[i], 0.0);
-
-      frame2[i * 3 + 0] = x[i] + 10;
-      frame2[i * 3 + 1] = y[i] + 10;
-      frame2[i * 3 + 2] = 0.0;
+      position.setXYZ(i, x[i], y[i], 0.0);
+      position2.setXYZ(i, x2[i], y[i], 0.0);
 
       show.setX(i, 1.0);
-      types.setX(i, i);
+      types.setX(i, i % 4);
       selected.setX(i, 0.0);
-      sizes.setX(i, size ? 9.0 * size[i] : 9.0);
+      
+      this.sizeAttribute.setX(i, size ? BASE_SIZE * size[i] : BASE_SIZE);
 
       if (color) {
         const tc = new THREE.Color(color[i])
@@ -218,20 +238,21 @@ export class WebGLRenderer {
 
     });
 
-    this.geometry.setAttribute("position", frame1);
+    this.geometry.setAttribute("position", position);
 
-    this.frame1Buffer = frame1;
+    this.frame1Buffer = position;
 
-    this.frame2Buffer = new THREE.Float32BufferAttribute(frame2, 3);
+    this.frame2Buffer = position2;
     this.geometry.setAttribute("frame2", this.frame2Buffer);
 
-    this.geometry.setAttribute("size", sizes);
+    this.geometry.setAttribute("size", this.sizeAttribute);
     this.geometry.setAttribute("col", colors);
     this.geometry.setAttribute("type", types);
     this.geometry.setAttribute("show", show);
     this.geometry.setAttribute("selected", selected);
 
     this.camera.position.z = 5;
+    
     this.updateBounds([bounds.minX, bounds.maxX], [bounds.minY, bounds.maxY]);
   }
 }

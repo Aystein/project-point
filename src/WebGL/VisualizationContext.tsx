@@ -2,11 +2,13 @@ import { useElementSize } from "@mantine/hooks";
 import * as React from "react";
 import { createContext, useContext } from "react";
 import { WebGLRenderer } from "three";
-import { MOUSE_LEAVE, MOUSE_MOVE, MOUSE_DRAG, MOUSE_DRAGGING, MOUSE_UP } from "./Commands";
+import { MOUSE_LEAVE, MOUSE_MOVE, MOUSE_DRAG, MOUSE_DRAGGING, MOUSE_UP, MOUSE_HOVER, MOUSE_WHEEL } from "./Commands";
 import { MouseController } from "./MouseController";
 import { Visualization } from "./Visualization";
+import { scaleLinear } from "d3-scale";
+import { ZoomTransform } from "./ZoomTransform";
 
-const VisContext = createContext({
+export const VisContext = createContext({
    vis: undefined as Visualization,
    ref: undefined,
    requestFrame: undefined,
@@ -15,7 +17,12 @@ const VisContext = createContext({
    yDomain: [0, 50],
    width: 600,
    height: 400,
+   zoom: {tx: 0, ty: 0, s: 1},
+   setZoom: undefined,
+   scaledXDomain: [0, 50],
+   scaledYDomain: [0, 50],
 });
+
 
 export const VisProvider = ({ children }) => {
    const [dimensions, setDimensions] = React.useState({
@@ -23,22 +30,49 @@ export const VisProvider = ({ children }) => {
       height: 400,
    });
 
+   const [zoom, setZoom] = React.useState({
+      tx: 0,
+      ty: 0,
+      s: 1
+   })
+
    const { ref, width, height } = useElementSize();
    const [renderer, setRenderer] = React.useState<WebGLRenderer>();
 
    const [renderFunctions, setRenderFunctions] = React.useState([]);
+
+   const [xDomain, setXDomain] = React.useState([0, 10]);
+   const [yDomain, setYDomain] = React.useState([0, 10]);
+
+   const scaledXDomain = React.useMemo(() => {
+      const xScale = scaleLinear().domain(xDomain).range([0, width]);
+  
+      const zoomTransform = new ZoomTransform(zoom.s, zoom.tx, zoom.ty);
+      const newX = zoomTransform.rescaleX(xScale);
+
+      return newX.domain();
+   }, [xDomain, zoom, width]);
+
+
+   const scaledYDomain = React.useMemo(() => {
+      const yScale = scaleLinear().domain(yDomain).range([0, height]);
+  
+      const zoomTransform = new ZoomTransform(zoom.s, zoom.tx, zoom.ty);
+      const newY = zoomTransform.rescaleY(yScale);
+
+      return newY.domain();
+   }, [yDomain, zoom, height]);
 
    renderer?.setSize(width, height, false);
 
    const dirtyRef = React.useRef(false);
 
    const frame = () => {
-      console.log("doing frame" + renderFunctions.length);
+      dirtyRef.current = false;
+      
       renderFunctions.forEach((func) => {
          func(renderer);
       });
-
-      dirtyRef.current = false;
    };
 
    const frameRef = React.useRef(frame);
@@ -76,11 +110,22 @@ export const VisProvider = ({ children }) => {
       const controller = new MouseController();
 
       controller.onMouseLeave = (event) => visContext.dispatchCommand(MOUSE_LEAVE, event);
-      controller.onMouseMove = (event) => visContext.dispatchCommand(MOUSE_MOVE, event);
+      controller.onMouseMove = (event) => {
+         visContext.dispatchCommand(MOUSE_HOVER, event);
+      }
       controller.onMouseUp = (event) => visContext.dispatchCommand(MOUSE_UP, event);
 
-      controller.onDragStart = (event) => visContext.dispatchCommand(MOUSE_DRAG, event);
-      controller.onDragMove = (event) => visContext.dispatchCommand(MOUSE_DRAGGING, event);
+      controller.onDragStart = (event) => {
+         visContext.dispatchCommand(MOUSE_DRAG, event);
+      }
+      controller.onDragMove = (event) => {
+         console.log("drag");
+         visContext.dispatchCommand(MOUSE_DRAGGING, event);
+      }
+
+      controller.onMouseWheel = (event) => {
+         visContext.dispatchCommand(MOUSE_WHEEL, event);
+      }
 
       controller.attach(ref.current);
 
@@ -97,10 +142,14 @@ export const VisProvider = ({ children }) => {
             ...dimensions,
             requestFrame,
             registerRenderFunction,
-            xDomain: [0, 50],
+            xDomain: xDomain,
             yDomain: [0, 50],
             ref,
             vis: visContext,
+            zoom,
+            setZoom,
+            scaledXDomain,
+            scaledYDomain,
          }}
       >
          <canvas
@@ -109,6 +158,7 @@ export const VisProvider = ({ children }) => {
             height={dimensions.height}
             ref={ref}
          ></canvas>
+
          {children}
       </VisContext.Provider>
    );
