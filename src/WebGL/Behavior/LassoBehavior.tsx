@@ -43,7 +43,7 @@ export function LassoSelectionPlugin() {
   useMouseDrag(
     MOUSE_DRAGGING,
     (event) => {
-      setPoints([...points, { x: event.offsetX, y: event.offsetY }]);
+      // setPoints([...points, { x: event.offsetX, y: event.offsetY }]);
       return false;
     },
     []

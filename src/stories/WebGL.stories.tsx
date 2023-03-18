@@ -1,13 +1,9 @@
 import React from 'react';
 import { ComponentStory, ComponentMeta } from '@storybook/react';
-
-import { Button } from './Button';
 import { Scatterplot } from '../WebGL/Scatter/Scatterplot';
 import { VisProvider } from "../WebGL/VisualizationContext";
 import { ZoomBehavior } from '../WebGL/Behavior/ZoomBehavior';
 import { PanBehavior } from '../WebGL/Behavior/PanBehavior';
-
-import { scaleOrdinal } from 'd3-scale';
 
 const model = {
   oid: "spatial",
@@ -91,7 +87,7 @@ export const Primary = () => {
   }}>
     <div style={{width:400, height: 300}}>
     <VisProvider>
-  <Scatterplot {...args} />
+
   <ZoomBehavior />
   <PanBehavior />
 </VisProvider></div>

@@ -2,6 +2,7 @@ import { FileInput, Flex } from "@mantine/core";
 import Papa from "papaparse";
 import React, { useState } from "react";
 import { useDispatch } from "react-redux";
+import { PapaPlugin } from "../PapaPlugin/PapaPlugin";
 import { initialize, Row } from "../Store/DataSlice.";
 
 
@@ -13,11 +14,14 @@ export function DataTab() {
 
   const handleChange = (file: File) => {
     console.log(file);
+    const plugin = new PapaPlugin<Row>();
+
     Papa.parse<Row>(file, {
       header: true,
       skipEmptyLines: true,
-      complete: (results) => {
-        dispatch(initialize(results.data));
+      step: plugin.step,
+      complete: () => {
+        dispatch(initialize(plugin.data));
       },
       dynamicTyping: true,
     });

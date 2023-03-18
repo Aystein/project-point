@@ -89,6 +89,7 @@ export class WebGLRenderer {
   material!: THREE.ShaderMaterial;
 
   frame1Buffer: THREE.Float32BufferAttribute;
+  frame2Buffer: THREE.Float32BufferAttribute;
 
   sizeAttribute: THREE.Float32BufferAttribute;
 

@@ -7,6 +7,8 @@ import * as d3 from 'd3-quadtree';
 import * as React from "react";
 import { useMouseDrag } from "../Behavior/LassoBehavior";
 import { MOUSE_HOVER } from "../Commands";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { ScatterTrace } from "../Container/ScatterTrace";
 
 type ColumnTemp = {
   values: number[];
@@ -26,7 +28,6 @@ export function Scatterplot({
   size,
   opacity,
   globalConfig = { pointSize: 16 },
-  interpolate,
 }: {
   x: string | ColumnTemp;
   x2: string | ColumnTemp;
@@ -35,10 +36,9 @@ export function Scatterplot({
   color?: string[];
   size?: number[];
   opacity?: number[];
-  globalConfig: GlobalConfig;
-  interpolate: { channel: string, duration: number }
+  globalConfig?: GlobalConfig;
 }) {
-  const [myRenderer, setRenderer] = useState<WebGLRenderer>();
+  const [myRenderer, setRenderer] = useState<ScatterTrace>();
 
   const [tree, setTree] = React.useState<any>();
   const [hover, setHover] = React.useState(0);
@@ -51,48 +51,25 @@ export function Scatterplot({
 
   const { ref, width, height, registerRenderFunction, requestFrame, scaledXDomain, scaledYDomain, zoom } =
     useVisContext();
-
-
   
   const render = (renderer: THREE.WebGLRenderer) => {
     if (!myRenderer) {
       return;
     }
 
-
-    renderer.setViewport(0,0,100,100)
-    renderer.render(myRenderer.scene, myRenderer.camera);
-
-    if (interpolate) {
-      const now = getTimestamp();
-      const i = Math.min(1, (now - timestamp) / interpolate.duration);
-
-
-      myRenderer.setInterpolation(interpolate.channel === 'x2' ? i : (1 - i));
-
-      if (i !== 1) {
-        requestFrame();
-      }
-    } else {
-      myRenderer.setInterpolation(0);
-    }
+    myRenderer.render(renderer, 0, 0);
   };
 
   const renderRef = React.useRef(render);
   renderRef.current = render;
 
   useEffect(() => {
-    setRenderer(new WebGLRenderer());
+    setRenderer(new ScatterTrace(4));
     registerRenderFunction((renderer) => {
       renderRef.current(renderer)
     });
     setTimeout(() => requestFrame(), 500);
   }, []);
-
-  useEffect(() => {
-    setTimestamp(getTimestamp());
-    requestFrame();
-  }, [interpolate]);
 
   useEffect(() => {
     if (!myRenderer) return;
@@ -111,11 +88,11 @@ export function Scatterplot({
     const scaleX = scaleLinear().domain(scaledXDomain).range([0, width]);
     const scaleY = scaleLinear().domain(scaledYDomain).range([0, height]);
 
-    const hit = tree.find(scaleX.invert(event.layerX), scaleY.invert(event.layerY))
+    // const hit = tree.find(scaleX.invert(event.layerX), scaleY.invert(event.layerY))
 
-    setHover(hit.index);
+    // setHover(hit.index);
 
-    myRenderer.setHover(hit.index);
+    // myRenderer.setHover(hit.index);
 
     requestFrame();
 
@@ -124,17 +101,24 @@ export function Scatterplot({
 
   useEffect(() => {
     if (!model || !myRenderer) return;
-    //const x = model.spatial.map((row) => row[xKey]);
-    //const y = model.spatial.map((row) => row[yKey]);
 
     //setTree(d3.quadtree()
     //  .x((d) => d[xKey])
     //  .y((d) => d[yKey])
     //  .addAll(model.spatial.map((e, i) => ({ ...e, index: i }))));
 
-    myRenderer.initialize(x, x2, y, model.bounds, color, size, opacity);
+    myRenderer.initialize({
+      x: [1, 2, 3, 4],
+      y: [1, 2, 3, 4],
+      bounds: {
+        minX: 0,
+        maxX: 10,
+        minY: 0,
+        maxY: 10
+      }
+    });
     requestFrame();
   }, [setRenderer, ref, model, myRenderer]);
 
-  return null;
+  return null
 }

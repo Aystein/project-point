@@ -329,7 +329,7 @@ export class ScatterTrace extends Trace {
         this.geometry.setAttribute("selected", this.selectedAttribute);
         this.geometry.setAttribute("opacity", this.opacityAttribute);
 
-        this.createQuadtree();
+        //this.createQuadtree();
 
         this.updateBounds([bounds.minX, bounds.maxX], [bounds.minY, bounds.maxY]);
     }

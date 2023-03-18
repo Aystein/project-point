@@ -1,4 +1,4 @@
-import TSNE from "../WebAssembly/tsne.js";
+// import TSNE from "../WebAssembly/tsne.js";
 
 const t = self;
 
@@ -6,7 +6,7 @@ t.onmessage = ({ data: { X, D, N, type } }) => {
   if (type !== "init") {
     return;
   }
-  TSNE(undefined).then((module: EmscriptenModule) => {
+  /** TSNE(undefined).then((module: EmscriptenModule) => {
     const newX = new Float64Array(
       module.HEAP8.buffer,
       module._malloc(N * 8 * D),
@@ -26,5 +26,5 @@ t.onmessage = ({ data: { X, D, N, type } }) => {
     version(newX.byteOffset, N, Y.byteOffset, D);
 
     t.postMessage({ type: "finish", Y: Y.slice(0) });
-  });
+  }); **/
 };

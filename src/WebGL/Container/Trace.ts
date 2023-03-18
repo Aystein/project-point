@@ -23,6 +23,10 @@ export class Trace {
         this.plot?.markAsDirty();
     }
 
+    onDrag() {
+        
+    }
+
     render(renderer: THREE.WebGLRenderer, width: number, height: number) {
         console.log("hey");
         renderer.render(this.scene, new THREE.OrthographicCamera(0, width, 0, height, -10, 10));
