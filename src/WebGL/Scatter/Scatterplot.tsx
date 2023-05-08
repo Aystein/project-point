@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { SpatialModel } from "../../Store/ModelSlice";
-import { WebGLRenderer } from "./WebGLRenderer";
 import { scaleLinear } from "d3-scale";
 import { useVisContext } from "../VisualizationContext";
 import * as d3 from 'd3-quadtree';
@@ -71,16 +70,20 @@ export function Scatterplot({
     setTimeout(() => requestFrame(), 500);
   }, []);
 
+
   useEffect(() => {
     if (!myRenderer) return;
 
     myRenderer.updateBounds(
       scaledXDomain,
-      scaledYDomain
+      scaledYDomain,
+      zoom,
+      width,
+      height
     );
-
+      // 600 / 10 -> 60
     requestFrame();
-  }, [scaledXDomain, scaledYDomain, myRenderer, zoom, timestamp]);
+  }, [scaledXDomain, scaledYDomain, myRenderer, zoom, timestamp, width, height]);
 
   useMouseDrag(MOUSE_HOVER, (event) => {
     if (!tree) return false;
@@ -108,8 +111,8 @@ export function Scatterplot({
     //  .addAll(model.spatial.map((e, i) => ({ ...e, index: i }))));
 
     myRenderer.initialize({
-      x: [1, 2, 3, 4],
-      y: [1, 2, 3, 4],
+      x: [0, 2, 3, 4],
+      y: [0, 2, 3, 4],
       bounds: {
         minX: 0,
         maxX: 10,

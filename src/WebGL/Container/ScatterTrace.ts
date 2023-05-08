@@ -51,6 +51,7 @@ const vertex = `
 uniform float frameTime;
 uniform float baseSize;
 uniform mat4 projectionMatrix;
+uniform vec3 cameraPosition;
 
 // Attributes of point sprites
 attribute float size;
@@ -181,6 +182,7 @@ export class ScatterTrace extends Trace {
         this.geometry = new THREE.BufferGeometry();
 
         const points = new THREE.Points(this.geometry, this.material);
+        points.frustumCulled = false;
 
         this.scene.add(points);
     }
@@ -189,8 +191,21 @@ export class ScatterTrace extends Trace {
         this.material.uniforms["frameTime"] = { value };
     }
 
-    updateBounds(xdomain: number[], ydomain: number[]) {
+    updateBounds(xdomain: number[], ydomain: number[], zoom: {tx: number; ty: number; s: number}, width: number, height: number) {
+        const extent = 4;
+        const baseK = width / extent;
+
+        this.camera = new OrthographicCamera(width / -2, width / 2, height / -2, height / 2, -1, 1);
+        
+        this.camera.position.setX((zoom.tx - width / 2) / (baseK * zoom.s));
+        this.camera.position.setY((zoom.ty - height / 2) / (baseK * zoom.s));
+        //this.camera.position.setY(zoom.ty / 30);
+        this.camera.zoom = baseK * zoom.s;
+        
+        //this.camera.zoom = zoom.s;
         this.camera = new OrthographicCamera(xdomain[0], xdomain[1], ydomain[0], ydomain[1], -1, 1);
+
+        this.camera.updateProjectionMatrix();
     }
 
 
@@ -331,7 +346,7 @@ export class ScatterTrace extends Trace {
 
         //this.createQuadtree();
 
-        this.updateBounds([bounds.minX, bounds.maxX], [bounds.minY, bounds.maxY]);
+        // this.updateBounds([bounds.minX, bounds.maxX], [bounds.minY, bounds.maxY], {s: 1, tx: 0, ty: 0}, 600, 400);
     }
 
     search(quadtree, xmin, ymin, xmax, ymax) {

@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { useSelector } from "react-redux";
 import { DataState } from "./Store/DataSlice.";
 import { Model, modelAdapter, SpatialModel } from "./Store/ModelSlice";
@@ -8,6 +9,7 @@ import { PanBehavior } from "./WebGL/Behavior/PanBehavior";
 import { ZoomBehavior } from "./WebGL/Behavior/ZoomBehavior";
 import { Scatterplot } from "./WebGL/Scatter/Scatterplot";
 import { VisProvider } from "./WebGL/VisualizationContext";
+import { BoxBehavior } from './WebGL/Behavior/BoxBehavior';
 
 function MainView({ data, view }: { data: DataState; view: ViewState }) {
   let { workspace } = view.attributes;
@@ -45,10 +47,24 @@ const model: SpatialModel = {
 
 
 export function Main() {
+  React.useEffect(() => {
+    const worker = new Worker(
+      new URL("./workers/testworker.ts", import.meta.url)
+    );
+
+    worker.onmessage = () => {
+      console.log("hiho");
+    }
+
+    worker.postMessage(null);
+
+  }, []);
+
   return <VisProvider>
     <Scatterplot model={model} x="" x2="" y="" />
     <ZoomBehavior />
     <PanBehavior />
+    <BoxBehavior />
   </VisProvider>
 }
 

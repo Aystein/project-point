@@ -91,6 +91,8 @@ export class MouseController {
   }
 
   mouseDown(event: MouseEvent) {
+    event.preventDefault();
+
     switch (event.button) {
       case LEFT_BUTTON:
         this.pressed[LEFT_BUTTON] = true;
@@ -110,6 +112,9 @@ export class MouseController {
   }
 
   mouseUp(event: MouseEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+
     if (this.mode === Mode.Drag) {
       this.mode = Mode.None;
       if (this.onDragEnd) {
@@ -147,6 +152,8 @@ export class MouseController {
   }
 
   mouseWheel(event: MouseEvent) {
+    event.preventDefault();
+    
     if (this.onMouseWheel) {
       this.onMouseWheel(event);
     }
@@ -155,13 +162,14 @@ export class MouseController {
   mouseMove(event: MouseEvent) {
     const mousePosition = { x: event.offsetX, y: event.offsetY };
     this.mousePosition = mousePosition;
-
     if (this.mode === Mode.Drag) {
       if (this.onDragMove) {
         this.onDragMove({
           movementX: event.screenX - this.prevX,
           movementY: event.screenY - this.prevY,
-          button: event.button,
+          offsetX: event.offsetX,
+          offsetY: event.offsetY,
+          button: this.pressedButton,
         }, this.pressedButton);
       }
     } else if (this.onMouseMove) {

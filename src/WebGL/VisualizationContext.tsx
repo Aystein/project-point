@@ -23,7 +23,6 @@ export const VisContext = createContext({
    scaledYDomain: [0, 50],
 });
 
-
 export const VisProvider = ({ children }) => {
    const [dimensions, setDimensions] = React.useState({
       width: 600,
@@ -41,8 +40,14 @@ export const VisProvider = ({ children }) => {
 
    const [renderFunctions, setRenderFunctions] = React.useState([]);
 
-   const [xDomain, setXDomain] = React.useState([0, 10]);
-   const [yDomain, setYDomain] = React.useState([0, 10]);
+   const [xDomain, setXDomain] = React.useState([0, 4]);
+   
+   const yDomain = React.useMemo(() => {
+      const halfExtent = ((xDomain[1] - xDomain[0]) * (height / width)) / 2;
+      const centerY = 2;
+
+      return [centerY - halfExtent, centerY + halfExtent];
+   }, [xDomain, width, height]);
 
    const scaledXDomain = React.useMemo(() => {
       const xScale = scaleLinear().domain(xDomain).range([0, width]);
@@ -52,7 +57,6 @@ export const VisProvider = ({ children }) => {
 
       return newX.domain();
    }, [xDomain, zoom, width]);
-
 
    const scaledYDomain = React.useMemo(() => {
       const yScale = scaleLinear().domain(yDomain).range([0, height]);
@@ -119,7 +123,6 @@ export const VisProvider = ({ children }) => {
          visContext.dispatchCommand(MOUSE_DRAG, event);
       }
       controller.onDragMove = (event) => {
-         console.log("drag");
          visContext.dispatchCommand(MOUSE_DRAGGING, event);
       }
 
@@ -139,7 +142,8 @@ export const VisProvider = ({ children }) => {
    return (
       <VisContext.Provider
          value={{
-            ...dimensions,
+            width,
+            height,
             requestFrame,
             registerRenderFunction,
             xDomain: xDomain,
@@ -153,7 +157,8 @@ export const VisProvider = ({ children }) => {
          }}
       >
          <canvas
-            style={{ width: "100%", height: "100%" }}
+            onContextMenu={(event) => { event.preventDefault(); }}
+            style={{ position: 'absolute', width: "100%", height: "100%" }}
             width={dimensions.width}
             height={dimensions.height}
             ref={ref}

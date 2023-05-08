@@ -5,6 +5,7 @@ import { VisProvider } from "../WebGL/VisualizationContext";
 import { ZoomBehavior } from '../WebGL/Behavior/ZoomBehavior';
 import { PanBehavior } from '../WebGL/Behavior/PanBehavior';
 
+
 const model = {
   oid: "spatial",
   id: 'test',

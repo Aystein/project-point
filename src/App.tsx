@@ -6,8 +6,10 @@ import {
   Tooltip,
   Title,
   Tabs,
+  Text,
   AppShell,
   Header,
+  Footer,
 } from "@mantine/core";
 import {
   IconHome2,
@@ -35,9 +37,8 @@ const useStyles = createStyles((theme) => ({
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    borderRight: `1px solid ${
-      theme.colorScheme === "dark" ? theme.colors.dark[7] : theme.colors.gray[3]
-    }`,
+    borderRight: `1px solid ${theme.colorScheme === "dark" ? theme.colors.dark[7] : theme.colors.gray[3]
+      }`,
   },
 
   main: {
@@ -89,9 +90,8 @@ const useStyles = createStyles((theme) => ({
     padding: theme.spacing.md,
     paddingTop: 18,
     height: 60,
-    borderBottom: `1px solid ${
-      theme.colorScheme === "dark" ? theme.colors.dark[7] : theme.colors.gray[3]
-    }`,
+    borderBottom: `1px solid ${theme.colorScheme === "dark" ? theme.colors.dark[7] : theme.colors.gray[3]
+      }`,
   },
 
   logo: {
@@ -101,9 +101,8 @@ const useStyles = createStyles((theme) => ({
     justifyContent: "center",
     height: 60,
     paddingTop: theme.spacing.md,
-    borderBottom: `1px solid ${
-      theme.colorScheme === "dark" ? theme.colors.dark[7] : theme.colors.gray[3]
-    }`,
+    borderBottom: `1px solid ${theme.colorScheme === "dark" ? theme.colors.dark[7] : theme.colors.gray[3]
+      }`,
     marginBottom: theme.spacing.xl,
   },
 
@@ -214,7 +213,19 @@ export function App() {
 
   return (
     <AppShell
-      padding="md"
+      padding={0}
+      footer={
+        <Footer height={60} p="md">
+          Application footer
+        </Footer>
+      }
+      header={
+        <Header height={{ base: 50, md: 70 }} p="md">
+          <div style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+            <Text>Application header</Text>
+          </div>
+        </Header>
+      }
       navbar={
         <Navbar width={{ sm: 300 }}>
           <Navbar.Section grow className={classes.wrapper}>
@@ -253,7 +264,9 @@ export function App() {
         },
       })}
     >
-      <Main />
+      <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+        <Main />
+      </div>
     </AppShell>
   );
 }

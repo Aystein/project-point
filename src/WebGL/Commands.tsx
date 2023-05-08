@@ -25,6 +25,8 @@ export type Commands = Map<
 export interface DragEvent {
    movementX: number;
    movementY: number;
+   offsetX: number;
+   offsetY: number;
    button: number;
 }
 
