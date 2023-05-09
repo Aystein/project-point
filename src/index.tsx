@@ -4,7 +4,6 @@ import { createRoot } from "react-dom/client";
 import { Provider } from "react-redux";
 import { App } from "./App";
 import { store } from "./Store/Store";
-import AppShellDemo from "./WebGL/AppShellDemo";
 
 createRoot(document.getElementById("root")).render(
   <React.StrictMode>
@@ -16,7 +15,4 @@ createRoot(document.getElementById("root")).render(
   </React.StrictMode>
 );
 
-
-
-
-export * from "./calculator";
+export * from './WebGL';

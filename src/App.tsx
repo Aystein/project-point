@@ -1,4 +1,4 @@
-import { useState } from "react";
+import * as React from 'react';
 import {
   createStyles,
   Navbar,
@@ -10,7 +10,7 @@ import {
   AppShell,
   Header,
   Footer,
-} from "@mantine/core";
+} from '@mantine/core';
 import {
   IconHome2,
   IconGauge,
@@ -19,33 +19,34 @@ import {
   IconCalendarStats,
   IconUser,
   IconSettings,
-} from "@tabler/icons";
-import { DataTab } from "./MainTabs/DataTab";
-import { TSNE } from "./MainTabs/tSNE";
-import { Main } from "./Main";
-import { EmbeddingTab } from "./MainTabs/EmbeddingTab";
+} from '@tabler/icons';
+import { DataTab } from './MainTabs/DataTab';
+import { Main } from './Main';
+import { EmbeddingTab } from './MainTabs/EmbeddingTab';
+import { useAppDispatch } from './Store/hooks';
+import { initializeDatasets } from './Store/DatasetSlice';
 
 const useStyles = createStyles((theme) => ({
   wrapper: {
-    display: "flex",
+    display: 'flex',
   },
 
   aside: {
-    flex: "0 0 60px",
+    flex: '0 0 60px',
     backgroundColor:
-      theme.colorScheme === "dark" ? theme.colors.dark[7] : theme.white,
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    borderRight: `1px solid ${theme.colorScheme === "dark" ? theme.colors.dark[7] : theme.colors.gray[3]
-      }`,
+      theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.white,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    borderRight: `1px solid ${theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.colors.gray[3]
+    }`,
   },
 
   main: {
     flex: 1,
-    maxHeight: "100vh",
+    maxHeight: '100vh',
     backgroundColor:
-      theme.colorScheme === "dark"
+      theme.colorScheme === 'dark'
         ? theme.colors.dark[6]
         : theme.colors.gray[0],
   },
@@ -54,66 +55,66 @@ const useStyles = createStyles((theme) => ({
     width: 44,
     height: 44,
     borderRadius: theme.radius.md,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
     color:
-      theme.colorScheme === "dark"
+      theme.colorScheme === 'dark'
         ? theme.colors.dark[0]
         : theme.colors.gray[7],
 
-    "&:hover": {
+    '&:hover': {
       backgroundColor:
-        theme.colorScheme === "dark"
+        theme.colorScheme === 'dark'
           ? theme.colors.dark[5]
           : theme.colors.gray[0],
     },
   },
 
   mainLinkActive: {
-    "&, &:hover": {
+    '&, &:hover': {
       backgroundColor: theme.fn.variant({
-        variant: "light",
+        variant: 'light',
         color: theme.primaryColor,
       }).background,
-      color: theme.fn.variant({ variant: "light", color: theme.primaryColor })
+      color: theme.fn.variant({ variant: 'light', color: theme.primaryColor })
         .color,
     },
   },
 
   title: {
-    boxSizing: "border-box",
+    boxSizing: 'border-box',
     fontFamily: `Greycliff CF, ${theme.fontFamily}`,
     marginBottom: theme.spacing.xl,
     backgroundColor:
-      theme.colorScheme === "dark" ? theme.colors.dark[7] : theme.white,
+      theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.white,
     padding: theme.spacing.md,
     paddingTop: 18,
     height: 60,
-    borderBottom: `1px solid ${theme.colorScheme === "dark" ? theme.colors.dark[7] : theme.colors.gray[3]
-      }`,
+    borderBottom: `1px solid ${theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.colors.gray[3]
+    }`,
   },
 
   logo: {
-    boxSizing: "border-box",
-    width: "100%",
-    display: "flex",
-    justifyContent: "center",
+    boxSizing: 'border-box',
+    width: '100%',
+    display: 'flex',
+    justifyContent: 'center',
     height: 60,
     paddingTop: theme.spacing.md,
-    borderBottom: `1px solid ${theme.colorScheme === "dark" ? theme.colors.dark[7] : theme.colors.gray[3]
-      }`,
+    borderBottom: `1px solid ${theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.colors.gray[3]
+    }`,
     marginBottom: theme.spacing.xl,
   },
 
   link: {
-    boxSizing: "border-box",
-    display: "block",
-    textDecoration: "none",
+    boxSizing: 'border-box',
+    display: 'block',
+    textDecoration: 'none',
     borderTopRightRadius: theme.radius.md,
     borderBottomRightRadius: theme.radius.md,
     color:
-      theme.colorScheme === "dark"
+      theme.colorScheme === 'dark'
         ? theme.colors.dark[0]
         : theme.colors.gray[7],
     padding: `0 ${theme.spacing.md}px`,
@@ -121,25 +122,25 @@ const useStyles = createStyles((theme) => ({
     marginRight: theme.spacing.md,
     fontWeight: 500,
     height: 44,
-    lineHeight: "44px",
+    lineHeight: '44px',
 
-    "&:hover": {
+    '&:hover': {
       backgroundColor:
-        theme.colorScheme === "dark"
+        theme.colorScheme === 'dark'
           ? theme.colors.dark[5]
           : theme.colors.gray[1],
-      color: theme.colorScheme === "dark" ? theme.white : theme.black,
+      color: theme.colorScheme === 'dark' ? theme.white : theme.black,
     },
   },
 
   linkActive: {
-    "&, &:hover": {
+    '&, &:hover': {
       borderLeftColor: theme.fn.variant({
-        variant: "filled",
+        variant: 'filled',
         color: theme.primaryColor,
       }).background,
       backgroundColor: theme.fn.variant({
-        variant: "filled",
+        variant: 'filled',
         color: theme.primaryColor,
       }).background,
       color: theme.white,
@@ -148,33 +149,23 @@ const useStyles = createStyles((theme) => ({
 }));
 
 const mainLinksMockdata = [
-  { icon: IconHome2, label: "Home", index: 0 },
-  { icon: IconGauge, label: "Dashboard", index: 1 },
-  { icon: IconDeviceDesktopAnalytics, label: "Analytics", index: 2 },
-  { icon: IconCalendarStats, label: "Releases", index: 3 },
-  { icon: IconUser, label: "Account", index: 4 },
-  { icon: IconFingerprint, label: "Security", index: 5 },
-  { icon: IconSettings, label: "Settings", index: 6 },
-];
-
-const linksMockdata = [
-  "Security",
-  "Settings",
-  "Dashboard",
-  "Releases",
-  "Account",
-  "Orders",
-  "Clients",
-  "Databases",
-  "Pull Requests",
-  "Open Issues",
-  "Wiki pages",
+  { icon: IconHome2, label: 'Home', index: 0 },
+  { icon: IconGauge, label: 'Dashboard', index: 1 },
+  { icon: IconDeviceDesktopAnalytics, label: 'Analytics', index: 2 },
+  { icon: IconCalendarStats, label: 'Releases', index: 3 },
+  { icon: IconUser, label: 'Account', index: 4 },
+  { icon: IconFingerprint, label: 'Security', index: 5 },
+  { icon: IconSettings, label: 'Settings', index: 6 },
 ];
 
 export function App() {
   const { classes, cx } = useStyles();
-  const [active, setActive] = useState(mainLinksMockdata[0].label);
-  const [activeLink, setActiveLink] = useState("Settings");
+  const [active, setActive] = React.useState(mainLinksMockdata[0].label);
+  const dispatch = useAppDispatch();
+
+  React.useEffect(() => {
+    dispatch(initializeDatasets());
+  }, []);
 
   const mainLinks = mainLinksMockdata.map((link) => (
     <Tooltip
@@ -195,38 +186,22 @@ export function App() {
     </Tooltip>
   ));
 
-  const links = linksMockdata.map((link) => (
-    <a
-      className={cx(classes.link, {
-        [classes.linkActive]: activeLink === link,
-      })}
-      href="/"
-      onClick={(event) => {
-        event.preventDefault();
-        setActiveLink(link);
-      }}
-      key={link}
-    >
-      {link}
-    </a>
-  ));
-
   return (
     <AppShell
       padding={0}
-      footer={
+      footer={(
         <Footer height={60} p="md">
           Application footer
         </Footer>
-      }
-      header={
+      )}
+      header={(
         <Header height={{ base: 50, md: 70 }} p="md">
           <div style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
             <Text>Application header</Text>
           </div>
         </Header>
-      }
-      navbar={
+      )}
+      navbar={(
         <Navbar width={{ sm: 300 }}>
           <Navbar.Section grow className={classes.wrapper}>
             <div className={classes.aside}>{mainLinks}</div>
@@ -253,14 +228,14 @@ export function App() {
             </div>
           </Navbar.Section>
         </Navbar>
-      }
+      )}
       styles={(theme) => ({
         main: {
           backgroundColor:
-            theme.colorScheme === "dark"
+            theme.colorScheme === 'dark'
               ? theme.colors.dark[8]
               : theme.colors.gray[0],
-          maxHeight: "100vh",
+          maxHeight: '100vh',
         },
       })}
     >

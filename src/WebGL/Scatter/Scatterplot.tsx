@@ -7,7 +7,7 @@ import * as React from "react";
 import { useMouseDrag } from "../Behavior/LassoBehavior";
 import { MOUSE_HOVER } from "../Commands";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { ScatterTrace } from "../Container/ScatterTrace";
+import { ScatterTrace } from "../Math/ScatterTrace";
 
 type ColumnTemp = {
   values: number[];
@@ -39,7 +39,7 @@ export function Scatterplot({
 }) {
   const [myRenderer, setRenderer] = useState<ScatterTrace>();
 
-  const [tree, setTree] = React.useState<any>();
+  const [tree, setTree] = React.useState();
   const [hover, setHover] = React.useState(0);
 
   const getTimestamp = () => {
@@ -63,7 +63,7 @@ export function Scatterplot({
   renderRef.current = render;
 
   useEffect(() => {
-    setRenderer(new ScatterTrace(4));
+    setRenderer(new ScatterTrace());
     registerRenderFunction((renderer) => {
       renderRef.current(renderer)
     });
@@ -79,7 +79,8 @@ export function Scatterplot({
       scaledYDomain,
       zoom,
       width,
-      height
+      height,
+      model.bounds,
     );
       // 600 / 10 -> 60
     requestFrame();
@@ -111,15 +112,11 @@ export function Scatterplot({
     //  .addAll(model.spatial.map((e, i) => ({ ...e, index: i }))));
 
     myRenderer.initialize({
-      x: [0, 2, 3, 4],
-      y: [0, 2, 3, 4],
-      bounds: {
-        minX: 0,
-        maxX: 10,
-        minY: 0,
-        maxY: 10
-      }
+      x: model.spatial.map((entry) => entry.x),
+      y: model.spatial.map((entry) => entry.y),
+      bounds: model.bounds
     });
+
     requestFrame();
   }, [setRenderer, ref, model, myRenderer]);
 

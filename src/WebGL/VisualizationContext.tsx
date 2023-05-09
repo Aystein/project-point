@@ -17,7 +17,7 @@ export const VisContext = createContext({
    yDomain: [0, 50],
    width: 600,
    height: 400,
-   zoom: {tx: 0, ty: 0, s: 1},
+   zoom: { tx: 0, ty: 0, s: 1 },
    setZoom: undefined,
    scaledXDomain: [0, 50],
    scaledYDomain: [0, 50],
@@ -40,11 +40,11 @@ export const VisProvider = ({ children }) => {
 
    const [renderFunctions, setRenderFunctions] = React.useState([]);
 
-   const [xDomain, setXDomain] = React.useState([0, 4]);
+   const [xDomain, setXDomain] = React.useState([-2, 2]);
    
    const yDomain = React.useMemo(() => {
       const halfExtent = ((xDomain[1] - xDomain[0]) * (height / width)) / 2;
-      const centerY = 2;
+      const centerY = 0;
 
       return [centerY - halfExtent, centerY + halfExtent];
    }, [xDomain, width, height]);
@@ -99,12 +99,13 @@ export const VisProvider = ({ children }) => {
    };
 
    React.useEffect(() => {
-      const renderer = new WebGLRenderer({ canvas: ref.current });
-      renderer.setPixelRatio(window.devicePixelRatio);
-      setRenderer(renderer);
-   }, []);
-
-   const vis = undefined;
+      const value = new WebGLRenderer({ canvas: ref.current });
+      value.setPixelRatio(window.devicePixelRatio);
+      value.setClearColor('#ffffff');
+      value.autoClearColor = true;
+      value.autoClear = true;
+      setRenderer(value);
+   }, [ref]);
 
    const visContext = React.useMemo(() => {
       return new Visualization();

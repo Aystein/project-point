@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useSelector } from "react-redux";
 import { DataState } from "./Store/DataSlice.";
-import { Model, modelAdapter, SpatialModel } from "./Store/ModelSlice";
+import { modelAdapter, SpatialModel } from "./Store/ModelSlice";
 import { Selectors } from "./Store/Selectors";
 import { viewAdapter, ViewState } from "./Store/ViewSlice";
 import { isEntityId } from "./Util";
@@ -10,15 +10,20 @@ import { ZoomBehavior } from "./WebGL/Behavior/ZoomBehavior";
 import { Scatterplot } from "./WebGL/Scatter/Scatterplot";
 import { VisProvider } from "./WebGL/VisualizationContext";
 import { BoxBehavior } from './WebGL/Behavior/BoxBehavior';
+import { allViews, useAppSelector } from './Store/hooks';
+
+
 
 function MainView({ data, view }: { data: DataState; view: ViewState }) {
   let { workspace } = view.attributes;
 
+  const modelEntity = useSelector(Selectors.models);
+
+  console.log(modelEntity);
   if (!workspace) {
     return null;
   }
 
-  const modelEntity = useSelector(Selectors.models);
   let model = isEntityId(workspace)
     ? modelAdapter.getSelectors().selectById(modelEntity, workspace)
     : workspace;
@@ -30,6 +35,13 @@ function MainView({ data, view }: { data: DataState; view: ViewState }) {
     //  return <Scatterplot model={model} xKey={"x"} yKey={"y"} />;
     case "neural":
       return <div>neural</div>;
+    default:
+      return <VisProvider>
+      <Scatterplot model={model} x="" x2="" y="" />
+      <ZoomBehavior />
+      <PanBehavior />
+      <BoxBehavior />
+    </VisProvider>
   }
 }
 
@@ -46,10 +58,10 @@ const model: SpatialModel = {
 }
 
 
-export function Main() {
+export function Main2() {
   React.useEffect(() => {
     const worker = new Worker(
-      new URL("./workers/testworker.ts", import.meta.url)
+      new URL("./Workers/testworker.ts", import.meta.url)
     );
 
     worker.onmessage = () => {
@@ -60,6 +72,12 @@ export function Main() {
 
   }, []);
 
+  const data = useSelector(Selectors.data);
+  const views = useSelector(Selectors.views);
+
+  console.log(data);
+  console.log(views);
+
   return <VisProvider>
     <Scatterplot model={model} x="" x2="" y="" />
     <ZoomBehavior />
@@ -68,16 +86,15 @@ export function Main() {
   </VisProvider>
 }
 
-export function Main2() {
+export function Main() {
   const data = useSelector(Selectors.data);
-  const views = useSelector(Selectors.views);
+  const views = useAppSelector(allViews.selectAll);
 
-  const viewValues = viewAdapter.getSelectors().selectAll(views.views);
-  console.log(viewValues);
+  console.log(views);
   return (
     <>
-      {viewValues.map((value) => {
-        return <MainView data={data} view={value} />;
+      {views.map((value) => {
+        return <MainView key={value.id} data={data} view={value} />;
       })}
     </>
   );

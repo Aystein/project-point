@@ -1,8 +1,5 @@
 import {
-  createAction,
   createEntityAdapter,
-  createReducer,
-  createSelector,
   createSlice,
   EntityId,
   EntityState,
@@ -10,10 +7,10 @@ import {
 } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import { Model, SpatialModel } from "./ModelSlice";
-import { RootState } from "./Store";
+import { VectorLike } from "../Interfaces";
 
 export interface ViewAttributes {
-  workspace: EntityId | SpatialModel;
+  workspace: SpatialModel;
   colorEncoding: string;
 }
 
@@ -31,13 +28,10 @@ const attributeSlice = createSlice({
   name: "world",
   initialState: undefined as ViewAttributes,
   reducers: {
-    changeWorkspace: (state, action: PayloadAction<EntityId>) => {
-      state.workspace = action.payload;
-    },
   },
 });
 
-export const { changeWorkspace } = attributeSlice.actions;
+export const { } = attributeSlice.actions;
 
 export const viewAdapter = createEntityAdapter<ViewState>({});
 
@@ -55,15 +49,9 @@ export const viewslice = createSlice({
   name: "views",
   initialState,
   reducers: {
-    addView: (state, action: PayloadAction<Model>) => {
-      viewAdapter.addOne(state.views, {
-        id: nanoid(),
-        attributes: {
-          workspace: action.payload.id,
-          colorEncoding: "",
-        },
-      });
-    },
+    updatePosition: (state, action: PayloadAction<VectorLike[]>) => {
+      state.views.entities[state.active].attributes.workspace.spatial = action.payload;
+    }
   },
   extraReducers: (builder) => {
     builder.addDefaultCase((state, action) => {
@@ -79,6 +67,6 @@ export const viewslice = createSlice({
 });
 
 // Action creators are generated for each case reducer function
-export const {} = viewslice.actions;
+export const { updatePosition } = viewslice.actions;
 
 export default viewslice.reducer;

@@ -1,4 +1,4 @@
-import { Button, Modal, Select } from "@mantine/core";
+import { Button, Modal } from "@mantine/core";
 import { useState } from "react";
 import { groupBy as rowGrouper } from "lodash";
 import "react-data-grid/lib/styles.css";
@@ -7,25 +7,11 @@ import { useDispatch, useSelector } from "react-redux";
 import { showNotification, updateNotification } from "@mantine/notifications";
 import { Selectors } from "../Store/Selectors";
 import { VectorLike } from "../Interfaces";
-import { initializeModel } from "../Store/ModelSlice";
-import { nanoid } from "@reduxjs/toolkit";
-import { getBounds } from "../Util";
 import { encode } from "./encode";
-
-function unmap(array: number[]): VectorLike[] {
-  const result = new Array<VectorLike>(array.length / 2);
-  for (let i = 0; i < result.length; i++) {
-    result[i] = {
-      x: array[i * 2],
-      y: array[i * 2 + 1],
-    };
-  }
-  return result;
-}
+import { updatePosition } from "../Store/ViewSlice";
 
 export function TSNE() {
   const data = useSelector(Selectors.data);
-  const models = useSelector(Selectors.models);
   const dispatch = useDispatch();
 
   const [opened, setOpened] = useState(false);
@@ -62,7 +48,7 @@ export function TSNE() {
 
     const { X, N, D } = encode(data, result);
 
-    const worker = new Worker(new URL("../workers/test.ts", import.meta.url));
+    const worker = new Worker(new URL("../Workers/test.ts", import.meta.url));
     worker.postMessage({
       X,
       N,
@@ -72,7 +58,7 @@ export function TSNE() {
     worker.onmessage = ({
       data: { type, Y },
     }: {
-      data: { Y: number[]; type: string };
+      data: { Y: VectorLike[]; type: string };
     }) => {
       switch (type) {
         case "finish":
@@ -83,14 +69,8 @@ export function TSNE() {
             color: "green",
           });
 
-          const spatial = unmap(Y);
           dispatch(
-            initializeModel({
-              oid: 'spatial',
-              id: nanoid(),
-              spatial,
-              bounds: getBounds(spatial),
-            })
+            updatePosition(Y)
           );
           break;
       }

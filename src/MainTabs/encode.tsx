@@ -4,7 +4,7 @@ import { DataType, VectorLike } from "../Interfaces";
 export function encode(
   data: DataState,
   keys: string[]
-): { X: number[]; D: number; N: number } {
+): { X: number[][]; D: number; N: number } {
   const columns = data.columns.filter((column) => keys.includes(column.key));
 
   const hist = data.rows.map((row) => {
@@ -27,7 +27,7 @@ export function encode(
       .flat();
   });
 
-  return { X: hist.flat(), N: hist.length, D: hist[0].length };
+  return { X: hist, N: hist.length, D: hist[0].length };
 }
 
 export function unmap(array: number[]): VectorLike[] {

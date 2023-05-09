@@ -1,66 +1,66 @@
-import { MOUSE_WHEEL } from "../Commands";
-import { useMouseDrag } from "./LassoBehavior";
-import { useVisContext } from "../VisualizationContext";
+import { MOUSE_WHEEL } from '../Commands'
+import { useMouseDrag } from './LassoBehavior'
+import { useVisContext } from '../VisualizationContext'
 
 export function normalizeWheel(event) {
     // Reasonable defaults
-    const PIXEL_STEP = 10;
-    const LINE_HEIGHT = 40;
-    const PAGE_HEIGHT = 800;
+    const PIXEL_STEP = 10
+    const LINE_HEIGHT = 40
+    const PAGE_HEIGHT = 800
 
-    let sX = 0;
-    let sY = 0; // spinX, spinY
-    let pX = 0;
-    let pY = 0; // pixelX, pixelY
+    let sX = 0
+    let sY = 0
+    let pX = 0
+    let pY = 0
 
     // Legacy
-    if ("detail" in event) {
-        sY = event.detail;
+    if ('detail' in event) {
+        sY = event.detail
     }
-    if ("wheelDelta" in event) {
-        sY = -event.wheelDelta / 120;
+    if ('wheelDelta' in event) {
+        sY = -event.wheelDelta / 120
     }
-    if ("wheelDeltaY" in event) {
-        sY = -event.wheelDeltaY / 120;
+    if ('wheelDeltaY' in event) {
+        sY = -event.wheelDeltaY / 120
     }
-    if ("wheelDeltaX" in event) {
-        sX = -event.wheelDeltaX / 120;
+    if ('wheelDeltaX' in event) {
+        sX = -event.wheelDeltaX / 120
     }
 
     // side scrolling on FF with DOMMouseScroll
-    if ("axis" in event && event.axis === event.HORIZONTAL_AXIS) {
-        sX = sY;
-        sY = 0;
+    if ('axis' in event && event.axis === event.HORIZONTAL_AXIS) {
+        sX = sY
+        sY = 0
     }
 
-    pX = sX * PIXEL_STEP;
-    pY = sY * PIXEL_STEP;
+    pX = sX * PIXEL_STEP
+    pY = sY * PIXEL_STEP
 
-    if ("deltaY" in event) {
-        pY = event.deltaY;
+    if ('deltaY' in event) {
+        pY = event.deltaY
     }
-    if ("deltaX" in event) {
-        pX = event.deltaX;
+    if ('deltaX' in event) {
+        pX = event.deltaX
     }
 
     if ((pX || pY) && event.deltaMode) {
         if (event.deltaMode === 1) {
             // delta in LINE units
-            pX *= LINE_HEIGHT;
-            pY *= LINE_HEIGHT;
+            pX *= LINE_HEIGHT
+            pY *= LINE_HEIGHT
         } else {
             // delta in PAGE units
-            pX *= PAGE_HEIGHT;
-            pY *= PAGE_HEIGHT;
+            pX *= PAGE_HEIGHT
+            pY *= PAGE_HEIGHT
         }
     }
 
     // Fall-back if spin cannot be determined
     if (pX && !sX) {
-        sX = pX < 1 ? -1 : 1;
+        sX = pX < 1 ? -1 : 1
     }
     if (pY && !sY) {
-        sY = pY < 1 ? -1 : 1;
+        sY = pY < 1 ? -1 : 1
     }
 
     return {
@@ -68,33 +68,33 @@ export function normalizeWheel(event) {
         spinY: sY,
         pixelX: pX,
         pixelY: pY,
-    };
+    }
 }
 
 export function ZoomBehavior() {
-    const { zoom, setZoom, ref } = useVisContext();
+    const { zoom, setZoom, ref } = useVisContext()
 
     useMouseDrag(
         MOUSE_WHEEL,
         (event) => {
-            const evt = normalizeWheel(event);
-            const wheel = evt.pixelY < 0 ? 1 : -1;
+            const evt = normalizeWheel(event)
+            const wheel = evt.pixelY < 0 ? 1 : -1
 
-            const zoomFactor = Math.exp(wheel * 0.1);
+            const zoomFactor = Math.exp(wheel * 0.1)
 
             // absolute mouse coordinates relative to parent container
-            let bounds = ref.current.getBoundingClientRect();
-            let x = event.clientX - bounds.left;
-            let y = event.clientY - bounds.top;
+            let bounds = ref.current.getBoundingClientRect()
+            let x = event.clientX - bounds.left
+            let y = event.clientY - bounds.top
 
-            const newScale = Math.max(0.5, Math.min(5.0, zoomFactor * zoom.s));
+            const newScale = Math.max(0.25, Math.min(5.0, zoomFactor * zoom.s))
 
             // downscaled coordinates relative to anchor
-            const zoomPointX = (x - zoom.tx) / zoom.s;
-            const zoomPointY = (y - zoom.ty) / zoom.s;
+            const zoomPointX = (x - zoom.tx) / zoom.s
+            const zoomPointY = (y - zoom.ty) / zoom.s
 
-            const offsetX = -(zoomPointX * (newScale - zoom.s));
-            const offsetY = -(zoomPointY * (newScale - zoom.s));
+            const offsetX = -(zoomPointX * (newScale - zoom.s))
+            const offsetY = -(zoomPointY * (newScale - zoom.s))
 
             const newZoom = {
                 s: newScale,
@@ -102,12 +102,12 @@ export function ZoomBehavior() {
                 ty: zoom.ty + offsetY,
             }
 
-            setZoom(newZoom);
+            setZoom(newZoom)
 
-            return true;
+            return true
         },
         [zoom, setZoom, ref]
-    );
+    )
 
-    return null;
+    return null
 }

@@ -1,9 +1,9 @@
+import * as React from 'react';
 import * as THREE from "three";
 import { Boundaries, VectorLike } from "../../Interfaces";
 // @ts-ignore
 import Test from "../../Assets/square_white.png";
 import { OrthographicCamera } from "three";
-import { Trace } from "./Trace";
 import * as d3 from 'd3-quadtree';
 import { ScaleLinear, scaleLinear } from 'd3-scale';
 
@@ -89,24 +89,34 @@ void main() {
 }
 `;
 
-export class ScatterTrace extends Trace {
+export class ScatterTrace {
     n: number;
 
     scene!: THREE.Scene;
+
     camera!: THREE.OrthographicCamera;
+
     geometry!: THREE.BufferGeometry;
+
     material!: THREE.ShaderMaterial;
 
     // Attributes
     sizeAttribute: THREE.Float32BufferAttribute;
+
     colorAttribute: THREE.Float32BufferAttribute;
+
     selectedAttribute: THREE.Float32BufferAttribute;
+
     opacityAttribute: THREE.Float32BufferAttribute;
+
     typeAttribute: THREE.Float32BufferAttribute;
+
     showAttribute: THREE.Float32BufferAttribute;
+
     positionAttribute: THREE.Float32BufferAttribute;
 
     hover: number = null;
+
     bounds: Boundaries;
 
     createFakeTexture() {
@@ -153,11 +163,11 @@ export class ScatterTrace extends Trace {
         texture.needsUpdate = true;
     }
 
-    constructor(n: number) {
-        super();
+    markAsDirty() {
 
-        this.n = n;
+    }
 
+    constructor() {
         this.scene = new THREE.Scene();
         this.camera = new THREE.OrthographicCamera(-50, 50, 150, -150, 0, 1000);
         //this.camera = new THREE.Camera();
@@ -168,10 +178,8 @@ export class ScatterTrace extends Trace {
             Test,
             (bitmap) => {
                 const texture2 = new THREE.CanvasTexture(bitmap);
-                this.material.uniforms["atlas"].value = texture2;
+                this.material.uniforms.atlas.value = texture2;
                 this.material.needsUpdate = true;
-
-                this.markAsDirty();
             },
             undefined,
             () => {
@@ -188,11 +196,11 @@ export class ScatterTrace extends Trace {
     }
 
     setInterpolation(value: number) {
-        this.material.uniforms["frameTime"] = { value };
+        this.material.uniforms.frameTime = { value };
     }
 
-    updateBounds(xdomain: number[], ydomain: number[], zoom: {tx: number; ty: number; s: number}, width: number, height: number) {
-        const extent = 4;
+    updateBounds(xdomain: number[], ydomain: number[], zoom: {tx: number; ty: number; s: number}, width: number, height: number, bounds: Boundaries) {
+        const extent = bounds.maxX - bounds.minX;
         const baseK = width / extent;
 
         this.camera = new OrthographicCamera(width / -2, width / 2, height / -2, height / 2, -1, 1);
@@ -315,6 +323,8 @@ export class ScatterTrace extends Trace {
     }
 
     initialize({ x, y, bounds, color, size, opacity, mark, filter, selected }: { selected?: number[] | number, filter?: number[] | number, x: number[], y: number[], bounds: Boundaries, color?: string[], size?: number[], opacity?: number[], mark?: number[] }) {
+        this.n = x.length;
+        
         this.bounds = bounds;
         
         // Create buffers
@@ -330,7 +340,7 @@ export class ScatterTrace extends Trace {
         this.setOpacity(opacity ?? 1);
         this.setSize(size ?? 1);
         this.setMark(mark ?? 0);
-        this.setColor(color ?? 'blue')
+        this.setColor(color ?? 'black')
         this.setFilter(filter ?? 0)
         this.setSelected(selected ?? 0)
         this.setX(x ?? 0);
@@ -366,7 +376,7 @@ export class ScatterTrace extends Trace {
       }
 
     createQuadtree() {
-        const x = scaleLinear().domain([this.bounds.minX, this.bounds.maxX]).range([this.plot.width, this.plot.height]);
+        /**const x = scaleLinear().domain([this.bounds.minX, this.bounds.maxX]).range([this.plot.width, this.plot.height]);
         const y = scaleLinear().domain([this.bounds.minY, this.bounds.maxY]).range([this.plot.width, this.plot.height]);
 
         const data = new Array(this.n);
@@ -378,10 +388,10 @@ export class ScatterTrace extends Trace {
         const tree = d3.quadtree()
         .addAll(data)
 
-        console.log(tree.find(0, 0));
+        console.log(tree.find(0, 0));**/
     }
 
-    override render(renderer: THREE.WebGLRenderer, width: number, height: number) {
+    render(renderer: THREE.WebGLRenderer, width: number, height: number) {
         renderer.render(this.scene, this.camera);
     }
 }

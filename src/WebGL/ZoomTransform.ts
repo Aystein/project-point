@@ -1,8 +1,8 @@
-import { invertBy } from "lodash";
-
 export class ZoomTransform {
     k: number;
+
     x: number;
+
     y: number;
 
     constructor(k, x, y) {

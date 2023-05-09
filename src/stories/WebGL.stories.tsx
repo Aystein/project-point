@@ -1,5 +1,6 @@
+/* eslint-disable import/no-extraneous-dependencies */
 import React from 'react';
-import { ComponentStory, ComponentMeta } from '@storybook/react';
+import { ComponentMeta } from '@storybook/react';
 import { Scatterplot } from '../WebGL/Scatter/Scatterplot';
 import { VisProvider } from "../WebGL/VisualizationContext";
 import { ZoomBehavior } from '../WebGL/Behavior/ZoomBehavior';
@@ -24,23 +25,6 @@ export default {
   component: Scatterplot,
 } as ComponentMeta<typeof Scatterplot>;
 
-// More on component templates: https://storybook.js.org/docs/react/writing-stories/introduction#using-args
-const Template: ComponentStory<typeof Scatterplot> = (args) => <div style={{
-  width: 600,
-  height: 400,
-  resize: 'both',
-  padding: 20,
-  overflow: 'auto',
-}}>
-  <VisProvider>
-    <Scatterplot {...args} />
-    <ZoomBehavior />
-    <PanBehavior />
-  </VisProvider>
-
-  <button>Interpolate</button>
-</div>;
-
 
 const x = Array.from({ length: 100000 }, () => {
   return Math.random() * 10;
@@ -62,10 +46,6 @@ export const Primary = () => {
     interpolate: { channel: 'x2', duration: 2 },
     y
   })
-  
-  // Sets the hooks for both the label and primary props
-  const [value, setValue] = React.useState('Secondary');
-  const [isPrimary, setIsPrimary] = React.useState(false);
 
   // Sets a click handler to change the label's value
   const handleClick = () => {
@@ -86,7 +66,7 @@ export const Primary = () => {
     flexDirection: 'column',
     alignItems: 'start'
   }}>
-    <div style={{width:400, height: 300}}>
+    <div style={{ width:400, height: 300 }}>
     <VisProvider>
 
   <ZoomBehavior />

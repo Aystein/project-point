@@ -1,5 +1,3 @@
-import { element } from "prop-types";
-import { DOMElement } from "react";
 import { DragEvent as GDragEvent } from "./Commands";
 
 const LEFT_BUTTON = 0;
@@ -26,6 +24,7 @@ export class MouseController {
   private mousePosition = { x: 0, y: 0 };
 
   private prevX = 0;
+
   private prevY = 0;
 
   onDragStart: (event: MouseEvent, button: number, initial) => void;
@@ -52,8 +51,6 @@ export class MouseController {
     mouseMove,
     mouseWheel
   };
-
-  constructor() { }
 
   get currentMousePosition() {
     return this.mousePosition;

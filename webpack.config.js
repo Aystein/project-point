@@ -47,6 +47,11 @@ module.exports = {
     syncWebAssembly: true,
     topLevelAwait: true
   },
+  devServer: {
+    client: {
+      overlay: false
+    }
+  },
   mode: "development",
   plugins: [
     new HtmlWebpackPlugin({
