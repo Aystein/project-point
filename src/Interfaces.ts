@@ -13,13 +13,13 @@ export enum DataType {
 }
 
 export interface VectorLike {
-  x: number;
-  y: number;
+  x: number
+  y: number
 }
 
 export interface Boundaries {
-  minX: number;
-  maxX: number;
-  minY: number;
-  maxY: number;
+  minX: number
+  maxX: number
+  minY: number
+  maxY: number
 }

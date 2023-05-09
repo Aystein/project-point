@@ -2,7 +2,7 @@
  * Calculates the default zoom factor by examining the bounds of the data set
  * and then dividing it by the height of the viewport.
  */
-console.log("test");
+console.log('test')
 /** export function getDefaultZoom(dataset: Dataset, width, height, xChannel: string, yChannel: string, workspace: IBaseProjection) {
     // Get rectangle that fits around data set
     let minX = 1000;

@@ -1,4 +1,4 @@
-import * as React from 'react';
+import * as React from 'react'
 import {
   createStyles,
   Navbar,
@@ -10,7 +10,7 @@ import {
   AppShell,
   Header,
   Footer,
-} from '@mantine/core';
+} from '@mantine/core'
 import {
   IconHome2,
   IconGauge,
@@ -19,12 +19,12 @@ import {
   IconCalendarStats,
   IconUser,
   IconSettings,
-} from '@tabler/icons';
-import { DataTab } from './MainTabs/DataTab';
-import { Main } from './Main';
-import { EmbeddingTab } from './MainTabs/EmbeddingTab';
-import { useAppDispatch } from './Store/hooks';
-import { initializeDatasets } from './Store/DatasetSlice';
+} from '@tabler/icons'
+import { DataTab } from './MainTabs/DataTab'
+import { Main } from './Main'
+import { EmbeddingTab } from './MainTabs/EmbeddingTab'
+import { useAppDispatch } from './Store/hooks'
+import { initializeDatasets } from './Store/DatasetSlice'
 
 const useStyles = createStyles((theme) => ({
   wrapper: {
@@ -38,7 +38,8 @@ const useStyles = createStyles((theme) => ({
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    borderRight: `1px solid ${theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.colors.gray[3]
+    borderRight: `1px solid ${
+      theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.colors.gray[3]
     }`,
   },
 
@@ -91,7 +92,8 @@ const useStyles = createStyles((theme) => ({
     padding: theme.spacing.md,
     paddingTop: 18,
     height: 60,
-    borderBottom: `1px solid ${theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.colors.gray[3]
+    borderBottom: `1px solid ${
+      theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.colors.gray[3]
     }`,
   },
 
@@ -102,7 +104,8 @@ const useStyles = createStyles((theme) => ({
     justifyContent: 'center',
     height: 60,
     paddingTop: theme.spacing.md,
-    borderBottom: `1px solid ${theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.colors.gray[3]
+    borderBottom: `1px solid ${
+      theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.colors.gray[3]
     }`,
     marginBottom: theme.spacing.xl,
   },
@@ -146,7 +149,7 @@ const useStyles = createStyles((theme) => ({
       color: theme.white,
     },
   },
-}));
+}))
 
 const mainLinksMockdata = [
   { icon: IconHome2, label: 'Home', index: 0 },
@@ -156,16 +159,16 @@ const mainLinksMockdata = [
   { icon: IconUser, label: 'Account', index: 4 },
   { icon: IconFingerprint, label: 'Security', index: 5 },
   { icon: IconSettings, label: 'Settings', index: 6 },
-];
+]
 
 export function App() {
-  const { classes, cx } = useStyles();
-  const [active, setActive] = React.useState(mainLinksMockdata[0].label);
-  const dispatch = useAppDispatch();
+  const { classes, cx } = useStyles()
+  const [active, setActive] = React.useState(mainLinksMockdata[0].label)
+  const dispatch = useAppDispatch()
 
   React.useEffect(() => {
-    dispatch(initializeDatasets());
-  }, []);
+    dispatch(initializeDatasets())
+  }, [])
 
   const mainLinks = mainLinksMockdata.map((link) => (
     <Tooltip
@@ -184,24 +187,26 @@ export function App() {
         <link.icon stroke={1.5} />
       </UnstyledButton>
     </Tooltip>
-  ));
+  ))
 
   return (
     <AppShell
       padding={0}
-      footer={(
+      footer={
         <Footer height={60} p="md">
           Application footer
         </Footer>
-      )}
-      header={(
+      }
+      header={
         <Header height={{ base: 50, md: 70 }} p="md">
-          <div style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+          <div
+            style={{ display: 'flex', alignItems: 'center', height: '100%' }}
+          >
             <Text>Application header</Text>
           </div>
         </Header>
-      )}
-      navbar={(
+      }
+      navbar={
         <Navbar width={{ sm: 300 }}>
           <Navbar.Section grow className={classes.wrapper}>
             <div className={classes.aside}>{mainLinks}</div>
@@ -228,7 +233,7 @@ export function App() {
             </div>
           </Navbar.Section>
         </Navbar>
-      )}
+      }
       styles={(theme) => ({
         main: {
           backgroundColor:
@@ -243,5 +248,5 @@ export function App() {
         <Main />
       </div>
     </AppShell>
-  );
+  )
 }

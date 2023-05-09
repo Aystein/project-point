@@ -7,6 +7,11 @@ import { viewAdapter } from './ViewSlice'
 export const useAppDispatch: () => AppDispatch = useDispatch
 export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector
 
-export const selectDatasets = createSelector((state: RootState) => state.datasets, (state) => Object.values(state.views.entities).map((entry) => entry.name))
+export const selectDatasets = createSelector(
+  (state: RootState) => state.datasets,
+  (state) => Object.values(state.views.entities).map((entry) => entry.name)
+)
 
-export const allViews = viewAdapter.getSelectors((state: RootState) => state.views.views)
+export const allViews = viewAdapter.getSelectors(
+  (state: RootState) => state.views.views
+)

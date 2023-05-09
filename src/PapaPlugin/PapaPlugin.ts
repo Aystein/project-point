@@ -1,36 +1,32 @@
-interface PapaPluginConfig {
+interface PapaPluginConfig {}
 
-}
-
-const defaultConfig: PapaPluginConfig = {
-
-}
+const defaultConfig: PapaPluginConfig = {}
 
 export class PapaPlugin<Row> {
-    /**
-     * Final processed data
-     */
-    data: Row[] = []
+  /**
+   * Final processed data
+   */
+  data: Row[] = []
 
-    /**
-     * Config for the step process
-     */
-    config: PapaPluginConfig
-    
-    constructor(config?: PapaPluginConfig) {
-        this.config = {}
-        Object.assign(this.config, defaultConfig)
-        if (config) {
-            Object.assign(this.config, config)
-        }
+  /**
+   * Config for the step process
+   */
+  config: PapaPluginConfig
 
-        this.step = this.step.bind(this);
+  constructor(config?: PapaPluginConfig) {
+    this.config = {}
+    Object.assign(this.config, defaultConfig)
+    if (config) {
+      Object.assign(this.config, config)
     }
 
-    /**
-     * Can be directly specified as step function of papaparse
-     */
-    step({ data }: { data: Row }) {
-        this.data.push(data)
-    }
+    this.step = this.step.bind(this)
+  }
+
+  /**
+   * Can be directly specified as step function of papaparse
+   */
+  step({ data }: { data: Row }) {
+    this.data.push(data)
+  }
 }

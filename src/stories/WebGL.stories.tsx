@@ -1,14 +1,13 @@
 /* eslint-disable import/no-extraneous-dependencies */
-import React from 'react';
-import { ComponentMeta } from '@storybook/react';
-import { Scatterplot } from '../WebGL/Scatter/Scatterplot';
-import { VisProvider } from "../WebGL/VisualizationContext";
-import { ZoomBehavior } from '../WebGL/Behavior/ZoomBehavior';
-import { PanBehavior } from '../WebGL/Behavior/PanBehavior';
-
+import React from 'react'
+import { ComponentMeta } from '@storybook/react'
+import { Scatterplot } from '../WebGL/Scatter/Scatterplot'
+import { VisProvider } from '../WebGL/VisualizationContext'
+import { ZoomBehavior } from '../WebGL/Behavior/ZoomBehavior'
+import { PanBehavior } from '../WebGL/Behavior/PanBehavior'
 
 const model = {
-  oid: "spatial",
+  oid: 'spatial',
   id: 'test',
   spatial: [],
   bounds: {
@@ -23,19 +22,18 @@ const model = {
 export default {
   title: 'Example/WebGL',
   component: Scatterplot,
-} as ComponentMeta<typeof Scatterplot>;
-
+} as ComponentMeta<typeof Scatterplot>
 
 const x = Array.from({ length: 100000 }, () => {
-  return Math.random() * 10;
+  return Math.random() * 10
 })
 
 const x2 = Array.from({ length: 100000 }, () => {
-  return 0;
+  return 0
 })
 
 const y = Array.from({ length: 100000 }, () => {
-  return Math.random() * 10;
+  return Math.random() * 10
 })
 
 export const Primary = () => {
@@ -44,7 +42,7 @@ export const Primary = () => {
     x,
     x2,
     interpolate: { channel: 'x2', duration: 2 },
-    y
+    y,
   })
 
   // Sets a click handler to change the label's value
@@ -52,34 +50,35 @@ export const Primary = () => {
     if (args.interpolate.channel === 'x2') {
       setArgs({
         ...args,
-        interpolate: { channel: 'x', duration: 2 }
+        interpolate: { channel: 'x', duration: 2 },
       })
     } else {
       setArgs({
         ...args,
-        interpolate: { channel: 'x2', duration: 2 }
+        interpolate: { channel: 'x2', duration: 2 },
       })
     }
-  };
-  return <div style={{
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'start'
-  }}>
-    <div style={{ width:400, height: 300 }}>
-    <VisProvider>
+  }
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'start',
+      }}
+    >
+      <div style={{ width: 400, height: 300 }}>
+        <VisProvider>
+          <ZoomBehavior />
+          <PanBehavior />
+        </VisProvider>
+      </div>
 
-  <ZoomBehavior />
-  <PanBehavior />
-</VisProvider></div>
-
-  <button onClick={handleClick}>Interpolate</button>
-
-</div>
-};
-
+      <button onClick={handleClick}>Interpolate</button>
+    </div>
+  )
+}
 
 export const Test = () => {
   return <div>test</div>
 }
-

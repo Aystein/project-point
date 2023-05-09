@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState } from 'react'
 import {
   AppShell,
   Navbar,
@@ -9,23 +9,31 @@ import {
   MediaQuery,
   Burger,
   useMantineTheme,
-} from '@mantine/core';
-import { Main } from '../Main';
+} from '@mantine/core'
+import { Main } from '../Main'
 
 export default function AppShellDemo() {
-  const theme = useMantineTheme();
-  const [opened, setOpened] = useState(false);
+  const theme = useMantineTheme()
+  const [opened, setOpened] = useState(false)
   return (
     <AppShell
       styles={{
         main: {
-          background: theme.colorScheme === 'dark' ? theme.colors.dark[8] : theme.colors.gray[0],
+          background:
+            theme.colorScheme === 'dark'
+              ? theme.colors.dark[8]
+              : theme.colors.gray[0],
         },
       }}
       navbarOffsetBreakpoint="sm"
       asideOffsetBreakpoint="sm"
       navbar={
-        <Navbar p="md" hiddenBreakpoint="sm" hidden={!opened} width={{ sm: 200, lg: 300 }}>
+        <Navbar
+          p="md"
+          hiddenBreakpoint="sm"
+          hidden={!opened}
+          width={{ sm: 200, lg: 300 }}
+        >
           <Text>Application navbar</Text>
         </Navbar>
       }
@@ -43,7 +51,9 @@ export default function AppShellDemo() {
       }
       header={
         <Header height={{ base: 50, md: 70 }} p="md">
-          <div style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+          <div
+            style={{ display: 'flex', alignItems: 'center', height: '100%' }}
+          >
             <MediaQuery largerThan="sm" styles={{ display: 'none' }}>
               <Burger
                 opened={opened}
@@ -59,9 +69,16 @@ export default function AppShellDemo() {
         </Header>
       }
     >
-      <div style={{ border: '1px solid red', width: '100%', height: '100%', position: 'relative' }}>
+      <div
+        style={{
+          border: '1px solid red',
+          width: '100%',
+          height: '100%',
+          position: 'relative',
+        }}
+      >
         <Main />
       </div>
     </AppShell>
-  );
+  )
 }

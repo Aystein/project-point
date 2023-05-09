@@ -1,7 +1,7 @@
-import { DragEvent as GDragEvent } from "./Commands";
+import { DragEvent as GDragEvent } from './Commands'
 
-const LEFT_BUTTON = 0;
-const RIGHT_BUTTON = 2;
+const LEFT_BUTTON = 0
+const RIGHT_BUTTON = 2
 
 enum Mode {
   None,
@@ -13,47 +13,47 @@ enum Mode {
  * Keeps track of the mouse state eg. press, click, move etc
  */
 export class MouseController {
-  pressed = new Array<boolean>(3).fill(false);
+  pressed = new Array<boolean>(3).fill(false)
 
-  pressedPosition = null;
+  pressedPosition = null
 
-  pressedButton = 0;
+  pressedButton = 0
 
-  mode: Mode = Mode.None;
+  mode: Mode = Mode.None
 
-  private mousePosition = { x: 0, y: 0 };
+  private mousePosition = { x: 0, y: 0 }
 
-  private prevX = 0;
+  private prevX = 0
 
-  private prevY = 0;
+  private prevY = 0
 
-  onDragStart: (event: MouseEvent, button: number, initial) => void;
+  onDragStart: (event: MouseEvent, button: number, initial) => void
 
-  onDragEnd: (event: MouseEvent, button: number) => void;
+  onDragEnd: (event: MouseEvent, button: number) => void
 
-  onDragMove: (event: GDragEvent, button: number) => void;
+  onDragMove: (event: GDragEvent, button: number) => void
 
-  onContext: (event: MouseEvent, button: number) => void;
+  onContext: (event: MouseEvent, button: number) => void
 
-  onMouseUp: (event: MouseEvent) => void;
+  onMouseUp: (event: MouseEvent) => void
 
-  onMouseMove: (event: MouseEvent) => void;
+  onMouseMove: (event: MouseEvent) => void
 
-  onMouseLeave: (event: MouseEvent) => void;
+  onMouseLeave: (event: MouseEvent) => void
 
-  onMouseWheel: (event: MouseEvent) => void;
+  onMouseWheel: (event: MouseEvent) => void
 
   attachContext: {
-    rootElement: HTMLElement,
-    mouseDown,
-    mouseLeave,
-    mouseUp,
-    mouseMove,
+    rootElement: HTMLElement
+    mouseDown
+    mouseLeave
+    mouseUp
+    mouseMove
     mouseWheel
-  };
+  }
 
   get currentMousePosition() {
-    return this.mousePosition;
+    return this.mousePosition
   }
 
   attach(element: HTMLElement) {
@@ -74,113 +74,136 @@ export class MouseController {
   }
 
   detach() {
-    this.attachContext.rootElement.removeEventListener('mousedown', this.attachContext.mouseDown)
-    this.attachContext.rootElement.removeEventListener('mousemove', this.attachContext.mouseMove)
-    this.attachContext.rootElement.removeEventListener('mouseup', this.attachContext.mouseUp)
-    this.attachContext.rootElement.removeEventListener('mouseleave', this.attachContext.mouseLeave)
-    this.attachContext.rootElement.removeEventListener('wheel', this.attachContext.mouseWheel)
+    this.attachContext.rootElement.removeEventListener(
+      'mousedown',
+      this.attachContext.mouseDown
+    )
+    this.attachContext.rootElement.removeEventListener(
+      'mousemove',
+      this.attachContext.mouseMove
+    )
+    this.attachContext.rootElement.removeEventListener(
+      'mouseup',
+      this.attachContext.mouseUp
+    )
+    this.attachContext.rootElement.removeEventListener(
+      'mouseleave',
+      this.attachContext.mouseLeave
+    )
+    this.attachContext.rootElement.removeEventListener(
+      'wheel',
+      this.attachContext.mouseWheel
+    )
   }
 
   mouseLeave(event: MouseEvent) {
     if (this.onMouseLeave) {
-      this.onMouseLeave(event);
+      this.onMouseLeave(event)
     }
   }
 
   mouseDown(event: MouseEvent) {
-    event.preventDefault();
+    event.preventDefault()
 
     switch (event.button) {
       case LEFT_BUTTON:
-        this.pressed[LEFT_BUTTON] = true;
-        this.pressedPosition = { x: event.offsetX, y: event.offsetY };
-        this.pressedButton = LEFT_BUTTON;
-        break;
+        this.pressed[LEFT_BUTTON] = true
+        this.pressedPosition = { x: event.offsetX, y: event.offsetY }
+        this.pressedButton = LEFT_BUTTON
+        break
       case RIGHT_BUTTON:
-        this.pressed[RIGHT_BUTTON] = true;
-        this.pressedPosition = { x: event.offsetX, y: event.offsetY };
-        this.pressedButton = RIGHT_BUTTON;
-        break;
+        this.pressed[RIGHT_BUTTON] = true
+        this.pressedPosition = { x: event.offsetX, y: event.offsetY }
+        this.pressedButton = RIGHT_BUTTON
+        break
       default:
-        break;
+        break
     }
 
-    this.mode = Mode.Pressed;
+    this.mode = Mode.Pressed
   }
 
   mouseUp(event: MouseEvent) {
-    event.preventDefault();
-    event.stopPropagation();
+    event.preventDefault()
+    event.stopPropagation()
 
     if (this.mode === Mode.Drag) {
-      this.mode = Mode.None;
+      this.mode = Mode.None
       if (this.onDragEnd) {
-        this.onDragEnd(event, this.pressedButton);
+        this.onDragEnd(event, this.pressedButton)
       }
-      return;
+      return
     }
 
     switch (event.button) {
       case LEFT_BUTTON:
-        this.pressed[LEFT_BUTTON] = false;
+        this.pressed[LEFT_BUTTON] = false
 
         if (this.mode === Mode.Pressed) {
           if (this.onContext) {
-            this.onContext(event, LEFT_BUTTON);
+            this.onContext(event, LEFT_BUTTON)
           }
 
-          this.mode = Mode.None;
+          this.mode = Mode.None
         }
-        break;
+        break
       case RIGHT_BUTTON:
-        this.pressed[RIGHT_BUTTON] = false;
+        this.pressed[RIGHT_BUTTON] = false
 
         if (this.mode === Mode.Pressed) {
           if (this.onContext) {
-            this.onContext(event, RIGHT_BUTTON);
+            this.onContext(event, RIGHT_BUTTON)
           }
 
-          this.mode = Mode.None;
+          this.mode = Mode.None
         }
-        break;
+        break
       default:
-        break;
+        break
     }
   }
 
   mouseWheel(event: MouseEvent) {
-    event.preventDefault();
-    
+    event.preventDefault()
+
     if (this.onMouseWheel) {
-      this.onMouseWheel(event);
+      this.onMouseWheel(event)
     }
   }
 
   mouseMove(event: MouseEvent) {
-    const mousePosition = { x: event.offsetX, y: event.offsetY };
-    this.mousePosition = mousePosition;
+    const mousePosition = { x: event.offsetX, y: event.offsetY }
+    this.mousePosition = mousePosition
     if (this.mode === Mode.Drag) {
       if (this.onDragMove) {
-        this.onDragMove({
-          movementX: event.screenX - this.prevX,
-          movementY: event.screenY - this.prevY,
-          offsetX: event.offsetX,
-          offsetY: event.offsetY,
-          button: this.pressedButton,
-        }, this.pressedButton);
+        this.onDragMove(
+          {
+            movementX: event.screenX - this.prevX,
+            movementY: event.screenY - this.prevY,
+            offsetX: event.offsetX,
+            offsetY: event.offsetY,
+            button: this.pressedButton,
+          },
+          this.pressedButton
+        )
       }
     } else if (this.onMouseMove) {
-      this.onMouseMove(event);
+      this.onMouseMove(event)
     }
 
-    if (this.mode === Mode.Pressed && this.pressedPosition && (Math.abs(this.pressedPosition.x - mousePosition.x) < 4 || Math.abs(this.pressedPosition.y - mousePosition.y) < 4)) {
+    if (
+      this.mode === Mode.Pressed &&
+      this.pressedPosition &&
+      (Math.abs(this.pressedPosition.x - mousePosition.x) < 4 ||
+        Math.abs(this.pressedPosition.y - mousePosition.y) < 4)
+    ) {
       if (this.onDragStart) {
-        this.onDragStart(event, this.pressedButton, this.pressedPosition);
-        this.mode = Mode.Drag;
+        this.onDragStart(event, this.pressedButton, this.pressedPosition)
+        this.mode = Mode.Drag
       }
     }
 
-    this.prevX = event.screenX;
-    this.prevY = event.screenY;
+    this.prevX = event.screenX
+    this.prevY = event.screenY
   }
 }
