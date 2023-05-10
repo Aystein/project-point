@@ -14,7 +14,11 @@ interface BaseModel {
 export interface SpatialModel extends BaseModel {
   oid: 'spatial'
   id: EntityId
+  
+  // The spatial data of this model (x, y coordinates)
   spatial: VectorLike[]
+
+  // The boundaries of the spatial data
   bounds: Boundaries
 }
 

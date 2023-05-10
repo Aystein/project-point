@@ -10,26 +10,27 @@ import {
   MOUSE_UP,
   MOUSE_HOVER,
   MOUSE_WHEEL,
+  MOUSE_DRAG_END,
 } from './Commands'
 import { MouseController } from './MouseController'
 import { Visualization } from './Visualization'
-import { scaleLinear } from 'd3-scale'
+import { scaleLinear, ScaleLinear } from 'd3-scale'
 import { ZoomTransform } from './ZoomTransform'
 
-export const VisContext = createContext({
-  vis: undefined as Visualization,
-  ref: undefined,
-  requestFrame: undefined,
-  registerRenderFunction: undefined,
-  xDomain: [0, 50],
-  yDomain: [0, 50],
-  width: 600,
-  height: 400,
-  zoom: { tx: 0, ty: 0, s: 1 },
-  setZoom: undefined,
-  scaledXDomain: [0, 50],
-  scaledYDomain: [0, 50],
-})
+export const VisContext = createContext<{
+  vis: Visualization
+  ref
+  requestFrame: () => void
+  registerRenderFunction: (value) => void
+  xDomain: number[]
+  yDomain: number[]
+  width: number
+  height: number
+  zoom: { tx: number; ty: number; s: number }
+  setZoom: (zoom: React.SetStateAction<{ tx: number; ty: number; s: number }>) => void
+  scaledXDomain: ScaleLinear<number, number>
+  scaledYDomain: ScaleLinear<number, number>
+}>(null)
 
 export const VisProvider = ({ children }) => {
   const [dimensions, setDimensions] = React.useState({
@@ -63,7 +64,7 @@ export const VisProvider = ({ children }) => {
     const zoomTransform = new ZoomTransform(zoom.s, zoom.tx, zoom.ty)
     const newX = zoomTransform.rescaleX(xScale)
 
-    return newX.domain()
+    return newX
   }, [xDomain, zoom, width])
 
   const scaledYDomain = React.useMemo(() => {
@@ -72,7 +73,7 @@ export const VisProvider = ({ children }) => {
     const zoomTransform = new ZoomTransform(zoom.s, zoom.tx, zoom.ty)
     const newY = zoomTransform.rescaleY(yScale)
 
-    return newY.domain()
+    return newY
   }, [yDomain, zoom, height])
 
   renderer?.setSize(width, height, false)
@@ -124,6 +125,7 @@ export const VisProvider = ({ children }) => {
 
     controller.onMouseLeave = (event) =>
       visContext.dispatchCommand(MOUSE_LEAVE, event)
+
     controller.onMouseMove = (event) => {
       visContext.dispatchCommand(MOUSE_HOVER, event)
     }
@@ -135,6 +137,9 @@ export const VisProvider = ({ children }) => {
     }
     controller.onDragMove = (event) => {
       visContext.dispatchCommand(MOUSE_DRAGGING, event)
+    }
+    controller.onDragEnd = (event) => {
+      visContext.dispatchCommand(MOUSE_DRAG_END, event)
     }
 
     controller.onMouseWheel = (event) => {

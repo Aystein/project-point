@@ -31,7 +31,7 @@ export interface DragEvent {
   button: number
 }
 
-export const MOUSE_DRAG: LexicalCommand<MouseEvent> = { type: 'mousedrag' }
+export const MOUSE_DRAG: LexicalCommand<DragEvent> = { type: 'mousedrag' }
 export const MOUSE_DRAGGING: LexicalCommand<DragEvent> = {
   type: 'mousedragging',
 }

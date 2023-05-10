@@ -32,7 +32,7 @@ export function Scatterplot({
   x2: string | ColumnTemp
   y: string | ColumnTemp
   model: SpatialModel
-  color?: string[]
+  color?:  string | string[]
   size?: number[]
   opacity?: number[]
   globalConfig?: GlobalConfig
@@ -47,6 +47,8 @@ export function Scatterplot({
   }
 
   const [timestamp, setTimestamp] = React.useState(0)
+
+  console.log("test");
 
   const {
     ref,
@@ -71,7 +73,10 @@ export function Scatterplot({
   renderRef.current = render
 
   useEffect(() => {
-    setRenderer(new ScatterTrace())
+    myRenderer?.setColor(color);
+  }, [color, myRenderer]);
+
+  useEffect(() => {
     registerRenderFunction((renderer) => {
       renderRef.current(renderer)
     })
@@ -82,8 +87,8 @@ export function Scatterplot({
     if (!myRenderer) return
 
     myRenderer.updateBounds(
-      scaledXDomain,
-      scaledYDomain,
+      scaledXDomain.domain(),
+      scaledYDomain.domain(),
       zoom,
       width,
       height,
@@ -98,8 +103,8 @@ export function Scatterplot({
     (event) => {
       if (!tree) return false
 
-      const scaleX = scaleLinear().domain(scaledXDomain).range([0, width])
-      const scaleY = scaleLinear().domain(scaledYDomain).range([0, height])
+      //const scaleX = scaleLinear().domain(scaledXDomain).range([0, width])
+      //const scaleY = scaleLinear().domain(scaledYDomain).range([0, height])
 
       // const hit = tree.find(scaleX.invert(event.layerX), scaleY.invert(event.layerY))
 
@@ -115,21 +120,25 @@ export function Scatterplot({
   )
 
   useEffect(() => {
-    if (!model || !myRenderer) return
+    if (!model) return
 
     //setTree(d3.quadtree()
     //  .x((d) => d[xKey])
     //  .y((d) => d[yKey])
     //  .addAll(model.spatial.map((e, i) => ({ ...e, index: i }))));
 
-    myRenderer.initialize({
+    const rend = new ScatterTrace();
+
+    rend.initialize({
       x: model.spatial.map((entry) => entry.x),
       y: model.spatial.map((entry) => entry.y),
       bounds: model.bounds,
     })
 
+    setRenderer(rend);
+
     requestFrame()
-  }, [setRenderer, ref, model, myRenderer])
+  }, [setRenderer, ref, model])
 
   return null
 }

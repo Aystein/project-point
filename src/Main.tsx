@@ -11,11 +11,13 @@ import { Scatterplot } from './WebGL/Scatter/Scatterplot'
 import { VisProvider } from './WebGL/VisualizationContext'
 import { BoxBehavior } from './WebGL/Behavior/BoxBehavior'
 import { allViews, useAppSelector } from './Store/hooks'
+import { useMantineTheme } from '@mantine/core'
 
 function MainView({ data, view }: { data: DataState; view: ViewState }) {
   let { workspace } = view.attributes
 
   const modelEntity = useSelector(Selectors.models)
+  const theme = useMantineTheme();
 
   if (!workspace) {
     return null
@@ -26,61 +28,18 @@ function MainView({ data, view }: { data: DataState; view: ViewState }) {
     : workspace
 
   switch (model.oid) {
-    //case "spatial":
-    //  return <Scatterplot model={model} xKey={"x"} yKey={"y"} />;
     case 'neural':
       return <div>neural</div>
     default:
       return (
         <VisProvider>
-          <Scatterplot model={model} x="" x2="" y="" />
+          <Scatterplot model={model} x="" x2="" y="" color={theme.colors.cyan[7]} />
           <ZoomBehavior />
           <PanBehavior />
           <BoxBehavior />
         </VisProvider>
       )
   }
-}
-
-const model: SpatialModel = {
-  oid: 'spatial',
-  id: 'test',
-  spatial: [],
-  bounds: {
-    minX: 0,
-    maxX: 10,
-    minY: 0,
-    maxY: 10,
-  },
-}
-
-export function Main2() {
-  React.useEffect(() => {
-    const worker = new Worker(
-      new URL('./Workers/testworker.ts', import.meta.url)
-    )
-
-    worker.onmessage = () => {
-      console.log('hiho')
-    }
-
-    worker.postMessage(null)
-  }, [])
-
-  const data = useSelector(Selectors.data)
-  const views = useSelector(Selectors.views)
-
-  console.log(data)
-  console.log(views)
-
-  return (
-    <VisProvider>
-      <Scatterplot model={model} x="" x2="" y="" />
-      <ZoomBehavior />
-      <PanBehavior />
-      <BoxBehavior />
-    </VisProvider>
-  )
 }
 
 export function Main() {

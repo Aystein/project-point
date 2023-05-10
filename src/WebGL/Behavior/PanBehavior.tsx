@@ -9,6 +9,7 @@ export function PanBehavior({ button = 0 }: { button?: number }) {
     MOUSE_DRAGGING,
     (event) => {
       console.log(event.button)
+
       if (event.button === button) {
         setZoom((zoom) => ({
           ...zoom,

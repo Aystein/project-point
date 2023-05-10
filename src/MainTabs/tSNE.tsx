@@ -1,4 +1,5 @@
-import { Button, Modal } from '@mantine/core'
+import { Button, Flex, Group, Modal, NumberInput, Stack } from '@mantine/core'
+import { useForm } from '@mantine/form'
 import { useState } from 'react'
 import { groupBy as rowGrouper } from 'lodash'
 import 'react-data-grid/lib/styles.css'
@@ -10,15 +11,25 @@ import { VectorLike } from '../Interfaces'
 import { encode } from './encode'
 import { updatePosition } from '../Store/ViewSlice'
 
-export function TSNE() {
+export function TSNE({
+  open,
+  setOpen,
+}: {
+  open: boolean
+  setOpen: (value: boolean) => void
+}) {
   const data = useSelector(Selectors.data)
   const dispatch = useDispatch()
 
-  const [opened, setOpened] = useState(false)
+  const form = useForm({
+    initialValues: {
+      perplexity: 30,
+    },
 
-  const handleTSNE = () => {
-    setOpened(true)
-  }
+    validate: {
+      perplexity: (value) => (value >= 10 ? null : 'Must be at least 10'),
+    },
+  })
 
   const [expandedGroupIds, setExpandedGroupIds] = useState<
     ReadonlySet<unknown>
@@ -76,14 +87,17 @@ export function TSNE() {
   }
 
   return (
-    <div>
-      <Button onClick={handleTSNE}>t-SNE</Button>
-
-      <Modal
-        opened={opened}
-        onClose={() => setOpened(false)}
-        title="This is fullscreen modal!"
-        fullScreen
+    <Modal
+      opened={open}
+      onClose={() => setOpen(false)}
+      title="t-SNE"
+      size="70%"
+    >
+      <form
+        onSubmit={form.onSubmit((values) => {
+          setOpen(false)
+          run()
+        })}
       >
         <DataGrid
           groupBy={['title']}
@@ -96,15 +110,24 @@ export function TSNE() {
           rows={rows}
           columns={columns}
         ></DataGrid>
-        <Button
-          onClick={() => {
-            setOpened(false)
-            run()
-          }}
-        >
+
+        <Group>
+          <Stack>
+            <NumberInput
+              defaultValue={30}
+              placeholder="Perplexity"
+              label="Perplexity"
+              withAsterisk
+              {...form.getInputProps('perplexity')}
+            />
+          </Stack>
+          <Stack>test</Stack>
+        </Group>
+
+        <Button mt="1.5rem" type="submit">
           Run
         </Button>
-      </Modal>
-    </div>
+      </form>
+    </Modal>
   )
 }

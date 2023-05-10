@@ -175,7 +175,6 @@ export function App() {
       label={link.label}
       position="right"
       withArrow
-      transitionDuration={0}
       key={link.label}
     >
       <UnstyledButton

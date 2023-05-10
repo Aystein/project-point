@@ -1,4 +1,5 @@
-import { Select } from '@mantine/core'
+import * as React from 'react'
+import { Button, Select } from '@mantine/core'
 import { useMemo } from 'react'
 import 'react-data-grid/lib/styles.css'
 import { useDispatch, useSelector } from 'react-redux'
@@ -20,9 +21,16 @@ export function EmbeddingTab() {
       }))
   }, [models])
 
+  const [open, setOpen] = React.useState(false)
+
+  const handleTSNE = () => {
+    setOpen(true)
+  }
+
   return (
     <div>
-      <TSNE />
+      <TSNE open={open} setOpen={setOpen} />
+      <Button onClick={handleTSNE}>t-SNE</Button>
     </div>
   )
 }

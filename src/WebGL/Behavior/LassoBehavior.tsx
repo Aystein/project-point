@@ -53,5 +53,5 @@ export function LassoSelectionPlugin() {
     []
   )
 
-  return <svg></svg>
+  return <svg style={{ pointerEvents: 'none' }}></svg>
 }

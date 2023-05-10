@@ -27,7 +27,7 @@ export class MouseController {
 
   private prevY = 0
 
-  onDragStart: (event: MouseEvent, button: number, initial) => void
+  onDragStart: (event: GDragEvent, button: number, initial) => void
 
   onDragEnd: (event: MouseEvent, button: number) => void
 
@@ -198,7 +198,18 @@ export class MouseController {
         Math.abs(this.pressedPosition.y - mousePosition.y) < 4)
     ) {
       if (this.onDragStart) {
-        this.onDragStart(event, this.pressedButton, this.pressedPosition)
+        console.log('down')
+        this.onDragStart(
+          {
+            movementX: 0,
+            movementY: 0,
+            offsetX: event.offsetX,
+            offsetY: event.offsetY,
+            button: this.pressedButton,
+          },
+          this.pressedButton,
+          this.pressedPosition
+        )
         this.mode = Mode.Drag
       }
     }

@@ -1,4 +1,4 @@
-import { NotificationsProvider } from '@mantine/notifications'
+import { Notifications } from '@mantine/notifications'
 import React from 'react'
 import { createRoot } from 'react-dom/client'
 import { Provider } from 'react-redux'
@@ -8,9 +8,8 @@ import { store } from './Store/Store'
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <Provider store={store}>
-      <NotificationsProvider>
-        <App />
-      </NotificationsProvider>
+      <Notifications />
+      <App />
     </Provider>
   </React.StrictMode>
 )

@@ -1,4 +1,4 @@
-import { FileInput, Flex, NavLink } from '@mantine/core'
+import { FileInput, Flex, Input, NavLink } from '@mantine/core'
 import Papa from 'papaparse'
 import * as React from 'react'
 import { useDispatch } from 'react-redux'
@@ -40,14 +40,13 @@ export function DataTab() {
   }
 
   return (
-    <Flex direction={'column'}>
+    <Flex direction={'column'} p="sm" gap="md">
       <Statistics />
 
       <FileInput
         placeholder="Pick file"
         label="CSV Upload"
         radius="xs"
-        size="xs"
         withAsterisk
         onChange={handleChange}
       />
@@ -75,17 +74,19 @@ function DatasetList() {
   }
 
   return (
-    <Flex direction={'column'} p={'1rem'}>
-      {datasets.map((name) => {
-        return (
-          <NavLink
-            key={name}
-            onClick={() => handleLoad(name)}
-            label={name}
-            active
-          />
-        )
-      })}
-    </Flex>
+    <Input.Wrapper label="Files">
+      <Flex direction={'column'}>
+        {datasets.map((name) => {
+          return (
+            <NavLink
+              key={name}
+              onClick={() => handleLoad(name)}
+              label={name}
+              active
+            />
+          )
+        })}
+      </Flex>
+    </Input.Wrapper>
   )
 }
