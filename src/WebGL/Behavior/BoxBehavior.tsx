@@ -1,61 +1,69 @@
 import * as React from 'react'
-import {
-  LexicalCommand,
-  CommandListener,
-  MOUSE_DRAG,
-  MOUSE_DRAGGING,
-  MOUSE_DRAG_END,
-} from '../Commands'
+import { MOUSE_DRAG, MOUSE_DRAGGING, MOUSE_DRAG_END } from '../Commands'
 import { useVisContext } from '../VisualizationContext'
 import { Rectangle } from '../Math/Rectangle'
-import { Button } from '@mantine/core'
-import { TSNE } from '../../MainTabs/tSNE'
+import { ActionIcon, Button, Group } from '@mantine/core'
 import { SpatialModel } from '../../Store/ModelSlice'
+import { openContextModal } from '@mantine/modals'
+import { useDispatch } from 'react-redux'
+import { VectorLike } from '../../Interfaces'
+import {
+  addSubEmbedding,
+  removeEmbedding,
+  updateEmbedding,
+} from '../../Store/ViewSlice'
+import { IconX } from '@tabler/icons-react'
+import { useMouseDrag } from './useMouseDrag'
 
-function ProjectButton({ area, model }: { area: Rectangle, model: SpatialModel }) {
-  const [open, setOpen] = React.useState(false)
-  
-
-  const handleOpen = () => {
-    setOpen(true)
-  }
-
+function ProjectButton({
+  filter,
+  onFinish,
+  onDelete,
+}: {
+  filter: number[]
+  onFinish: (Y: VectorLike[]) => void
+  onDelete: () => void
+}) {
   return (
     <>
       <Button
         style={{ pointerEvents: 'auto', opacity: 1 }}
         m="1.5rem"
         variant="outline"
-        onClick={handleOpen}
+        onClick={() => {
+          openContextModal({
+            modal: 'demonstration',
+            title: 't-SNE embedding',
+            size: '70%',
+            innerProps: {
+              filter,
+              onFinish,
+            },
+          })
+        }}
       >
         Settings
       </Button>
-      <TSNE open={open} setOpen={setOpen} />
+      <ActionIcon
+        style={{ pointerEvents: 'auto', opacity: 1 }}
+        onClick={() => {
+          onDelete()
+        }}
+      >
+        <IconX />
+      </ActionIcon>
     </>
   )
 }
 
-export function useMouseEvent<T>(
-  command: LexicalCommand<T>,
-  callback: CommandListener<T>,
-  deps: React.DependencyList
-) {
-  const { vis } = useVisContext()
-
-  React.useEffect(() => {
-    return vis.registerCommand(command, callback, 1)
-  }, deps)
-}
-
-export function BoxBehavior() {
+export function BoxBehavior({ parentModel }: { parentModel: SpatialModel }) {
   const { vis, scaledXDomain, scaledYDomain } = useVisContext()
 
   const [rect, setRect] = React.useState<Rectangle>()
-
-  const [models, setModels] = React.useState<Rectangle[]>([])
+  const dispatch = useDispatch()
 
   // register to mousedrag...
-  useMouseEvent(
+  useMouseDrag(
     MOUSE_DRAG,
     (event) => {
       if (event.button === 2) {
@@ -68,7 +76,7 @@ export function BoxBehavior() {
     []
   )
 
-  useMouseEvent(
+  useMouseDrag(
     MOUSE_DRAGGING,
     (event) => {
       if (rect && event.button === 2) {
@@ -88,23 +96,35 @@ export function BoxBehavior() {
     [rect, setRect]
   )
 
-  useMouseEvent(
+  useMouseDrag(
     MOUSE_DRAG_END,
     (event) => {
       if (rect) {
-        setModels((arr) => {
-          return [
-            ...arr,
-            new Rectangle(
-              scaledXDomain.invert(rect.x),
-              scaledYDomain.invert(rect.y),
-              scaledXDomain.invert(rect.x + rect.width) -
-                scaledXDomain.invert(rect.x),
-              scaledYDomain.invert(rect.y + rect.height) -
-                scaledYDomain.invert(rect.y)
-            ),
-          ]
+        const worldRect = new Rectangle(
+          scaledXDomain.invert(rect.x),
+          scaledYDomain.invert(rect.y),
+          scaledXDomain.invert(rect.x + rect.width) -
+            scaledXDomain.invert(rect.x),
+          scaledYDomain.invert(rect.y + rect.height) -
+            scaledYDomain.invert(rect.y)
+        )
+
+        const filter = new Array<number>()
+
+        parentModel.flatSpatial.forEach((value, key) => {
+          if (worldRect.within(value)) {
+            filter.push(key)
+          }
         })
+
+        dispatch(
+          addSubEmbedding({
+            filter,
+            Y: null,
+            area: worldRect,
+          })
+        )
+
         setRect(null)
         return true
       }
@@ -137,26 +157,47 @@ export function BoxBehavior() {
         />
       ) : null}
 
-      {models.map((area) => {
+      {parentModel?.children.map((model) => {
         return (
-          <div
-            key={area.x}
-            style={{
-              pointerEvents: 'none',
-              position: 'absolute',
-              left: scaledXDomain(area.x),
-              top: scaledYDomain(area.y),
-              width:
-                scaledXDomain(area.x + area.width) - scaledXDomain(area.x),
-              height:
-                scaledYDomain(area.y + area.height) - scaledYDomain(area.y),
-              border: '3px solid black',
-            }}
-          >
-            <ProjectButton area={area} model={model} />
-          </div>
+          <SingleBox key={model.id} area={model.area} parentModel={model} />
         )
       })}
     </div>
+  )
+}
+
+function SingleBox({
+  area,
+  parentModel,
+}: {
+  area: Rectangle
+  parentModel: SpatialModel
+}) {
+  const { scaledXDomain, scaledYDomain } = useVisContext()
+  const dispatch = useDispatch()
+
+  return (
+    <Group
+      key={area.x}
+      style={{
+        pointerEvents: 'none',
+        position: 'absolute',
+        left: scaledXDomain(area.x),
+        top: scaledYDomain(area.y),
+        width: scaledXDomain(area.x + area.width) - scaledXDomain(area.x),
+        height: scaledYDomain(area.y + area.height) - scaledYDomain(area.y),
+        border: '3px solid black',
+      }}
+    >
+      <ProjectButton
+        filter={parentModel.filter}
+        onFinish={(Y) => {
+          dispatch(updateEmbedding({ Y, id: parentModel.id }))
+        }}
+        onDelete={() => {
+          dispatch(removeEmbedding({ id: parentModel.id }))
+        }}
+      />
+    </Group>
   )
 }

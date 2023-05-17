@@ -27,7 +27,9 @@ export const VisContext = createContext<{
   width: number
   height: number
   zoom: { tx: number; ty: number; s: number }
-  setZoom: (zoom: React.SetStateAction<{ tx: number; ty: number; s: number }>) => void
+  setZoom: (
+    zoom: React.SetStateAction<{ tx: number; ty: number; s: number }>
+  ) => void
   scaledXDomain: ScaleLinear<number, number>
   scaledYDomain: ScaleLinear<number, number>
 }>(null)
@@ -91,13 +93,13 @@ export const VisProvider = ({ children }) => {
   const frameRef = React.useRef(frame)
   frameRef.current = frame
 
-  const requestFrame = () => {
+  const requestFrame = React.useCallback(() => {
     if (!dirtyRef.current) {
       requestAnimationFrame(() => frameRef.current())
 
       dirtyRef.current = true
     }
-  }
+  }, [])
 
   React.useEffect(() => {
     requestFrame()
@@ -111,8 +113,7 @@ export const VisProvider = ({ children }) => {
     const value = new WebGLRenderer({ canvas: ref.current })
     value.setPixelRatio(window.devicePixelRatio)
     value.setClearColor('#ffffff')
-    value.autoClearColor = true
-    value.autoClear = true
+
     setRenderer(value)
   }, [ref])
 

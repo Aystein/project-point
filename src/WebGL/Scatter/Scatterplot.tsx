@@ -1,12 +1,9 @@
 import { useEffect, useState } from 'react'
 import { SpatialModel } from '../../Store/ModelSlice'
-import { scaleLinear } from 'd3-scale'
 import { useVisContext } from '../VisualizationContext'
-import * as d3 from 'd3-quadtree'
 import * as React from 'react'
-import { useMouseDrag } from '../Behavior/LassoBehavior'
+import { useMouseDrag } from '../Behavior/useMouseDrag'
 import { MOUSE_HOVER } from '../Commands'
-import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { ScatterTrace } from '../Math/ScatterTrace'
 
 type ColumnTemp = {
@@ -19,6 +16,7 @@ interface GlobalConfig {
 }
 
 export function Scatterplot({
+  n,
   x,
   x2,
   y,
@@ -27,28 +25,22 @@ export function Scatterplot({
   size,
   opacity,
   globalConfig = { pointSize: 16 },
+  hover,
 }: {
-  x: string | ColumnTemp
+  n: number
+  x: number[]
   x2: string | ColumnTemp
-  y: string | ColumnTemp
+  y: number[]
   model: SpatialModel
-  color?:  string | string[]
+  color?: string | string[]
   size?: number[]
   opacity?: number[]
   globalConfig?: GlobalConfig
+  hover: number
 }) {
   const [myRenderer, setRenderer] = useState<ScatterTrace>()
 
-  const [tree, setTree] = React.useState()
-  const [hover, setHover] = React.useState(0)
-
-  const getTimestamp = () => {
-    return Date.now() / 1000
-  }
-
   const [timestamp, setTimestamp] = React.useState(0)
-
-  console.log("test");
 
   const {
     ref,
@@ -73,8 +65,8 @@ export function Scatterplot({
   renderRef.current = render
 
   useEffect(() => {
-    myRenderer?.setColor(color);
-  }, [color, myRenderer]);
+    myRenderer?.setColor(color)
+  }, [color, myRenderer])
 
   useEffect(() => {
     registerRenderFunction((renderer) => {
@@ -82,6 +74,10 @@ export function Scatterplot({
     })
     setTimeout(() => requestFrame(), 500)
   }, [])
+
+  useEffect(() => {
+    myRenderer?.setHover(hover)
+  }, [hover, myRenderer])
 
   useEffect(() => {
     if (!myRenderer) return
@@ -98,47 +94,34 @@ export function Scatterplot({
     requestFrame()
   }, [scaledXDomain, scaledYDomain, myRenderer, zoom, timestamp, width, height])
 
-  useMouseDrag(
-    MOUSE_HOVER,
-    (event) => {
-      if (!tree) return false
-
-      //const scaleX = scaleLinear().domain(scaledXDomain).range([0, width])
-      //const scaleY = scaleLinear().domain(scaledYDomain).range([0, height])
-
-      // const hit = tree.find(scaleX.invert(event.layerX), scaleY.invert(event.layerY))
-
-      // setHover(hit.index);
-
-      // myRenderer.setHover(hit.index);
+  useEffect(() => {
+    if (myRenderer) {
+      myRenderer.setX(x)
+      myRenderer.setY(y)
 
       requestFrame()
-
-      return true
-    },
-    [tree, scaledXDomain, scaledYDomain]
-  )
+    }
+  }, [x, y, myRenderer])
 
   useEffect(() => {
     if (!model) return
 
-    //setTree(d3.quadtree()
-    //  .x((d) => d[xKey])
-    //  .y((d) => d[yKey])
-    //  .addAll(model.spatial.map((e, i) => ({ ...e, index: i }))));
+    const rend = new ScatterTrace(n)
 
-    const rend = new ScatterTrace();
+    rend.onDirty = () => {
+      requestFrame()
+    }
 
     rend.initialize({
-      x: model.spatial.map((entry) => entry.x),
-      y: model.spatial.map((entry) => entry.y),
+      x,
+      y,
       bounds: model.bounds,
     })
 
-    setRenderer(rend);
+    setRenderer(rend)
 
     requestFrame()
-  }, [setRenderer, ref, model])
+  }, [setRenderer, ref, n])
 
   return null
 }

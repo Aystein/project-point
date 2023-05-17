@@ -83,6 +83,7 @@ function DatasetList() {
               onClick={() => handleLoad(name)}
               label={name}
               active
+              variant="subtle"
             />
           )
         })}

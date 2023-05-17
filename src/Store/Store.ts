@@ -88,8 +88,10 @@ const reducer = createReducer<RootState>(undefined, (builder) => {
         column.type = DataType.Ordinal
         column.domain = Array.from(distinct)
       }
+    })
 
-      console.log(empty, date)
+    rows.forEach((row, index) => {
+      row.index = index
     })
 
     state.data.id = id
@@ -98,25 +100,28 @@ const reducer = createReducer<RootState>(undefined, (builder) => {
 
     state.views.views = viewAdapter.getInitialState()
     const viewId = nanoid()
+    const spatial = rows.map((row) => ({ x: Math.random(), y: Math.random() }))
     state.views.views = viewAdapter.addOne(state.views.views, {
       id: viewId,
       attributes: {
         workspace: {
           oid: 'spatial',
           id: nanoid(),
-          spatial: rows.map((row) => ({ x: Math.random(), y: Math.random() })),
+          spatial,
           bounds: {
             minX: 0,
             maxX: 1,
             minY: 0,
             maxY: 1,
           },
+          children: [],
+          filter: null,
+          flatSpatial: spatial,
+          area: null,
         },
-        colorEncoding: '',
       },
     })
     state.views.active = viewId
-    viewAdapter.removeAll(state.views.views)
   })
   builder.addDefaultCase(combined)
 })

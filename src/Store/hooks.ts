@@ -15,3 +15,18 @@ export const selectDatasets = createSelector(
 export const allViews = viewAdapter.getSelectors(
   (state: RootState) => state.views.views
 )
+
+export const filterData = createSelector(
+  (state: RootState) => state.data,
+  (entities) => {
+    return
+  }
+)
+
+export const makeGenerateSpatial = () => {
+  const selectItemsByCategory = createSelector(
+    [(state: RootState) => state.models, (state, modelId) => modelId],
+    (items, modelId) => items.models.entities[modelId]?.spatial
+  )
+  return selectItemsByCategory
+}

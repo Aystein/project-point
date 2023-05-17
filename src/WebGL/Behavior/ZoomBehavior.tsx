@@ -1,5 +1,5 @@
 import { MOUSE_WHEEL } from '../Commands'
-import { useMouseDrag } from './LassoBehavior'
+import { useMouseDrag } from "./useMouseDrag"
 import { useVisContext } from '../VisualizationContext'
 
 export function normalizeWheel(event) {

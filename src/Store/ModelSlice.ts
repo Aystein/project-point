@@ -6,30 +6,41 @@ import {
 } from '@reduxjs/toolkit'
 import type { PayloadAction } from '@reduxjs/toolkit'
 import { Boundaries, VectorLike } from '../Interfaces'
+import { Rectangle } from '../WebGL/Math/Rectangle'
 
 interface BaseModel {
   id: EntityId
 }
 
+export type EmbeddingParameters = {
+  embedding: 'tsne'
+  perplexity: number
+}
+
 export interface SpatialModel extends BaseModel {
   oid: 'spatial'
   id: EntityId
-  
+
+  parameters?: EmbeddingParameters
+
   // The spatial data of this model (x, y coordinates)
   spatial: VectorLike[]
 
+  // Hierarchically unnested spatial data. VERY useful as reactive state for spatial data
+  flatSpatial: VectorLike[]
+
   // The boundaries of the spatial data
   bounds: Boundaries
+
+  // The indices of the rows this model operates on
+  filter: number[]
+
+  children: SpatialModel[]
+
+  area: Rectangle
 }
 
-export interface NeuralModel extends BaseModel {
-  oid: 'neural'
-  id: EntityId
-  features: string[]
-  classLabel: string[]
-}
-
-export type Model = SpatialModel | NeuralModel
+export type Model = SpatialModel
 
 export interface ModelsState {
   models: EntityState<Model>
@@ -45,8 +56,12 @@ export const modelSlice = createSlice({
   name: 'models',
   initialState,
   reducers: {
-    initializeModel: (state, action: PayloadAction<Model>) => {
-      modelAdapter.addOne(state.models, action.payload)
+    initializeModel: (
+      state,
+      action: PayloadAction<{ parent: Model; model: Model }>
+    ) => {
+      //state.models.entities.
+      //modelAdapter.addOne(state.models, action.payload)
     },
   },
 })

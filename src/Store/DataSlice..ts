@@ -11,24 +11,28 @@ interface NumberColumn {
   key: string
   type: DataType.Numeric
   domain: number[]
+  group?: string
 }
 
 interface OrdinalColumn {
   key: string
   type: DataType.Ordinal
   domain: string[]
+  group?: string
 }
 
 interface DateColumn {
   key: string
   type: DataType.Date
   domain?: never
+  group?: string
 }
 
 interface UnknownColumn {
   key: string
   type: DataType.Unknown
   domain?: never
+  group?: string
 }
 
 export type Column = NumberColumn | OrdinalColumn | DateColumn | UnknownColumn

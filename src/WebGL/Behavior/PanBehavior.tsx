@@ -1,5 +1,5 @@
 import { MOUSE_DRAGGING } from '../Commands'
-import { useMouseDrag } from './LassoBehavior'
+import { useMouseDrag } from "./useMouseDrag"
 import { useVisContext } from '../VisualizationContext'
 
 export function PanBehavior({ button = 0 }: { button?: number }) {
@@ -8,8 +8,6 @@ export function PanBehavior({ button = 0 }: { button?: number }) {
   useMouseDrag(
     MOUSE_DRAGGING,
     (event) => {
-      console.log(event.button)
-
       if (event.button === button) {
         setZoom((zoom) => ({
           ...zoom,

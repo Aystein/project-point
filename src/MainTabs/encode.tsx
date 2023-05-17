@@ -3,11 +3,12 @@ import { DataType, VectorLike } from '../Interfaces'
 
 export function encode(
   data: DataState,
+  filter: number[],
   keys: string[]
 ): { X: number[][]; D: number; N: number } {
   const columns = data.columns.filter((column) => keys.includes(column.key))
 
-  const hist = data.rows.map((row) => {
+  const hist = (filter?.map((i) => data.rows[i]) ?? data.rows).map((row) => {
     return columns
       .map((column) => {
         const value = row[column.key]

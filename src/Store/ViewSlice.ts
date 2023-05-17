@@ -8,10 +8,12 @@ import {
 import type { PayloadAction } from '@reduxjs/toolkit'
 import { Model, SpatialModel } from './ModelSlice'
 import { VectorLike } from '../Interfaces'
+import { getBounds } from '../Util'
+import { Rectangle } from '../WebGL/Math/Rectangle'
+import { scaleLinear } from 'd3-scale'
 
 export interface ViewAttributes {
   workspace: SpatialModel
-  colorEncoding: string
 }
 
 export interface ViewState {
@@ -27,10 +29,142 @@ export interface ViewsState {
 const attributeSlice = createSlice({
   name: 'world',
   initialState: undefined as ViewAttributes,
-  reducers: {},
+  reducers: {
+    removeEmbedding: (state, action: PayloadAction<{ id: EntityId }>) => {
+      state.workspace.children.splice(
+        state.workspace.children.findIndex(
+          (value) => value.id === action.payload.id
+        ),
+        1
+      )
+
+      const flatSpatial = state.workspace.spatial.map((value) => ({
+        x: value.x,
+        y: value.y,
+      }))
+
+      state.workspace.children.forEach((child) => {
+        const scaleX = scaleLinear()
+          .domain([child.bounds.minX, child.bounds.maxX])
+          .range([
+            child.area.x + child.area.width * 0.01,
+            child.area.x + child.area.width * 0.99,
+          ])
+        const scaleY = scaleLinear()
+          .domain([child.bounds.minY, child.bounds.maxY])
+          .range([
+            child.area.y + child.area.height * 0.01,
+            child.area.y + child.area.height * 0.99,
+          ])
+
+        child.filter.forEach((i, k) => {
+          flatSpatial[i] = {
+            x: scaleX(child.spatial[k].x),
+            y: scaleY(child.spatial[k].y),
+          }
+        })
+      })
+
+      state.workspace.flatSpatial = flatSpatial
+    },
+    updateEmbedding: (
+      state,
+      action: PayloadAction<{ id: EntityId; Y: VectorLike[] }>
+    ) => {
+      const { Y, id } = action.payload
+
+      const model = state.workspace.children.find((value) => value.id === id)
+      model.spatial = Y
+      model.bounds = getBounds(Y)
+
+      const flatSpatial = state.workspace.spatial.map((value) => ({
+        x: value.x,
+        y: value.y,
+      }))
+
+      state.workspace.children.forEach((child) => {
+        const scaleX = scaleLinear()
+          .domain([child.bounds.minX, child.bounds.maxX])
+          .range([
+            child.area.x + child.area.width * 0.01,
+            child.area.x + child.area.width * 0.99,
+          ])
+        const scaleY = scaleLinear()
+          .domain([child.bounds.minY, child.bounds.maxY])
+          .range([
+            child.area.y + child.area.height * 0.01,
+            child.area.y + child.area.height * 0.99,
+          ])
+
+        child.filter.forEach((i, k) => {
+          flatSpatial[i] = {
+            x: scaleX(child.spatial[k].x),
+            y: scaleY(child.spatial[k].y),
+          }
+        })
+      })
+
+      state.workspace.flatSpatial = flatSpatial
+    },
+    addSubEmbedding: (
+      state,
+      action: PayloadAction<{
+        filter: number[]
+        Y: VectorLike[]
+        area: Rectangle
+      }>
+    ) => {
+      const { Y, filter, area } = action.payload
+
+      const subModel: SpatialModel = {
+        oid: 'spatial',
+        id: nanoid(),
+        spatial: Y,
+        flatSpatial: Y,
+        bounds: Y ? getBounds(Y) : null,
+        filter,
+        area,
+        children: [],
+      }
+
+      state.workspace.children.push(subModel)
+
+      // Only alter coordinates if we have supplied spatial information to this model
+      if (Y) {
+        const flatSpatial = state.workspace.spatial.map((value) => ({
+          x: value.x,
+          y: value.y,
+        }))
+
+        state.workspace.children.forEach((child) => {
+          const scaleX = scaleLinear()
+            .domain([child.bounds.minX, child.bounds.maxX])
+            .range([
+              child.area.x + child.area.width * 0.01,
+              child.area.x + child.area.width * 0.99,
+            ])
+          const scaleY = scaleLinear()
+            .domain([child.bounds.minY, child.bounds.maxY])
+            .range([
+              child.area.y + child.area.height * 0.01,
+              child.area.y + child.area.height * 0.99,
+            ])
+
+          child.filter.forEach((i, k) => {
+            flatSpatial[i] = {
+              x: scaleX(child.spatial[k].x),
+              y: scaleY(child.spatial[k].y),
+            }
+          })
+        })
+
+        state.workspace.flatSpatial = flatSpatial
+      }
+    },
+  },
 })
 
-export const {} = attributeSlice.actions
+export const { addSubEmbedding, updateEmbedding, removeEmbedding } = attributeSlice.actions
 
 export const viewAdapter = createEntityAdapter<ViewState>({})
 
@@ -41,7 +175,7 @@ const initialState: ViewsState = {
 
 initialState.views = viewAdapter.addOne(initialState.views, {
   id: nanoid(),
-  attributes: { workspace: null, colorEncoding: null },
+  attributes: { workspace: null },
 })
 
 export const viewslice = createSlice({

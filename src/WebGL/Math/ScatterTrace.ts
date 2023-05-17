@@ -4,10 +4,8 @@ import { Boundaries, VectorLike } from '../../Interfaces'
 // @ts-ignore
 import Test from '../../Assets/square_white.png'
 import { OrthographicCamera } from 'three'
-import * as d3 from 'd3-quadtree'
-import { ScaleLinear, scaleLinear } from 'd3-scale'
 
-const HOVER_SCALE = 1.25
+const HOVER_SCALE = 1.35
 
 const fragment = `
 precision mediump float;
@@ -42,7 +40,6 @@ void main() {
     //vec4 border = texture2D(atlas, vec2(vType * 0.25, 0.5) + gl_PointCoord * 0.25);
     //gl_FragColor = mix(gl_FragColor, border, border.a);
     //}
-
 }
 `
 
@@ -50,8 +47,6 @@ const vertex = `
 // Vertex shader of the particle mesh.
 uniform float frameTime;
 uniform float baseSize;
-uniform mat4 projectionMatrix;
-uniform vec3 cameraPosition;
 
 // Attributes of point sprites
 attribute float size;
@@ -61,7 +56,7 @@ attribute float show;
 attribute float selected;
 attribute float opacity;
 
-attribute vec3 position;
+attribute vec3 position2;
 
 // Varying of point sprites
 varying vec3 vColor;
@@ -84,8 +79,9 @@ void main() {
 
     gl_PointSize = size * baseSize;
     
-    gl_Position = projectionMatrix * vec4(position.x, position.y, 0.0, 1.0);
-    // gl_Position = projectionMatrix * mix(vec4(position.x, position.y, 0.0, 1.0), vec4(frame2.x, frame2.y, 0.0, 1.0), frameTime);
+    //gl_Position = projectionMatrix * vec4(position.x, position.y, 0.0, 1.0);
+    gl_Position = projectionMatrix * mix(vec4(position2.x, position2.y, 0.0, 1.0), vec4(position.x, position.y, 0.0, 1.0), frameTime);
+    gl_Position.z = 0.0;
 }
 `
 
@@ -115,9 +111,17 @@ export class ScatterTrace {
 
   positionAttribute: THREE.Float32BufferAttribute
 
+  position2Attribute: THREE.Float32BufferAttribute
+
   hover: number = null
 
   bounds: Boundaries
+
+  dirty: boolean = true
+
+  interpolationTimer: number
+
+  onDirty: () => void
 
   createFakeTexture() {
     const width = 512
@@ -142,7 +146,7 @@ export class ScatterTrace {
 
     const texture = new THREE.DataTexture(data, width, height)
 
-    this.material = new THREE.RawShaderMaterial({
+    this.material = new THREE.ShaderMaterial({
       uniforms: {
         color: { value: new THREE.Color(0xffffff) },
         spritesPerRow: { value: 2 },
@@ -151,24 +155,33 @@ export class ScatterTrace {
         atlas: {
           value: texture,
         },
-        frameTime: { value: 0.5 },
+        frameTime: { value: 1 },
       },
       transparent: true,
       vertexShader: vertex,
       fragmentShader: fragment,
+      depthTest: true,
+      depthWrite: true,
     })
 
+    this.material.blending = THREE.NormalBlending 
     // used the buffer to create a DataTexture
 
     texture.needsUpdate = true
   }
 
-  markAsDirty() {}
+  markAsDirty() {
+    if (!this.dirty && this.onDirty) {
+      this.dirty = true
+      this.onDirty()
+    }
+  }
 
-  constructor() {
+  constructor(n: number) {
     this.scene = new THREE.Scene()
     this.camera = new THREE.OrthographicCamera(-50, 50, 150, -150, 0, 1000)
     //this.camera = new THREE.Camera();
+    this.n = n
 
     this.createFakeTexture()
 
@@ -193,8 +206,10 @@ export class ScatterTrace {
     this.scene.add(points)
   }
 
-  setInterpolation(value: number) {
-    this.material.uniforms.frameTime = { value }
+  initInterpolation() {
+    this.material.uniforms.frameTime = { value: 0 }
+    this.markAsDirty()
+    this.interpolationTimer = performance.now()
   }
 
   updateBounds(
@@ -231,6 +246,7 @@ export class ScatterTrace {
       -1,
       1
     )
+    this.camera.frustumCulled = false
 
     this.camera.updateProjectionMatrix()
   }
@@ -250,6 +266,13 @@ export class ScatterTrace {
         this.hover,
         this.sizeAttribute.getX(this.hover) / HOVER_SCALE
       )
+
+      this.colorAttribute.setXYZ(
+        this.hover,
+        this.colorAttribute.getX(this.hover) / HOVER_SCALE,
+        this.colorAttribute.getY(this.hover) / HOVER_SCALE,
+        this.colorAttribute.getZ(this.hover) / HOVER_SCALE
+      )
     }
 
     this.hover = index
@@ -259,13 +282,28 @@ export class ScatterTrace {
         this.hover,
         this.sizeAttribute.getX(this.hover) * HOVER_SCALE
       )
+
+      this.colorAttribute.setXYZ(
+        this.hover,
+        this.colorAttribute.getX(this.hover) * HOVER_SCALE,
+        this.colorAttribute.getY(this.hover) * HOVER_SCALE,
+        this.colorAttribute.getZ(this.hover) * HOVER_SCALE
+      )
     }
 
     this.sizeAttribute.needsUpdate = true
+    this.colorAttribute.needsUpdate = true
+    this.positionAttribute.needsUpdate = true
+
+    this.markAsDirty()
   }
 
   setX(value: number | number[]) {
     const attribute = this.positionAttribute
+
+    for (let i = 0; i < this.n; i++) {
+      this.position2Attribute.setX(i, this.positionAttribute.getX(i))
+    }
 
     if (Array.isArray(value)) {
       for (let i = 0; i < this.n; i++) {
@@ -277,12 +315,38 @@ export class ScatterTrace {
       }
     }
 
+    this.initInterpolation()
+    this.positionAttribute.needsUpdate = true
+    this.markAsDirty()
+  }
+
+  setZ(value: number | number[]) {
+    const attribute = this.positionAttribute
+
+    for (let i = 0; i < this.n; i++) {
+      this.position2Attribute.setZ(i, this.positionAttribute.getZ(i))
+    }
+
+    if (Array.isArray(value)) {
+      for (let i = 0; i < this.n; i++) {
+        attribute.setZ(i, value[i])
+      }
+    } else {
+      for (let i = 0; i < this.n; i++) {
+        attribute.setZ(i, value)
+      }
+    }
+
     this.positionAttribute.needsUpdate = true
     this.markAsDirty()
   }
 
   setY(value: number | number[]) {
     const attribute = this.positionAttribute
+
+    for (let i = 0; i < this.n; i++) {
+      this.position2Attribute.setY(i, this.positionAttribute.getY(i))
+    }
 
     if (Array.isArray(value)) {
       for (let i = 0; i < this.n; i++) {
@@ -294,8 +358,14 @@ export class ScatterTrace {
       }
     }
 
+    this.initInterpolation()
     this.positionAttribute.needsUpdate = true
     this.markAsDirty()
+  }
+
+  invalidateOldFrame() {
+    this.position2Attribute = this.positionAttribute.clone()
+    this.geometry.setAttribute('position2', this.position2Attribute)
   }
 
   setSize(value: number | number[]) {
@@ -376,8 +446,6 @@ export class ScatterTrace {
     opacity?: number[]
     mark?: number[]
   }) {
-    this.n = x.length
-
     this.bounds = bounds
 
     // Create buffers
@@ -394,6 +462,10 @@ export class ScatterTrace {
       1
     )
     this.positionAttribute = new THREE.Float32BufferAttribute(
+      new Float32Array(this.n * 3),
+      3
+    )
+    this.position2Attribute = new THREE.Float32BufferAttribute(
       new Float32Array(this.n * 3),
       3
     )
@@ -421,51 +493,32 @@ export class ScatterTrace {
     this.setY(y ?? 0)
 
     this.geometry.setAttribute('position', this.positionAttribute)
+    this.geometry.setAttribute('position2', this.position2Attribute)
     this.geometry.setAttribute('size', this.sizeAttribute)
     this.geometry.setAttribute('col', this.colorAttribute)
     this.geometry.setAttribute('type', this.typeAttribute)
     this.geometry.setAttribute('show', this.showAttribute)
     this.geometry.setAttribute('selected', this.selectedAttribute)
     this.geometry.setAttribute('opacity', this.opacityAttribute)
-
-    //this.createQuadtree();
-
-    // this.updateBounds([bounds.minX, bounds.maxX], [bounds.minY, bounds.maxY], {s: 1, tx: 0, ty: 0}, 600, 400);
-  }
-
-  search(quadtree, xmin, ymin, xmax, ymax) {
-    const results = []
-    quadtree.visit((node, x1, y1, x2, y2) => {
-      if (!node.length) {
-        do {
-          let d = node.data
-          if (d[0] >= xmin && d[0] < xmax && d[1] >= ymin && d[1] < ymax) {
-            results.push(d)
-          }
-        } while ((node = node.next))
-      }
-      return x1 >= xmax || y1 >= ymax || x2 < xmin || y2 < ymin
-    })
-    return results
-  }
-
-  createQuadtree() {
-    /**const x = scaleLinear().domain([this.bounds.minX, this.bounds.maxX]).range([this.plot.width, this.plot.height]);
-        const y = scaleLinear().domain([this.bounds.minY, this.bounds.maxY]).range([this.plot.width, this.plot.height]);
-
-        const data = new Array(this.n);
-
-        for (let i = 0; i < this.n; i++) {
-            data[i] = [this.positionAttribute.getX(i), this.positionAttribute.getY(i), i]
-        }
-
-        const tree = d3.quadtree()
-        .addAll(data)
-
-        console.log(tree.find(0, 0));**/
   }
 
   render(renderer: THREE.WebGLRenderer, width: number, height: number) {
+    this.dirty = false
+
+    const t = performance.now()
+    const s = (t - this.interpolationTimer) / 1000
+    this.interpolationTimer = t
+
+    const curr = this.material.uniforms.frameTime.value
+    const newCurr = Math.min(1, curr + s)
+    this.material.uniforms.frameTime = { value: newCurr }
+
+    if (newCurr < 1) {
+      this.markAsDirty()
+    } else if (curr < 1 && newCurr === 1) {
+      this.invalidateOldFrame()
+    }
+
     renderer.render(this.scene, this.camera)
   }
 }

@@ -198,7 +198,6 @@ export class MouseController {
         Math.abs(this.pressedPosition.y - mousePosition.y) < 4)
     ) {
       if (this.onDragStart) {
-        console.log('down')
         this.onDragStart(
           {
             movementX: 0,
