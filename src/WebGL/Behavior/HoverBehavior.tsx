@@ -63,6 +63,5 @@ export function HoverBehavior({
 }
 
 function HoverComponent({ row }: { row: Row }) {
-  console.log(row)
   return row ? <div>{row.index}</div> : null
 }

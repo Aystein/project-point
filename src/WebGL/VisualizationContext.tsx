@@ -4,7 +4,6 @@ import { createContext, useContext } from 'react'
 import { WebGLRenderer } from 'three'
 import {
   MOUSE_LEAVE,
-  MOUSE_MOVE,
   MOUSE_DRAG,
   MOUSE_DRAGGING,
   MOUSE_UP,

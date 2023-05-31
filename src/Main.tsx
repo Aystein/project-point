@@ -11,6 +11,7 @@ import { BoxBehavior } from './WebGL/Behavior/BoxBehavior'
 import { allViews, useAppSelector } from './Store/hooks'
 import { useMantineTheme } from '@mantine/core'
 import { HoverBehavior } from './WebGL/Behavior/HoverBehavior'
+import { SVGPlot } from './WebGL/Scatter/SVGPlot'
 
 function MainView({
   data,
@@ -42,21 +43,31 @@ function MainView({
     default:
       return (
         <VisProvider>
-          <Scatterplot
-            n={workspace?.flatSpatial.length ?? null}
-            model={workspace}
-            x={x}
-            x2=""
-            y={y}
-            color={theme.colors.cyan[7]}
-            hover={hover}
-          />
+          {false && (
+            <Scatterplot
+              n={workspace?.flatSpatial.length ?? null}
+              model={workspace}
+              x={x}
+              x2=""
+              y={y}
+              color={theme.colors.cyan[7]}
+              hover={hover}
+            />
+          )}
           <ZoomBehavior />
           <PanBehavior />
           <BoxBehavior parentModel={workspace} />
           <HoverBehavior
             positions={workspace?.flatSpatial}
             onHover={setHover}
+          />
+          <SVGPlot
+            n={workspace?.flatSpatial.length ?? null}
+            model={workspace}
+            x={x}
+            x2=""
+            y={y}
+            hover={hover}
           />
         </VisProvider>
       )

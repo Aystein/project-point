@@ -24,4 +24,17 @@ export class Rectangle {
       vector.y < this.y + this.height
     )
   }
+
+  serialize() {
+    return {
+      x: this.x,
+      y: this.y,
+      width: this.width,
+      height: this.height,
+    }
+  }
+
+  static deserialize() {
+
+  }
 }

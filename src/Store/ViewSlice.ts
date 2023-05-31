@@ -98,8 +98,8 @@ const attributeSlice = createSlice({
 
         child.filter.forEach((i, k) => {
           flatSpatial[i] = {
-            x: scaleX(child.spatial[k].x),
-            y: scaleY(child.spatial[k].y),
+            x: child.spatial[k].x,
+            y: child.spatial[k].y,
           }
         })
       })

@@ -19,10 +19,12 @@ function ProjectButton({
   filter,
   onFinish,
   onDelete,
+  area,
 }: {
   filter: number[]
   onFinish: (Y: VectorLike[]) => void
   onDelete: () => void
+  area: Rectangle
 }) {
   return (
     <>
@@ -36,6 +38,7 @@ function ProjectButton({
             title: 't-SNE embedding',
             size: '70%',
             innerProps: {
+              area,
               filter,
               onFinish,
             },
@@ -191,6 +194,7 @@ function SingleBox({
     >
       <ProjectButton
         filter={parentModel.filter}
+        area={area}
         onFinish={(Y) => {
           dispatch(updateEmbedding({ Y, id: parentModel.id }))
         }}
