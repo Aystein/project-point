@@ -1,4 +1,4 @@
-import { MOUSE_DRAGGING } from '../Commands'
+import { COMMAND_PRIORITY_NORMAL, MOUSE_DRAGGING } from '../Commands'
 import { useMouseDrag } from "./useMouseDrag"
 import { useVisContext } from '../VisualizationContext'
 
@@ -18,6 +18,7 @@ export function PanBehavior({ button = 0 }: { button?: number }) {
         return true
       }
     },
+    COMMAND_PRIORITY_NORMAL,
     [setZoom]
   )
 

@@ -67,6 +67,31 @@ const attributeSlice = createSlice({
 
       state.workspace.flatSpatial = flatSpatial
     },
+    translateArea: (state, action: PayloadAction<{ id: EntityId, x: number, y: number  }>) => {
+      const { id, x, y } = action.payload
+      const model = state.workspace.children.find((value) => value.id === id)
+
+      model.area.x += x
+      model.area.y += y
+
+      model.spatial = model.spatial.map((value) => ({ x: value.x + x, y: value.y + y }))
+
+      const flatSpatial = state.workspace.spatial.map((value) => ({
+        x: value.x,
+        y: value.y,
+      }))
+
+      state.workspace.children.forEach((child) => {
+        child.filter.forEach((i, k) => {
+          flatSpatial[i] = {
+            x: child.spatial[k].x,
+            y: child.spatial[k].y,
+          }
+        })
+      })
+
+      state.workspace.flatSpatial = flatSpatial
+    },
     updateEmbedding: (
       state,
       action: PayloadAction<{ id: EntityId; Y: VectorLike[] }>
@@ -83,19 +108,6 @@ const attributeSlice = createSlice({
       }))
 
       state.workspace.children.forEach((child) => {
-        const scaleX = scaleLinear()
-          .domain([child.bounds.minX, child.bounds.maxX])
-          .range([
-            child.area.x + child.area.width * 0.01,
-            child.area.x + child.area.width * 0.99,
-          ])
-        const scaleY = scaleLinear()
-          .domain([child.bounds.minY, child.bounds.maxY])
-          .range([
-            child.area.y + child.area.height * 0.01,
-            child.area.y + child.area.height * 0.99,
-          ])
-
         child.filter.forEach((i, k) => {
           flatSpatial[i] = {
             x: child.spatial[k].x,
@@ -114,7 +126,9 @@ const attributeSlice = createSlice({
         area: Rectangle
       }>
     ) => {
-      const { Y, filter, area } = action.payload
+      const { filter, area } = action.payload
+
+      const Y = filter.map((i) => state.workspace.flatSpatial[i])
 
       const subModel: SpatialModel = {
         oid: 'spatial',
@@ -123,48 +137,16 @@ const attributeSlice = createSlice({
         flatSpatial: Y,
         bounds: Y ? getBounds(Y) : null,
         filter,
-        area,
+        area: area.serialize(),
         children: [],
       }
 
       state.workspace.children.push(subModel)
-
-      // Only alter coordinates if we have supplied spatial information to this model
-      if (Y) {
-        const flatSpatial = state.workspace.spatial.map((value) => ({
-          x: value.x,
-          y: value.y,
-        }))
-
-        state.workspace.children.forEach((child) => {
-          const scaleX = scaleLinear()
-            .domain([child.bounds.minX, child.bounds.maxX])
-            .range([
-              child.area.x + child.area.width * 0.01,
-              child.area.x + child.area.width * 0.99,
-            ])
-          const scaleY = scaleLinear()
-            .domain([child.bounds.minY, child.bounds.maxY])
-            .range([
-              child.area.y + child.area.height * 0.01,
-              child.area.y + child.area.height * 0.99,
-            ])
-
-          child.filter.forEach((i, k) => {
-            flatSpatial[i] = {
-              x: scaleX(child.spatial[k].x),
-              y: scaleY(child.spatial[k].y),
-            }
-          })
-        })
-
-        state.workspace.flatSpatial = flatSpatial
-      }
     },
   },
 })
 
-export const { addSubEmbedding, updateEmbedding, removeEmbedding } = attributeSlice.actions
+export const { addSubEmbedding, updateEmbedding, removeEmbedding, translateArea } = attributeSlice.actions
 
 export const viewAdapter = createEntityAdapter<ViewState>({})
 

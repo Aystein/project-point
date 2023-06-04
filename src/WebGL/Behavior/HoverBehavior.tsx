@@ -2,7 +2,7 @@ import * as React from 'react'
 import { quadtree } from 'd3-quadtree'
 import { VectorLike } from '../../Interfaces'
 import { useMouseDrag } from './useMouseDrag'
-import { MOUSE_HOVER } from '../Commands'
+import { COMMAND_PRIORITY_NORMAL, MOUSE_HOVER } from '../Commands'
 import { useVisContext } from '../VisualizationContext'
 import { Affix, Button, Card, Transition, rem } from '@mantine/core'
 import { useAppSelector } from '../../Store/hooks'
@@ -48,6 +48,7 @@ export function HoverBehavior({
 
       return true
     },
+    COMMAND_PRIORITY_NORMAL,
     [tree, scaledXDomain, scaledYDomain, onHover, lastHover, setLastHover]
   )
 

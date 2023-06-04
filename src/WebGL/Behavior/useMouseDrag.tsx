@@ -1,7 +1,8 @@
 import * as React from 'react';
 import {
   LexicalCommand,
-  CommandListener
+  CommandListener,
+  CommandListenerPriority
 } from '../Commands';
 import { useVisContext } from '../VisualizationContext';
 
@@ -9,11 +10,12 @@ import { useVisContext } from '../VisualizationContext';
 export function useMouseDrag<T>(
   command: LexicalCommand<T>,
   callback: CommandListener<T>,
+  priority: CommandListenerPriority,
   deps: React.DependencyList
 ) {
   const { vis } = useVisContext();
 
   React.useEffect(() => {
-    return vis.registerCommand(command, callback, 1);
+    return vis.registerCommand(command, callback, priority);
   }, deps);
 }

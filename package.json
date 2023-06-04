@@ -79,6 +79,7 @@
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
+    "@types/d3-force": "^3.0.4",
     "@types/d3-scale": "^4.0.3",
     "@types/emscripten": "^1.39.6",
     "@types/jest": "^27.5.2",

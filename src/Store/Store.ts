@@ -100,7 +100,7 @@ const reducer = createReducer<RootState>(undefined, (builder) => {
 
     state.views.views = viewAdapter.getInitialState()
     const viewId = nanoid()
-    const spatial = rows.map((row) => ({ x: Math.random(), y: Math.random() }))
+    const spatial = rows.map((row) => ({ x: -1 + (Math.random() * 2), y: -1 + (Math.random() * 2) }))
     state.views.views = viewAdapter.addOne(state.views.views, {
       id: viewId,
       attributes: {

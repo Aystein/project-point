@@ -77,7 +77,7 @@ void main() {
     vSelected = selected;
     vOpacity = opacity;
 
-    gl_PointSize = size * baseSize;
+    gl_PointSize = max(6.0, size * baseSize);
     
     //gl_Position = projectionMatrix * vec4(position.x, position.y, 0.0, 1.0);
     gl_Position = projectionMatrix * mix(vec4(position2.x, position2.y, 0.0, 1.0), vec4(position.x, position.y, 0.0, 1.0), frameTime);
@@ -189,6 +189,7 @@ export class ScatterTrace {
       Test,
       (bitmap) => {
         const texture2 = new THREE.CanvasTexture(bitmap)
+        texture2.minFilter = THREE.NearestFilter
         this.material.uniforms.atlas.value = texture2
         this.material.needsUpdate = true
       },
@@ -247,6 +248,8 @@ export class ScatterTrace {
       1
     )
     this.camera.frustumCulled = false
+
+    this.material.uniforms.baseSize = { value: width / ((xdomain[1] - xdomain[0]) / 0.018) }
 
     this.camera.updateProjectionMatrix()
   }

@@ -31,6 +31,7 @@ export const VisContext = createContext<{
   ) => void
   scaledXDomain: ScaleLinear<number, number>
   scaledYDomain: ScaleLinear<number, number>
+  world: (value: number) => number
 }>(null)
 
 export const VisProvider = ({ children }) => {
@@ -76,6 +77,13 @@ export const VisProvider = ({ children }) => {
 
     return newY
   }, [yDomain, zoom, height])
+
+  const world = React.useMemo(() => {
+    return (value: number) => {
+      const pxPerWorld = width / (scaledXDomain.domain()[1] - scaledXDomain.domain()[0])
+      return value / pxPerWorld
+    }
+  }, [scaledXDomain, width])
 
   renderer?.setSize(width, height, false)
 
@@ -170,6 +178,7 @@ export const VisProvider = ({ children }) => {
         setZoom,
         scaledXDomain,
         scaledYDomain,
+        world
       }}
     >
       <canvas

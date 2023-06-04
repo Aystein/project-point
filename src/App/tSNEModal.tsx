@@ -11,7 +11,7 @@ import { showNotification, updateNotification } from '@mantine/notifications'
 import { VectorLike } from '../Interfaces'
 import { updatePosition } from '../Store/ViewSlice'
 import { encode } from '../MainTabs/encode'
-import { Rectangle } from '../WebGL/Math/Rectangle'
+import { IRectangle, Rectangle } from '../WebGL/Math/Rectangle'
 
 export function TSNEModal({
   context,
@@ -20,7 +20,7 @@ export function TSNEModal({
 }: ContextModalProps<{
   onFinish: (Y: VectorLike[]) => void
   filter: number[]
-  area: Rectangle
+  area: IRectangle
 }>) {
   const data = useSelector(Selectors.data)
   const dispatch = useDispatch()
@@ -69,7 +69,7 @@ export function TSNEModal({
       X,
       N,
       D,
-      area: innerProps.area.serialize(),
+      area: innerProps.area,
       type: 'init',
     })
     worker.onmessage = ({

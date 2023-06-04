@@ -5,8 +5,6 @@ import * as d3 from 'd3-force';
 import { scaleLinear } from 'd3-scale';
 import { getBounds } from '../Util';
 
-console.log(d3)
-
 self.onmessage = ({ data: { X, D, N, area, type } }) => {
   if (type !== 'init') {
     return
@@ -57,7 +55,7 @@ self.onmessage = ({ data: { X, D, N, area, type } }) => {
 
   var simulation = d3.forceSimulation(nodes)
     .force('collision', d3.forceCollide().radius(function(d) {
-      return 0.002
+      return 0.006
     }))
     .force('x', d3.forceX().x(function(d) {
       return Y[d.index].x;
@@ -70,35 +68,18 @@ self.onmessage = ({ data: { X, D, N, area, type } }) => {
     for (var i = 0, n = Math.ceil(Math.log(simulation.alphaMin()) / Math.log(1 - simulation.alphaDecay())); i < n; ++i) {
       simulation.tick();
     }
-  
-  console.log(simulation.nodes().map((node) => ({ x: node.x, y: node.y })))
+
+    const t0 = performance.now()
+    for (var i = 0; i < 60; ++i) {
+      simulation.tick();
+    }
+    const t1 = performance.now()
+
+    console.log(`Force layout run for ${(t1 - t0) / 1000} seconds`)
   
 
   self.postMessage({
     type: 'finish',
     Y: simulation.nodes().map((node) => ({ x: node.x, y: node.y })),
   })
-
-  /**let model = new TSNE({
-    dim: 2,
-    perplexity: 30.0,
-    earlyExaggeration: 4.0,
-    learningRate: 50.0,
-    nIter: 400,
-    metric: 'euclidean',
-  })
-
-  model.init({
-    data: X,
-    type: 'dense',
-  })
-
-  let [error, iter] = model.run()
-
-  let outputScaled = model.getOutputScaled()
-
-  self.postMessage({
-    type: 'finish',
-    Y: outputScaled.map((arr) => ({ x: arr[0], y: arr[1] })),
-  })**/
 }

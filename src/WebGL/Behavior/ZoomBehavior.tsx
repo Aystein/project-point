@@ -1,4 +1,4 @@
-import { MOUSE_WHEEL } from '../Commands'
+import { COMMAND_PRIORITY_NORMAL, MOUSE_WHEEL } from '../Commands'
 import { useMouseDrag } from "./useMouseDrag"
 import { useVisContext } from '../VisualizationContext'
 
@@ -106,6 +106,7 @@ export function ZoomBehavior() {
 
       return true
     },
+    COMMAND_PRIORITY_NORMAL,
     [zoom, setZoom, ref]
   )
 

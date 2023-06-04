@@ -6,7 +6,7 @@ import {
 } from '@reduxjs/toolkit'
 import type { PayloadAction } from '@reduxjs/toolkit'
 import { Boundaries, VectorLike } from '../Interfaces'
-import { Rectangle } from '../WebGL/Math/Rectangle'
+import { IRectangle, Rectangle } from '../WebGL/Math/Rectangle'
 
 interface BaseModel {
   id: EntityId
@@ -37,7 +37,7 @@ export interface SpatialModel extends BaseModel {
 
   children: SpatialModel[]
 
-  area: Rectangle
+  area: IRectangle
 }
 
 export type Model = SpatialModel

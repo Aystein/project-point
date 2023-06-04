@@ -1,5 +1,12 @@
 import { VectorLike } from '../../Interfaces'
 
+export interface IRectangle {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
 export class Rectangle {
   x: number
 
@@ -25,7 +32,7 @@ export class Rectangle {
     )
   }
 
-  serialize() {
+  serialize(): IRectangle {
     return {
       x: this.x,
       y: this.y,
@@ -34,7 +41,15 @@ export class Rectangle {
     }
   }
 
-  static deserialize() {
+  get centerX() {
+    return this.x + this.width / 2
+  }
 
+  get centerY() {
+    return this.y + this.height / 2
+  }
+
+  static deserialize(dump: IRectangle) {
+    return new Rectangle(dump.x, dump.y, dump.width, dump.height)
   }
 }

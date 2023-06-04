@@ -25,7 +25,7 @@ export default {
 } as ComponentMeta<typeof Scatterplot>
 
 const x = Array.from({ length: 100000 }, () => {
-  return Math.random() * 10
+  return -1 + (Math.random() * 2)
 })
 
 const x2 = Array.from({ length: 100000 }, () => {
@@ -33,7 +33,7 @@ const x2 = Array.from({ length: 100000 }, () => {
 })
 
 const y = Array.from({ length: 100000 }, () => {
-  return Math.random() * 10
+  return -1 + (Math.random() * 2)
 })
 
 export const Primary = () => {

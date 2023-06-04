@@ -43,7 +43,7 @@ function MainView({
     default:
       return (
         <VisProvider>
-          {false && (
+          
             <Scatterplot
               n={workspace?.flatSpatial.length ?? null}
               model={workspace}
@@ -53,7 +53,7 @@ function MainView({
               color={theme.colors.cyan[7]}
               hover={hover}
             />
-          )}
+          
           <ZoomBehavior />
           <PanBehavior />
           <BoxBehavior parentModel={workspace} />
@@ -61,14 +61,7 @@ function MainView({
             positions={workspace?.flatSpatial}
             onHover={setHover}
           />
-          <SVGPlot
-            n={workspace?.flatSpatial.length ?? null}
-            model={workspace}
-            x={x}
-            x2=""
-            y={y}
-            hover={hover}
-          />
+
         </VisProvider>
       )
   }
