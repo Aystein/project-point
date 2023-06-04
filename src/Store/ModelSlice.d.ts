@@ -19,6 +19,7 @@ export interface SpatialModel extends BaseModel {
     filter: number[];
     children: SpatialModel[];
     area: IRectangle;
+    interpolate: boolean;
 }
 export type Model = SpatialModel;
 export interface ModelsState {

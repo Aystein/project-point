@@ -9,11 +9,31 @@ export interface ViewsState {
     active: EntityId;
 }
 export declare const changeWorkspace: import("@reduxjs/toolkit").ActionCreatorWithOptionalPayload<EntityId, "world/changeWorkspace">;
-export declare const viewAdapter: import("@reduxjs/toolkit").EntityAdapter<SingleFile>;
+export declare const fileAdapter: import("@reduxjs/toolkit").EntityAdapter<SingleFile>;
 export declare const viewslice: import("@reduxjs/toolkit").Slice<import("immer/dist/internal").WritableDraft<ViewsState>, {
-    addView: (state: import("immer/dist/internal").WritableDraft<ViewsState>, action: PayloadAction<Model>) => void;
+    addFile: (state: import("immer/dist/internal").WritableDraft<ViewsState>, action: PayloadAction<Model>) => void;
 }, "views">;
 export declare const initializeDatasets: import("@reduxjs/toolkit").AsyncThunk<string[], void, {
+    state?: unknown;
+    dispatch?: import("redux").Dispatch<import("redux").AnyAction>;
+    extra?: unknown;
+    rejectValue?: unknown;
+    serializedErrorType?: unknown;
+    pendingMeta?: unknown;
+    fulfilledMeta?: unknown;
+    rejectedMeta?: unknown;
+}>;
+export declare const deleteDataset: import("@reduxjs/toolkit").AsyncThunk<string, string, {
+    state?: unknown;
+    dispatch?: import("redux").Dispatch<import("redux").AnyAction>;
+    extra?: unknown;
+    rejectValue?: unknown;
+    serializedErrorType?: unknown;
+    pendingMeta?: unknown;
+    fulfilledMeta?: unknown;
+    rejectedMeta?: unknown;
+}>;
+export declare const storeDataset: import("@reduxjs/toolkit").AsyncThunk<string, File, {
     state?: unknown;
     dispatch?: import("redux").Dispatch<import("redux").AnyAction>;
     extra?: unknown;

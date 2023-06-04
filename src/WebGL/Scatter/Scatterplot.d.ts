@@ -6,7 +6,7 @@ type ColumnTemp = {
 interface GlobalConfig {
     pointSize: number;
 }
-export declare function Scatterplot({ n, x, x2, y, model, color, size, opacity, globalConfig, hover, }: {
+export declare function Scatterplot({ n, x, x2, y, model, color, size, opacity, globalConfig, hover, interpolate, }: {
     n: number;
     x: number[];
     x2: string | ColumnTemp;
@@ -17,5 +17,6 @@ export declare function Scatterplot({ n, x, x2, y, model, color, size, opacity, 
     opacity?: number[];
     globalConfig?: GlobalConfig;
     hover: number;
+    interpolate: boolean;
 }): any;
 export {};
