@@ -1,95 +1,61 @@
-import * as React from 'react'
+import * as React from 'react';
 import {
   COMMAND_PRIORITY_CRITICAL,
   COMMAND_PRIORITY_NORMAL,
   MOUSE_DRAG,
   MOUSE_DRAGGING,
   MOUSE_DRAG_END,
-} from '../Commands'
-import { useVisContext } from '../VisualizationContext'
-import { IRectangle, Rectangle } from '../Math/Rectangle'
-import { ActionIcon, Button, Group, Menu } from '@mantine/core'
-import { SpatialModel } from '../../Store/ModelSlice'
-import { openContextModal } from '@mantine/modals'
-import { useDispatch } from 'react-redux'
-import { VectorLike } from '../../Interfaces'
+} from '../Commands';
+import { useVisContext } from '../VisualizationContext';
+import { IRectangle, Rectangle } from '../Math/Rectangle';
+import {
+  ActionIcon,
+  Affix,
+  Autocomplete,
+  Button,
+  Group,
+  Menu,
+  Overlay,
+  ThemeIcon,
+} from '@mantine/core';
+import { IconArrowsMove } from '@tabler/icons-react';
+import { SpatialModel } from '../../Store/ModelSlice';
+import { openContextModal } from '@mantine/modals';
+import { useDispatch } from 'react-redux';
+import { VectorLike } from '../../Interfaces';
 import {
   addSubEmbedding,
   removeEmbedding,
   translateArea,
   updateEmbedding,
-} from '../../Store/ViewSlice'
-import { IconX } from '@tabler/icons-react'
-import { useMouseDrag } from './useMouseDrag'
-import { useDrag } from '../../hooks/use-drag'
-import { runCondenseLayout, runGroupLayout } from '../../Layouts/condense'
-import { useAppSelector } from '../../Store/hooks'
-
-function ProjectButton({
-  filter,
-  onFinish,
-  onDelete,
-  area,
-}: {
-  filter: number[]
-  onFinish: (Y: VectorLike[]) => void
-  onDelete: () => void
-  area: IRectangle
-}) {
-  return (
-    <>
-      <Button
-        style={{ pointerEvents: 'auto', opacity: 1 }}
-        variant="outline"
-        onClick={() => {
-          openContextModal({
-            modal: 'demonstration',
-            title: 't-SNE embedding',
-            size: '70%',
-            innerProps: {
-              area,
-              filter,
-              onFinish,
-            },
-          })
-        }}
-      >
-        UMAP
-      </Button>
-      <ActionIcon
-        style={{ pointerEvents: 'auto', opacity: 1 }}
-        onClick={() => {
-          onDelete()
-        }}
-      >
-        <IconX />
-      </ActionIcon>
-    </>
-  )
-}
+} from '../../Store/ViewSlice';
+import { IconX } from '@tabler/icons-react';
+import { useMouseEvent } from './useMouseDrag';
+import { runCondenseLayout } from '../../Layouts/condense';
+import { useAppSelector } from '../../Store/hooks';
 
 export function BoxBehavior({ parentModel }: { parentModel: SpatialModel }) {
-  const { vis, scaledXDomain, scaledYDomain } = useVisContext()
+  const { vis, scaledXDomain, scaledYDomain } = useVisContext();
 
-  const [rect, setRect] = React.useState<Rectangle>()
-  const dispatch = useDispatch()
+  const [rect, setRect] = React.useState<Rectangle>();
+  const dispatch = useDispatch();
 
   // register to mousedrag...
-  useMouseDrag(
+  useMouseEvent(
     MOUSE_DRAG,
     (event) => {
       if (event.button === 2) {
-        setRect(new Rectangle(event.offsetX, event.offsetY, 0, 0))
-        return true
+        setRect(new Rectangle(event.offsetX, event.offsetY, 0, 0));
+        return true;
       }
 
-      return false
+      return false;
     },
     COMMAND_PRIORITY_NORMAL,
     []
-  )
+  );
 
-  useMouseDrag(
+  useMouseEvent(
     MOUSE_DRAGGING,
     (event) => {
       if (rect && event.button === 2) {
@@ -99,18 +65,18 @@ export function BoxBehavior({ parentModel }: { parentModel: SpatialModel }) {
             value.y,
             event.offsetX - value.x,
             event.offsetY - value.y
-          )
-        })
-        return true
+          );
+        });
+        return true;
       }
 
-      return false
+      return false;
     },
     COMMAND_PRIORITY_NORMAL,
     [rect, setRect]
-  )
+  );
 
-  useMouseDrag(
+  useMouseEvent(
     MOUSE_DRAG_END,
     (event) => {
       if (rect) {
@@ -121,15 +87,15 @@ export function BoxBehavior({ parentModel }: { parentModel: SpatialModel }) {
             scaledXDomain.invert(rect.x),
           scaledYDomain.invert(rect.y + rect.height) -
             scaledYDomain.invert(rect.y)
-        )
+        );
 
-        const filter = new Array<number>()
+        const filter = new Array<number>();
 
         parentModel.flatSpatial.forEach((value, key) => {
           if (worldRect.within(value)) {
-            filter.push(key)
+            filter.push(key);
           }
-        })
+        });
 
         dispatch(
           addSubEmbedding({
@@ -137,16 +103,16 @@ export function BoxBehavior({ parentModel }: { parentModel: SpatialModel }) {
             Y: null,
             area: worldRect,
           })
-        )
+        );
 
-        setRect(null)
-        return true
+        setRect(null);
+        return true;
       }
-      return false
+      return false;
     },
     COMMAND_PRIORITY_NORMAL,
     [rect]
-  )
+  );
 
   return (
     <div
@@ -155,6 +121,7 @@ export function BoxBehavior({ parentModel }: { parentModel: SpatialModel }) {
         width: '100%',
         height: '100%',
         pointerEvents: 'none',
+        overflow: 'hidden',
       }}
     >
       {rect ? (
@@ -175,68 +142,81 @@ export function BoxBehavior({ parentModel }: { parentModel: SpatialModel }) {
       {parentModel?.children.map((model) => {
         return (
           <SingleBox key={model.id} area={model.area} parentModel={model} />
-        )
+        );
       })}
     </div>
-  )
+  );
+}
+
+function DragCover({ onMove }: { onMove: (amount: VectorLike) => void }) {
+  const [drag, setDrag] = React.useState<VectorLike>(null);
+
+  return (
+    <>
+      <ActionIcon
+        style={{ pointerEvents: 'initial' }}
+        onMouseDown={(event) => {
+          setDrag({ x: event.screenX, y: event.screenY });
+        }}
+      >
+        <IconArrowsMove />
+      </ActionIcon>
+      {drag ? (
+        <Overlay
+          style={{ pointerEvents: 'initial' }}
+          opacity={0}
+          fixed
+          onMouseMove={(event) => {
+            onMove({ x: event.movementX, y: event.movementY });
+          }}
+          onMouseUp={(event) => {
+            setDrag(null);
+          }}
+        />
+      ) : null}
+    </>
+  );
 }
 
 function SingleBox({
   area,
   parentModel,
 }: {
-  area: IRectangle
-  parentModel: SpatialModel
+  area: IRectangle;
+  parentModel: SpatialModel;
 }) {
-  const { scaledXDomain, scaledYDomain, world } = useVisContext()
-  const dispatch = useDispatch()
-  const data = useAppSelector((state) => state.data.rows)
+  const { scaledXDomain, scaledYDomain, world } = useVisContext();
+  const dispatch = useDispatch();
+  const data = useAppSelector((state) => state.data.rows);
 
+  React.useEffect(() => {
+    console.log('mount');
+  }, []);
 
   const handleCondense = async () => {
-    const Y = await runCondenseLayout(parentModel.filter.length, area)
-    console.log(Y)
+    const Y = await runCondenseLayout(parentModel.filter.length, area);
+    console.log(Y);
 
-    dispatch(updateEmbedding({ id: parentModel.id, Y }))
-  }
+    dispatch(updateEmbedding({ id: parentModel.id, Y }));
+  };
 
   const handleGroupBy = async () => {
-    const Y = await runGroupLayout(parentModel.filter.map((i) => data[i]), area, 'Type 1')
-
-    dispatch(updateEmbedding({ id: parentModel.id, Y }))
-  }
-
-  const { ref, active } = useDrag((value) => {
-    console.log(value)
-  })
-
-  useMouseDrag(
-    MOUSE_DRAGGING,
-    (event) => {
-      if (
-        Rectangle.deserialize(area).within({
-          x: scaledXDomain.invert(event.offsetX),
-          y: scaledYDomain.invert(event.offsetY),
-        })
-      ) {
-        dispatch(
-          translateArea({
-            id: parentModel.id,
-            x: world(event.movementX),
-            y: world(event.movementY),
-          })
-        )
-        return true
-      }
-      return false
-    },
-    COMMAND_PRIORITY_CRITICAL,
-    [world, parentModel, area]
-  )
+    const onFinish = (Y) => {
+      dispatch(updateEmbedding({ id: parentModel.id, Y }));
+    };
+    openContextModal({
+      modal: 'grouping',
+      title: 'Group by',
+      innerProps: {
+        X: parentModel.filter.map((i) => data[i]),
+        area,
+        onFinish,
+      },
+    });
+  };
 
   return (
     <Group
-      key={area.x}
       style={{
         pointerEvents: 'none',
         position: 'absolute',
@@ -254,29 +234,54 @@ function SingleBox({
           top: 0,
         }}
       >
-        <Menu shadow="md" width={200}>
-          <div ref={ref} style={{ pointerEvents: 'auto' }}>drag</div>
-
-          <Menu.Target>
-            <Button style={{ pointerEvents: 'auto' }}>More</Button>
-          </Menu.Target>
-
-          <Menu.Dropdown style={{ pointerEvents: 'auto' }}>
-            <Menu.Item onClick={handleCondense}>Condense</Menu.Item>
-            <Menu.Item onClick={handleGroupBy}>Group by</Menu.Item>
-          </Menu.Dropdown>
-        </Menu>
-        <ProjectButton
-          filter={parentModel.filter}
-          area={area}
-          onFinish={(Y) => {
-            dispatch(updateEmbedding({ Y, id: parentModel.id }))
-          }}
-          onDelete={() => {
-            dispatch(removeEmbedding({ id: parentModel.id }))
+        <DragCover
+          onMove={(movement) => {
+            dispatch(
+              translateArea({
+                id: parentModel.id,
+                x: world(movement.x),
+                y: world(movement.y),
+              })
+            );
           }}
         />
+        <Menu shadow="md" width={200}>
+          <Menu.Target>
+            <Button style={{ pointerEvents: 'initial' }}>More</Button>
+          </Menu.Target>
+
+          <Menu.Dropdown style={{ pointerEvents: 'initial' }}>
+            <Menu.Item onClick={handleCondense}>Condense</Menu.Item>
+            <Menu.Item onClick={handleGroupBy}>Group by</Menu.Item>
+            <Menu.Item
+              onClick={() => {
+                openContextModal({
+                  modal: 'demonstration',
+                  title: 't-SNE embedding',
+                  size: '70%',
+                  innerProps: {
+                    area,
+                    filter: parentModel.filter,
+                    onFinish: (Y) => {
+                      dispatch(updateEmbedding({ id: parentModel.id, Y }));
+                    },
+                  },
+                });
+              }}
+            >
+              UMAP
+            </Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
+        <ActionIcon
+          style={{ pointerEvents: 'auto', opacity: 1 }}
+          onClick={() => {
+            dispatch(removeEmbedding({ id: parentModel.id }));
+          }}
+        >
+          <IconX />
+        </ActionIcon>
       </Group>
     </Group>
-  )
+  );
 }

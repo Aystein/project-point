@@ -24,7 +24,7 @@ import { DataTab } from './MainTabs/DataTab'
 import { Main } from './Main'
 import { EmbeddingTab } from './MainTabs/EmbeddingTab'
 import { useAppDispatch } from './Store/hooks'
-import { initializeDatasets } from './Store/DatasetSlice'
+import { initializeDatasets } from './Store/FilesSlice'
 
 const useStyles = createStyles((theme) => ({
   wrapper: {
@@ -153,15 +153,9 @@ const useStyles = createStyles((theme) => ({
 
 const mainLinksMockdata = [
   { icon: IconHome2, label: 'Home', index: 0 },
-  { icon: IconGauge, label: 'Dashboard', index: 1 },
-  { icon: IconDeviceDesktopAnalytics, label: 'Analytics', index: 2 },
-  { icon: IconCalendarStats, label: 'Releases', index: 3 },
-  { icon: IconUser, label: 'Account', index: 4 },
-  { icon: IconFingerprint, label: 'Security', index: 5 },
-  { icon: IconSettings, label: 'Settings', index: 6 },
 ]
 
-export function App() {
+export function AntApp() {
   const { classes, cx } = useStyles()
   const [active, setActive] = React.useState(mainLinksMockdata[0].label)
   const dispatch = useAppDispatch()
@@ -201,7 +195,7 @@ export function App() {
           <div
             style={{ display: 'flex', alignItems: 'center', height: '100%' }}
           >
-            <Text>Application header</Text>
+            <Text>Ant Application</Text>
           </div>
         </Header>
       }
@@ -221,12 +215,6 @@ export function App() {
               >
                 <Tabs.Panel value={mainLinksMockdata[0].label}>
                   <DataTab />
-                </Tabs.Panel>
-                <Tabs.Panel value={mainLinksMockdata[1].label}>
-                  <EmbeddingTab />
-                </Tabs.Panel>
-                <Tabs.Panel value={mainLinksMockdata[2].label}>
-                  Settings tab content
                 </Tabs.Panel>
               </Tabs>
             </div>

@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { quadtree } from 'd3-quadtree'
 import { VectorLike } from '../../Interfaces'
-import { useMouseDrag } from './useMouseDrag'
+import { useMouseEvent } from './useMouseDrag'
 import { COMMAND_PRIORITY_NORMAL, MOUSE_HOVER } from '../Commands'
 import { useVisContext } from '../VisualizationContext'
 import { Affix, Button, Card, Transition, rem } from '@mantine/core'
@@ -28,7 +28,7 @@ export function HoverBehavior({
       : null
   }, [positions])
 
-  useMouseDrag(
+  useMouseEvent(
     MOUSE_HOVER,
     (event) => {
       if (!tree) {

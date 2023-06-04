@@ -1,71 +1,25 @@
-import { Button, Flex, Group, Modal, NumberInput, Stack } from '@mantine/core'
-import { useForm } from '@mantine/form'
-import { useState } from 'react'
-import { groupBy as rowGrouper } from 'lodash'
-import 'react-data-grid/lib/styles.css'
-import DataGrid, { SelectColumn } from 'react-data-grid'
-import { useDispatch, useSelector } from 'react-redux'
-import { showNotification, updateNotification } from '@mantine/notifications'
-import { Selectors } from '../Store/Selectors'
-import { VectorLike } from '../Interfaces'
-import { encode } from './encode'
-import { updatePosition } from '../Store/ViewSlice'
-import { DataState } from '../Store/DataSlice.'
-
-export function runTSNE(
-  data: DataState,
-  filter: number[],
-  result: string[],
-  onFinish: (Y: VectorLike[]) => void
-) {
-  const { X, N, D } = encode(data, filter, result)
-
-  showNotification({
-    id: 'tsne',
-    title: 't-SNE',
-    message: 'Computing t-SNE ...',
-    loading: true,
-    autoClose: false,
-    color: 'teal',
-  })
-
-  const worker = new Worker(new URL('../Workers/test.ts', import.meta.url))
-  worker.postMessage({
-    X,
-    N,
-    D,
-    type: 'init',
-  })
-  worker.onmessage = ({
-    data: { type, Y },
-  }: {
-    data: { Y: VectorLike[]; type: string }
-  }) => {
-    switch (type) {
-      case 'finish':
-        onFinish(Y)
-
-        updateNotification({
-          id: 'tsne',
-          autoClose: 3000,
-          message: 't-SNE completed!',
-          color: 'green',
-        })
-
-        break
-    }
-  }
-}
+import { Button, Group, Modal, NumberInput, Stack } from '@mantine/core';
+import { useForm } from '@mantine/form';
+import { useState } from 'react';
+import { groupBy as rowGrouper } from 'lodash';
+import 'react-data-grid/lib/styles.css';
+import DataGrid, { SelectColumn } from 'react-data-grid';
+import { useDispatch, useSelector } from 'react-redux';
+import { showNotification, updateNotification } from '@mantine/notifications';
+import { Selectors } from '../Store/Selectors';
+import { VectorLike } from '../Interfaces';
+import { encode } from './encode';
+import { updatePosition } from '../Store/ViewSlice';
 
 export function TSNE({
   open,
   setOpen,
 }: {
-  open: boolean
-  setOpen: (value: boolean) => void
+  open: boolean;
+  setOpen: (value: boolean) => void;
 }) {
-  const data = useSelector(Selectors.data)
-  const dispatch = useDispatch()
+  const data = useSelector(Selectors.data);
+  const dispatch = useDispatch();
 
   const form = useForm({
     initialValues: {
@@ -75,21 +29,21 @@ export function TSNE({
     validate: {
       perplexity: (value) => (value >= 10 ? null : 'Must be at least 10'),
     },
-  })
+  });
 
   const [expandedGroupIds, setExpandedGroupIds] = useState<
     ReadonlySet<unknown>
-  >(() => new Set<unknown>([]))
+  >(() => new Set<unknown>([]));
   const [selectedRows, setSelectedRows] = useState<ReadonlySet<number>>(
     () => new Set()
-  )
+  );
 
-  const columns = [SelectColumn, { key: 'name', name: 'ID' }]
+  const columns = [SelectColumn, { key: 'name', name: 'ID' }];
 
   const rows = data.columns.map((column, id) => ({
     id,
     name: column.key,
-  }))
+  }));
 
   const run = () => {
     showNotification({
@@ -99,23 +53,23 @@ export function TSNE({
       loading: true,
       autoClose: false,
       color: 'teal',
-    })
+    });
 
-    const result = Array.from(selectedRows).map((value) => rows[value].name)
+    const result = Array.from(selectedRows).map((value) => rows[value].name);
 
-    const { X, N, D } = encode(data, null, result)
+    const { X, N, D } = encode(data, null, result);
 
-    const worker = new Worker(new URL('../Workers/test.ts', import.meta.url))
+    const worker = new Worker(new URL('../Workers/test.ts', import.meta.url));
     worker.postMessage({
       X,
       N,
       D,
       type: 'init',
-    })
+    });
     worker.onmessage = ({
       data: { type, Y },
     }: {
-      data: { Y: VectorLike[]; type: string }
+      data: { Y: VectorLike[]; type: string };
     }) => {
       switch (type) {
         case 'finish':
@@ -124,13 +78,13 @@ export function TSNE({
             autoClose: 3000,
             message: 't-SNE completed!',
             color: 'green',
-          })
+          });
 
-          dispatch(updatePosition(Y))
-          break
+          dispatch(updatePosition(Y));
+          break;
       }
-    }
-  }
+    };
+  };
 
   return (
     <Modal
@@ -141,8 +95,8 @@ export function TSNE({
     >
       <form
         onSubmit={form.onSubmit((values) => {
-          setOpen(false)
-          run()
+          setOpen(false);
+          run();
         })}
       >
         <DataGrid
@@ -175,5 +129,5 @@ export function TSNE({
         </Button>
       </form>
     </Modal>
-  )
+  );
 }

@@ -7,7 +7,7 @@ import {
 import { useVisContext } from '../VisualizationContext';
 
 
-export function useMouseDrag<T>(
+export function useMouseEvent<T>(
   command: LexicalCommand<T>,
   callback: CommandListener<T>,
   priority: CommandListenerPriority,

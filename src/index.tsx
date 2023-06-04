@@ -2,14 +2,16 @@ import { Notifications } from '@mantine/notifications'
 import React from 'react'
 import { createRoot } from 'react-dom/client'
 import { Provider } from 'react-redux'
-import { App } from './App'
+import { AntApp } from './AntApp'
 import { store } from './Store/Store'
-import { ModalsProvider, openContextModal } from '@mantine/modals'
+import { ModalsProvider } from '@mantine/modals'
 import { MantineProvider } from '@mantine/core'
-import { TSNEModal } from './App/tSNEModal'
+import { TSNEModal } from './Modals/tSNEModal'
+import { GroupByModal } from './Modals/GroupByModal'
 
 const modals = {
   demonstration: TSNEModal,
+  grouping: GroupByModal
 }
 
 declare module '@mantine/modals' {
@@ -35,7 +37,7 @@ createRoot(document.getElementById('root')).render(
       >
         <ModalsProvider modals={modals}>
           <Notifications />
-          <App />
+          <AntApp />
         </ModalsProvider>
       </MantineProvider>
     </Provider>

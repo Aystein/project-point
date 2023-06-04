@@ -1,36 +1,5 @@
-import * as React from 'react'
-import { Button, Select } from '@mantine/core'
-import { useMemo } from 'react'
-import 'react-data-grid/lib/styles.css'
-import { useDispatch, useSelector } from 'react-redux'
-import { Selectors } from '../Store/Selectors'
-import { modelAdapter } from '../Store/ModelSlice'
-import { TSNE } from './tSNE'
+import 'react-data-grid/lib/styles.css';
 
 export function EmbeddingTab() {
-  const models = useSelector(Selectors.models)
-  const dispatch = useDispatch()
-
-  const items = useMemo(() => {
-    return modelAdapter
-      .getSelectors()
-      .selectAll(models)
-      .map((value) => ({
-        value: value.id as string,
-        label: 'umap',
-      }))
-  }, [models])
-
-  const [open, setOpen] = React.useState(false)
-
-  const handleTSNE = () => {
-    setOpen(true)
-  }
-
-  return (
-    <div>
-      <TSNE open={open} setOpen={setOpen} />
-      <Button onClick={handleTSNE}>t-SNE</Button>
-    </div>
-  )
+  return <div>embeddings</div>;
 }

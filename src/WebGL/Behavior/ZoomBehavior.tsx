@@ -1,5 +1,5 @@
 import { COMMAND_PRIORITY_NORMAL, MOUSE_WHEEL } from '../Commands'
-import { useMouseDrag } from "./useMouseDrag"
+import { useMouseEvent } from "./useMouseDrag"
 import { useVisContext } from '../VisualizationContext'
 
 export function normalizeWheel(event) {
@@ -74,7 +74,7 @@ export function normalizeWheel(event) {
 export function ZoomBehavior() {
   const { zoom, setZoom, ref } = useVisContext()
 
-  useMouseDrag(
+  useMouseEvent(
     MOUSE_WHEEL,
     (event) => {
       const evt = normalizeWheel(event)

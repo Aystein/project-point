@@ -9,7 +9,7 @@ export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector
 
 export const selectDatasets = createSelector(
   (state: RootState) => state.datasets,
-  (state) => Object.values(state.views.entities).map((entry) => entry.name)
+  (state) => Object.values(state.files.entities).map((entry) => entry)
 )
 
 export const allViews = viewAdapter.getSelectors(

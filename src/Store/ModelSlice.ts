@@ -38,6 +38,8 @@ export interface SpatialModel extends BaseModel {
   children: SpatialModel[]
 
   area: IRectangle
+
+  interpolate: boolean
 }
 
 export type Model = SpatialModel

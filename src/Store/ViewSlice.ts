@@ -6,7 +6,7 @@ import {
   nanoid,
 } from '@reduxjs/toolkit'
 import type { PayloadAction } from '@reduxjs/toolkit'
-import { Model, SpatialModel } from './ModelSlice'
+import { SpatialModel } from './ModelSlice'
 import { VectorLike } from '../Interfaces'
 import { getBounds } from '../Util'
 import { Rectangle } from '../WebGL/Math/Rectangle'
@@ -65,6 +65,7 @@ const attributeSlice = createSlice({
         })
       })
 
+      state.workspace.interpolate = true
       state.workspace.flatSpatial = flatSpatial
     },
     translateArea: (state, action: PayloadAction<{ id: EntityId, x: number, y: number  }>) => {
@@ -90,6 +91,7 @@ const attributeSlice = createSlice({
         })
       })
 
+      state.workspace.interpolate = false
       state.workspace.flatSpatial = flatSpatial
     },
     updateEmbedding: (
@@ -116,6 +118,7 @@ const attributeSlice = createSlice({
         })
       })
 
+      state.workspace.interpolate = true
       state.workspace.flatSpatial = flatSpatial
     },
     addSubEmbedding: (
@@ -139,6 +142,7 @@ const attributeSlice = createSlice({
         filter,
         area: area.serialize(),
         children: [],
+        interpolate: true,
       }
 
       state.workspace.children.push(subModel)

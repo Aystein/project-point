@@ -1,18 +1,18 @@
-import { useEffect, useState } from 'react'
-import { SpatialModel } from '../../Store/ModelSlice'
-import { useVisContext } from '../VisualizationContext'
-import * as React from 'react'
-import { useMouseDrag } from '../Behavior/useMouseDrag'
-import { MOUSE_HOVER } from '../Commands'
-import { ScatterTrace } from '../Math/ScatterTrace'
+import { useEffect, useState } from 'react';
+import { SpatialModel } from '../../Store/ModelSlice';
+import { useVisContext } from '../VisualizationContext';
+import * as React from 'react';
+import { useMouseEvent } from '../Behavior/useMouseDrag';
+import { MOUSE_HOVER } from '../Commands';
+import { ScatterTrace } from '../Math/ScatterTrace';
 
 type ColumnTemp = {
-  values: number[]
-  domain: number[]
-}
+  values: number[];
+  domain: number[];
+};
 
 interface GlobalConfig {
-  pointSize: number
+  pointSize: number;
 }
 
 export function Scatterplot({
@@ -26,21 +26,23 @@ export function Scatterplot({
   opacity,
   globalConfig = { pointSize: 16 },
   hover,
+  interpolate = true,
 }: {
-  n: number
-  x: number[]
-  x2: string | ColumnTemp
-  y: number[]
-  model: SpatialModel
-  color?: string | string[]
-  size?: number[]
-  opacity?: number[]
-  globalConfig?: GlobalConfig
-  hover: number
+  n: number;
+  x: number[];
+  x2: string | ColumnTemp;
+  y: number[];
+  model: SpatialModel;
+  color?: string | string[];
+  size?: number[];
+  opacity?: number[];
+  globalConfig?: GlobalConfig;
+  hover: number;
+  interpolate: boolean;
 }) {
-  const [myRenderer, setRenderer] = useState<ScatterTrace>()
+  const [myRenderer, setRenderer] = useState<ScatterTrace>();
 
-  const [timestamp, setTimestamp] = React.useState(0)
+  const [timestamp, setTimestamp] = React.useState(0);
 
   const {
     ref,
@@ -51,36 +53,36 @@ export function Scatterplot({
     scaledXDomain,
     scaledYDomain,
     zoom,
-  } = useVisContext()
+  } = useVisContext();
 
   const render = (renderer: THREE.WebGLRenderer) => {
     if (!myRenderer) {
-      return
+      return;
     }
 
-    myRenderer.render(renderer, 0, 0)
-  }
+    myRenderer.render(renderer, 0, 0);
+  };
 
-  const renderRef = React.useRef(render)
-  renderRef.current = render
+  const renderRef = React.useRef(render);
+  renderRef.current = render;
 
   useEffect(() => {
-    myRenderer?.setColor(color)
-  }, [color, myRenderer])
+    myRenderer?.setColor(color);
+  }, [color, myRenderer]);
 
   useEffect(() => {
     registerRenderFunction((renderer) => {
-      renderRef.current(renderer)
-    })
-    setTimeout(() => requestFrame(), 500)
-  }, [])
+      renderRef.current(renderer);
+    });
+    setTimeout(() => requestFrame(), 500);
+  }, []);
 
   useEffect(() => {
-    myRenderer?.setHover(hover)
-  }, [hover, myRenderer])
+    myRenderer?.setHover(hover);
+  }, [hover, myRenderer]);
 
   useEffect(() => {
-    if (!myRenderer) return
+    if (!myRenderer) return;
 
     myRenderer.updateBounds(
       scaledXDomain.domain(),
@@ -89,39 +91,47 @@ export function Scatterplot({
       width,
       height,
       model.bounds
-    )
+    );
     // 600 / 10 -> 60
-    requestFrame()
-  }, [scaledXDomain, scaledYDomain, myRenderer, zoom, timestamp, width, height])
+    requestFrame();
+  }, [
+    scaledXDomain,
+    scaledYDomain,
+    myRenderer,
+    zoom,
+    timestamp,
+    width,
+    height,
+  ]);
 
   useEffect(() => {
     if (myRenderer) {
-      myRenderer.setX(x)
-      myRenderer.setY(y)
+      myRenderer.setX(x);
+      myRenderer.setY(y);
 
-      requestFrame()
+      requestFrame();
     }
-  }, [x, y, myRenderer])
+  }, [x, y, myRenderer]);
 
   useEffect(() => {
-    if (!model) return
+    if (!model) return;
 
-    const rend = new ScatterTrace(n)
+    const rend = new ScatterTrace(n);
 
     rend.onDirty = () => {
-      requestFrame()
-    }
+      requestFrame();
+    };
 
     rend.initialize({
       x,
       y,
       bounds: model.bounds,
-    })
+    });
 
-    setRenderer(rend)
+    setRenderer(rend);
 
-    requestFrame()
-  }, [setRenderer, ref, n])
+    requestFrame();
+  }, [setRenderer, ref, n]);
 
-  return null
+  return null;
 }

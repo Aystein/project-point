@@ -1,11 +1,11 @@
 import { COMMAND_PRIORITY_NORMAL, MOUSE_DRAGGING } from '../Commands'
-import { useMouseDrag } from "./useMouseDrag"
+import { useMouseEvent } from "./useMouseDrag"
 import { useVisContext } from '../VisualizationContext'
 
 export function PanBehavior({ button = 0 }: { button?: number }) {
   const { setZoom } = useVisContext()
 
-  useMouseDrag(
+  useMouseEvent(
     MOUSE_DRAGGING,
     (event) => {
       if (event.button === button) {
