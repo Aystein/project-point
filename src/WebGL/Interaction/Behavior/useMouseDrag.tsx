@@ -3,8 +3,8 @@ import {
   LexicalCommand,
   CommandListener,
   CommandListenerPriority
-} from '../Commands';
-import { useVisContext } from '../VisualizationContext';
+} from '../../Interaction/Commands';
+import { useVisContext } from '../../VisualizationContext';
 
 
 export function useMouseEvent<T>(

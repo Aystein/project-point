@@ -2,15 +2,14 @@ import * as React from 'react';
 import { useSelector } from 'react-redux';
 import { DataState } from './Store/DataSlice.';
 import { Selectors } from './Store/Selectors';
-import { PanBehavior } from './WebGL/Behavior/PanBehavior';
-import { ZoomBehavior } from './WebGL/Behavior/ZoomBehavior';
+import { PanBehavior } from './WebGL/Interaction/Behavior/PanBehavior';
+import { ZoomBehavior } from './WebGL/Interaction/Behavior/ZoomBehavior';
 import { Scatterplot } from './WebGL/Scatter/Scatterplot';
 import { VisProvider } from './WebGL/VisualizationContext';
-import { BoxBehavior } from './WebGL/Behavior/BoxBehavior';
+import { BoxBehavior } from './WebGL/Interaction/Behavior/BoxBehavior';
 import {  useAppSelector } from './Store/hooks';
 import { useMantineTheme } from '@mantine/core';
-import { HoverBehavior } from './WebGL/Behavior/HoverBehavior';
-import { SVGPlot } from './WebGL/Scatter/SVGPlot';
+import { HoverBehavior } from './WebGL/Interaction/Behavior/HoverBehavior';
 import { SpatialModel } from './Store/ModelSlice';
 
 function MainView({

@@ -1,6 +1,6 @@
-import { COMMAND_PRIORITY_NORMAL, MOUSE_DRAGGING } from '../Commands'
+import { COMMAND_PRIORITY_NORMAL, MOUSE_DRAGGING } from '../../Interaction/Commands'
 import { useMouseEvent } from "./useMouseDrag"
-import { useVisContext } from '../VisualizationContext'
+import { useVisContext } from '../../VisualizationContext'
 
 export function PanBehavior({ button = 0 }: { button?: number }) {
   const { setZoom } = useVisContext()

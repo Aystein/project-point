@@ -5,9 +5,9 @@ import {
   MOUSE_DRAG,
   MOUSE_DRAGGING,
   MOUSE_DRAG_END,
-} from '../Commands';
-import { useVisContext } from '../VisualizationContext';
-import { IRectangle, Rectangle } from '../Math/Rectangle';
+} from '../../Interaction/Commands';
+import { useVisContext } from '../../VisualizationContext';
+import { IRectangle, Rectangle } from '../../Math/Rectangle';
 import {
   ActionIcon,
   Affix,
@@ -19,20 +19,20 @@ import {
   ThemeIcon,
 } from '@mantine/core';
 import { IconArrowsMove } from '@tabler/icons-react';
-import { SpatialModel } from '../../Store/ModelSlice';
+import { SpatialModel } from '../../../Store/ModelSlice';
 import { openContextModal } from '@mantine/modals';
 import { useDispatch } from 'react-redux';
-import { VectorLike } from '../../Interfaces';
+import { VectorLike } from '../../../Interfaces';
 import {
   addSubEmbedding,
   removeEmbedding,
   translateArea,
   updateEmbedding,
-} from '../../Store/ViewSlice';
+} from '../../../Store/ViewSlice';
 import { IconX } from '@tabler/icons-react';
 import { useMouseEvent } from './useMouseDrag';
-import { runCondenseLayout } from '../../Layouts/condense';
-import { useAppSelector } from '../../Store/hooks';
+import { runCondenseLayout } from '../../../Layouts/Layouts';
+import { useAppSelector } from '../../../Store/hooks';
 
 export function BoxBehavior({ parentModel }: { parentModel: SpatialModel }) {
   const { vis, scaledXDomain, scaledYDomain } = useVisContext();

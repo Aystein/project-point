@@ -4,7 +4,7 @@ import {
   CommandPayloadType,
   CommandListener,
   CommandListenerPriority,
-} from './Commands'
+} from './Interaction/Commands'
 
 export class Visualization {
   _commands: Commands

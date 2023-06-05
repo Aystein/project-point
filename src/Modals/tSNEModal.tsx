@@ -9,9 +9,9 @@ import 'react-data-grid/lib/styles.css';
 import DataGrid, { SelectColumn } from 'react-data-grid';
 import { showNotification, updateNotification } from '@mantine/notifications';
 import { VectorLike } from '../Interfaces';
-import { encode } from '../MainTabs/encode';
+import { encode } from '../DataLoading/Encode';
 import { IRectangle } from '../WebGL/Math/Rectangle';
-import { runUMAPLayout } from '../Layouts/condense';
+import { runUMAPLayout } from '../Layouts/Layouts';
 
 export function TSNEModal({
   context,

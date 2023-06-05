@@ -13,16 +13,9 @@ import {
 } from '@mantine/core'
 import {
   IconHome2,
-  IconGauge,
-  IconDeviceDesktopAnalytics,
-  IconFingerprint,
-  IconCalendarStats,
-  IconUser,
-  IconSettings,
 } from '@tabler/icons'
 import { DataTab } from './MainTabs/DataTab'
 import { Main } from './Main'
-import { EmbeddingTab } from './MainTabs/EmbeddingTab'
 import { useAppDispatch } from './Store/hooks'
 import { initializeDatasets } from './Store/FilesSlice'
 

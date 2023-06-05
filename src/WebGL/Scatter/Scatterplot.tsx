@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { SpatialModel } from '../../Store/ModelSlice';
 import { useVisContext } from '../VisualizationContext';
 import * as React from 'react';
-import { ScatterTrace } from '../Math/ScatterTrace';
+import { ScatterTrace } from './ScatterTrace';
 
 type ColumnTemp = {
   values: number[];

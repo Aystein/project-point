@@ -1,6 +1,6 @@
 import * as React from 'react'
-import { COMMAND_PRIORITY_NORMAL, MOUSE_DRAG, MOUSE_DRAGGING, MOUSE_DRAG_END } from '../Commands'
-import { useVisContext } from '../VisualizationContext'
+import { COMMAND_PRIORITY_NORMAL, MOUSE_DRAG, MOUSE_DRAGGING, MOUSE_DRAG_END } from '../../Interaction/Commands'
+import { useVisContext } from '../../VisualizationContext'
 import { useMouseEvent } from './useMouseDrag'
 
 export function LassoSelectionPlugin() {

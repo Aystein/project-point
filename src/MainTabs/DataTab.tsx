@@ -9,24 +9,14 @@ import {
   Group,
   Input,
   Menu,
-  NavLink,
   rem,
   Stack,
-  Text,
 } from '@mantine/core';
-import Papa from 'papaparse';
 import * as React from 'react';
-import { useDispatch } from 'react-redux';
-import { PapaPlugin } from '../PapaPlugin/PapaPlugin';
-import { Row } from '../Store/DataSlice.';
 import { selectDatasets, useAppDispatch, useAppSelector } from '../Store/hooks';
 import { loadDatasetGlobal } from '../Store/Store';
-import {
-  deleteDataset,
-  loadDataset,
-  storeDataset,
-} from '../Store/FilesSlice';
-import { parseCSV } from '../Loading/CSVLoader';
+import { deleteDataset, loadDataset, storeDataset } from '../Store/FilesSlice';
+import { parseCSV } from '../DataLoading/CSVLoader';
 import {
   IconDatabase,
   IconDots,

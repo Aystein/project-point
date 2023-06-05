@@ -1,6 +1,6 @@
 import Papa from 'papaparse'
 import { Row } from '../Store/DataSlice.'
-import { PapaPlugin } from '../PapaPlugin/PapaPlugin'
+import { PapaPlugin } from './PapaPlugin'
 
 export function parseCSV(content: string): Promise<Row[]> {
   return new Promise((resolve) => {

@@ -7,7 +7,7 @@ import {
 } from '@reduxjs/toolkit';
 
 import type { PayloadAction } from '@reduxjs/toolkit';
-import { parseCSV } from '../Loading/CSVLoader';
+import { parseCSV } from '../DataLoading/CSVLoader';
 import { loadDatasetGlobal, RootState } from './Store';
 
 export interface SingleFile {

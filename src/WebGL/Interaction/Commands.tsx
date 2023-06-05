@@ -1,4 +1,4 @@
-import { Visualization } from './Visualization'
+import { Visualization } from '../Visualization'
 
 export type CommandListener<P> = (payload: P, editor: Visualization) => boolean
 

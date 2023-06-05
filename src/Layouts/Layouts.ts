@@ -57,6 +57,6 @@ export function runGroupLayout(X, area: IRectangle, feature: string) {
 export function runUMAPLayout(X, N, D, area) {
   return runLayout(
     { X, N, D, area },
-    new Worker(new URL('../Workers/test.ts', import.meta.url))
+    new Worker(new URL('../Workers/umap.worker.ts', import.meta.url))
   );
 }

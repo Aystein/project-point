@@ -57,9 +57,6 @@ module.exports = {
     new HtmlWebpackPlugin({
       template: "index.html",
     }),
-    new CopyWebpackPlugin({
-      patterns: [{ from: "WebAssembly" }],
-    }),
   ],
   devtool: "source-map",
 };

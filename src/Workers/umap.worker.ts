@@ -1,5 +1,4 @@
 /* eslint-disable no-restricted-globals */
-import TSNE from 'tsne-js'
 import { UMAP } from 'umap-js';
 import * as d3 from 'd3-force';
 import { scaleLinear } from 'd3-scale';

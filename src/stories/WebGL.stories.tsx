@@ -3,8 +3,8 @@ import React from 'react'
 import { ComponentMeta } from '@storybook/react'
 import { Scatterplot } from '../WebGL/Scatter/Scatterplot'
 import { VisProvider } from '../WebGL/VisualizationContext'
-import { ZoomBehavior } from '../WebGL/Behavior/ZoomBehavior'
-import { PanBehavior } from '../WebGL/Behavior/PanBehavior'
+import { ZoomBehavior } from '../WebGL/Interaction/Behavior/ZoomBehavior'
+import { PanBehavior } from '../WebGL/Interaction/Behavior/PanBehavior'
 
 const model = {
   oid: 'spatial',

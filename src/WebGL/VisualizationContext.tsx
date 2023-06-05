@@ -10,11 +10,11 @@ import {
   MOUSE_HOVER,
   MOUSE_WHEEL,
   MOUSE_DRAG_END,
-} from './Commands'
-import { MouseController } from './MouseController'
+} from './Interaction/Commands'
+import { MouseController } from './Interaction/MouseController'
 import { Visualization } from './Visualization'
 import { scaleLinear, ScaleLinear } from 'd3-scale'
-import { ZoomTransform } from './ZoomTransform'
+import { ZoomTransform } from './Math/ZoomTransform'
 
 export const VisContext = createContext<{
   vis: Visualization

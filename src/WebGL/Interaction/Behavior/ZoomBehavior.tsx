@@ -1,6 +1,6 @@
-import { COMMAND_PRIORITY_NORMAL, MOUSE_WHEEL } from '../Commands'
+import { COMMAND_PRIORITY_NORMAL, MOUSE_WHEEL } from '../../Interaction/Commands'
 import { useMouseEvent } from "./useMouseDrag"
-import { useVisContext } from '../VisualizationContext'
+import { useVisContext } from '../../VisualizationContext'
 
 export function normalizeWheel(event) {
   // Reasonable defaults

@@ -1,12 +1,12 @@
 import * as React from 'react'
 import { quadtree } from 'd3-quadtree'
-import { VectorLike } from '../../Interfaces'
+import { VectorLike } from '../../../Interfaces'
 import { useMouseEvent } from './useMouseDrag'
-import { COMMAND_PRIORITY_NORMAL, MOUSE_HOVER } from '../Commands'
-import { useVisContext } from '../VisualizationContext'
+import { COMMAND_PRIORITY_NORMAL, MOUSE_HOVER } from '../../Interaction/Commands'
+import { useVisContext } from '../../VisualizationContext'
 import { Affix, Button, Card, Transition, rem } from '@mantine/core'
-import { useAppSelector } from '../../Store/hooks'
-import { Row } from '../../Store/DataSlice.'
+import { useAppSelector } from '../../../Store/hooks'
+import { Row } from '../../../Store/DataSlice.'
 
 export function HoverBehavior({
   positions,

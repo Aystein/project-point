@@ -8,9 +8,9 @@ import { groupBy as rowGrouper } from 'lodash';
 import 'react-data-grid/lib/styles.css';
 import DataGrid, { SelectColumn } from 'react-data-grid';
 import { VectorLike } from '../Interfaces';
-import { encode } from '../MainTabs/encode';
+import { encode } from '../DataLoading/Encode';
 import { IRectangle } from '../WebGL/Math/Rectangle';
-import { runGroupLayout, runUMAPLayout } from '../Layouts/condense';
+import { runGroupLayout, runUMAPLayout } from '../Layouts/Layouts';
 
 export function GroupByModal({
   context,
