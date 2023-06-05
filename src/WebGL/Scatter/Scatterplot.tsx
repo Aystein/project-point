@@ -2,8 +2,6 @@ import { useEffect, useState } from 'react';
 import { SpatialModel } from '../../Store/ModelSlice';
 import { useVisContext } from '../VisualizationContext';
 import * as React from 'react';
-import { useMouseEvent } from '../Behavior/useMouseDrag';
-import { MOUSE_HOVER } from '../Commands';
 import { ScatterTrace } from '../Math/ScatterTrace';
 
 type ColumnTemp = {

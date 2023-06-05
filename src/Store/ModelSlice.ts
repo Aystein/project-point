@@ -1,74 +1,39 @@
-import {
-  createEntityAdapter,
-  createSlice,
-  EntityId,
-  EntityState,
-} from '@reduxjs/toolkit'
-import type { PayloadAction } from '@reduxjs/toolkit'
-import { Boundaries, VectorLike } from '../Interfaces'
-import { IRectangle, Rectangle } from '../WebGL/Math/Rectangle'
+import { EntityId } from '@reduxjs/toolkit';
+import { Boundaries, VectorLike } from '../Interfaces';
+import { IRectangle } from '../WebGL/Math/Rectangle';
 
 interface BaseModel {
-  id: EntityId
+  id: EntityId;
 }
 
 export type EmbeddingParameters = {
-  embedding: 'tsne'
-  perplexity: number
-}
+  embedding: 'tsne';
+  perplexity: number;
+};
 
 export interface SpatialModel extends BaseModel {
-  oid: 'spatial'
-  id: EntityId
+  oid: 'spatial';
+  id: EntityId;
 
-  parameters?: EmbeddingParameters
+  parameters?: EmbeddingParameters;
 
   // The spatial data of this model (x, y coordinates)
-  spatial: VectorLike[]
+  spatial: VectorLike[];
 
   // Hierarchically unnested spatial data. VERY useful as reactive state for spatial data
-  flatSpatial: VectorLike[]
+  flatSpatial: VectorLike[];
 
   // The boundaries of the spatial data
-  bounds: Boundaries
+  bounds: Boundaries;
 
   // The indices of the rows this model operates on
-  filter: number[]
+  filter: number[];
 
-  children: SpatialModel[]
+  children: SpatialModel[];
 
-  area: IRectangle
+  area: IRectangle;
 
-  interpolate: boolean
+  interpolate: boolean;
 }
 
-export type Model = SpatialModel
-
-export interface ModelsState {
-  models: EntityState<Model>
-}
-
-export const modelAdapter = createEntityAdapter<Model>({})
-
-const initialState: ModelsState = {
-  models: modelAdapter.getInitialState(),
-}
-
-export const modelSlice = createSlice({
-  name: 'models',
-  initialState,
-  reducers: {
-    initializeModel: (
-      state,
-      action: PayloadAction<{ parent: Model; model: Model }>
-    ) => {
-      //state.models.entities.
-      //modelAdapter.addOne(state.models, action.payload)
-    },
-  },
-})
-
-// Action creators are generated for each case reducer function
-export const { initializeModel } = modelSlice.actions
-
-export default modelSlice.reducer
+export type Model = SpatialModel;

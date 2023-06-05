@@ -6,15 +6,13 @@ import {
   nanoid,
 } from '@reduxjs/toolkit';
 import { Column, Row, dataReducer } from './DataSlice.';
-import modelReducer from './ModelSlice';
-import viewReducer, { viewAdapter } from './ViewSlice';
+import viewReducer from './ViewSlice';
 import { datasetReducer } from './FilesSlice';
 import { DataType } from '../Interfaces';
 import isNumber from 'lodash/isNumber';
 
 const combined = combineReducers({
   data: dataReducer,
-  models: modelReducer,
   views: viewReducer,
   datasets: datasetReducer,
 });
@@ -97,34 +95,27 @@ const reducer = createReducer<RootState>(undefined, (builder) => {
     state.data.rows = rows;
     state.data.columns = columns;
 
-    state.views.views = viewAdapter.getInitialState();
-    const viewId = nanoid();
     const spatial = rows.map((row) => ({
       x: -1 + Math.random() * 2,
       y: -1 + Math.random() * 2,
     }));
-    state.views.views = viewAdapter.addOne(state.views.views, {
-      id: viewId,
-      attributes: {
-        workspace: {
-          oid: 'spatial',
-          id: nanoid(),
-          spatial,
-          bounds: {
-            minX: 0,
-            maxX: 1,
-            minY: 0,
-            maxY: 1,
-          },
-          children: [],
-          filter: null,
-          flatSpatial: spatial,
-          area: null,
-          interpolate: true,
-        },
+
+    state.views.workspace = {
+      oid: 'spatial',
+      id: nanoid(),
+      spatial,
+      bounds: {
+        minX: 0,
+        maxX: 1,
+        minY: 0,
+        maxY: 1,
       },
-    });
-    state.views.active = viewId;
+      children: [],
+      filter: null,
+      flatSpatial: spatial,
+      area: null,
+      interpolate: true,
+    };
   });
   builder.addDefaultCase(combined);
 });
