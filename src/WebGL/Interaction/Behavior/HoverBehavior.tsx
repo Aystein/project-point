@@ -1,23 +1,27 @@
-import * as React from 'react'
-import { quadtree } from 'd3-quadtree'
-import { VectorLike } from '../../../Interfaces'
-import { useMouseEvent } from './useMouseDrag'
-import { COMMAND_PRIORITY_NORMAL, MOUSE_HOVER } from '../../Interaction/Commands'
-import { useVisContext } from '../../VisualizationContext'
-import { Affix, Button, Card, Transition, rem } from '@mantine/core'
-import { useAppSelector } from '../../../Store/hooks'
-import { Row } from '../../../Store/DataSlice.'
+import * as React from 'react';
+import { quadtree } from 'd3-quadtree';
+import { VectorLike } from '../../../Interfaces';
+import { useMouseEvent } from './useMouseDrag';
+import {
+  COMMAND_PRIORITY_NORMAL,
+  MOUSE_HOVER,
+} from '../../Interaction/Commands';
+import { useVisContext } from '../../VisualizationContext';
+import { Affix, Button, Card, Table, Transition, rem } from '@mantine/core';
+import { useAppSelector } from '../../../Store/hooks';
+import { Row } from '../../../Store/DataSlice.';
+import keys from 'lodash/keys';
 
 export function HoverBehavior({
   positions,
   onHover,
 }: {
-  positions: VectorLike[]
-  onHover: (index: number) => void
+  positions: VectorLike[];
+  onHover: (index: number) => void;
 }) {
-  const { scaledXDomain, scaledYDomain, requestFrame } = useVisContext()
-  const [lastHover, setLastHover] = React.useState<number>(null)
-  const data = useAppSelector((state) => state.data)
+  const { scaledXDomain, scaledYDomain, requestFrame } = useVisContext();
+  const [lastHover, setLastHover] = React.useState<number>(null);
+  const data = useAppSelector((state) => state.data);
 
   const tree = React.useMemo(() => {
     return positions
@@ -25,32 +29,32 @@ export function HoverBehavior({
           .x((d) => d.x)
           .y((d) => d.y)
           .addAll(positions.map((value, i) => ({ ...value, index: i })))
-      : null
-  }, [positions])
+      : null;
+  }, [positions]);
 
   useMouseEvent(
     MOUSE_HOVER,
     (event) => {
       if (!tree) {
-        return false
+        return false;
       }
 
       const hover = tree.find(
         scaledXDomain.invert(event.offsetX),
         scaledYDomain.invert(event.offsetY)
-      ).index
+      ).index;
 
       if (lastHover !== hover) {
-        onHover(hover)
-        requestFrame()
-        setLastHover(hover)
+        onHover(hover);
+        requestFrame();
+        setLastHover(hover);
       }
 
-      return true
+      return true;
     },
     COMMAND_PRIORITY_NORMAL,
     [tree, scaledXDomain, scaledYDomain, onHover, lastHover, setLastHover]
-  )
+  );
 
   return (
     <Affix position={{ bottom: rem(20), right: rem(20) }}>
@@ -60,9 +64,28 @@ export function HoverBehavior({
         </Card.Section>
       </Card>
     </Affix>
-  )
+  );
 }
 
 function HoverComponent({ row }: { row: Row }) {
-  return row ? <div>{row.index}</div> : null
+  const rows = keys(row).map((key) => (
+    <tr key={key}>
+      <td style={{ width: rem(150), overflow: 'hidden', textOverflow: 'ellipsis' }}>{key}</td>
+      <td>{row[key]}</td>
+    </tr>
+  ));
+
+  return (
+    <div
+      style={{
+        width: rem(400),
+        maxHeight: rem(600),
+        overflowY: 'auto',
+      }}
+    >
+      <Table withBorder withColumnBorders>
+        <tbody>{rows}</tbody>
+      </Table>
+    </div>
+  );
 }

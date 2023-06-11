@@ -115,6 +115,8 @@ const reducer = createReducer<RootState>(undefined, (builder) => {
       flatSpatial: spatial,
       area: null,
       interpolate: true,
+      color: rows.map(() => [0.5, 0.5, 0.5, 1]).flat(),
+      shape: rows.map(() => 0),
     };
   });
   builder.addDefaultCase(combined);

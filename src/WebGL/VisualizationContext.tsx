@@ -1,7 +1,7 @@
-import { useElementSize } from '@mantine/hooks'
-import * as React from 'react'
-import { createContext, useContext } from 'react'
-import { WebGLRenderer } from 'three'
+import { useElementSize } from '@mantine/hooks';
+import * as React from 'react';
+import { createContext, useContext } from 'react';
+import { WebGLRenderer } from 'three';
 import {
   MOUSE_LEAVE,
   MOUSE_DRAG,
@@ -10,158 +10,164 @@ import {
   MOUSE_HOVER,
   MOUSE_WHEEL,
   MOUSE_DRAG_END,
-} from './Interaction/Commands'
-import { MouseController } from './Interaction/MouseController'
-import { Visualization } from './Visualization'
-import { scaleLinear, ScaleLinear } from 'd3-scale'
-import { ZoomTransform } from './Math/ZoomTransform'
+} from './Interaction/Commands';
+import { MouseController } from './Interaction/MouseController';
+import { Visualization } from './Visualization';
+import { scaleLinear, ScaleLinear } from 'd3-scale';
+import { ZoomTransform } from './Math/ZoomTransform';
+import { useMantineTheme } from '@mantine/core';
 
 export const VisContext = createContext<{
-  vis: Visualization
-  ref
-  requestFrame: () => void
-  registerRenderFunction: (value) => void
-  xDomain: number[]
-  yDomain: number[]
-  width: number
-  height: number
-  zoom: { tx: number; ty: number; s: number }
+  vis: Visualization;
+  ref;
+  requestFrame: () => void;
+  registerRenderFunction: (value) => void;
+  xDomain: number[];
+  yDomain: number[];
+  width: number;
+  height: number;
+  zoom: { tx: number; ty: number; s: number };
   setZoom: (
     zoom: React.SetStateAction<{ tx: number; ty: number; s: number }>
-  ) => void
-  scaledXDomain: ScaleLinear<number, number>
-  scaledYDomain: ScaleLinear<number, number>
-  world: (value: number) => number
-}>(null)
+  ) => void;
+  scaledXDomain: ScaleLinear<number, number>;
+  scaledYDomain: ScaleLinear<number, number>;
+  world: (value: number) => number;
+}>(null);
 
 export const VisProvider = ({ children }) => {
+  const theme = useMantineTheme();
+
   const [dimensions, setDimensions] = React.useState({
     width: 600,
     height: 400,
-  })
+  });
 
   const [zoom, setZoom] = React.useState({
     tx: 0,
     ty: 0,
     s: 1,
-  })
+  });
 
-  const { ref, width, height } = useElementSize()
-  const [renderer, setRenderer] = React.useState<WebGLRenderer>()
+  const { ref, width, height } = useElementSize();
+  const [renderer, setRenderer] = React.useState<WebGLRenderer>();
 
-  const [renderFunctions, setRenderFunctions] = React.useState([])
+  const [renderFunctions, setRenderFunctions] = React.useState([]);
 
-  const [xDomain, setXDomain] = React.useState([-2, 2])
+  const [xDomain, setXDomain] = React.useState([-2, 2]);
 
   const yDomain = React.useMemo(() => {
-    const halfExtent = ((xDomain[1] - xDomain[0]) * (height / width)) / 2
-    const centerY = 0
+    const halfExtent = ((xDomain[1] - xDomain[0]) * (height / width)) / 2;
+    const centerY = 0;
 
-    return [centerY - halfExtent, centerY + halfExtent]
-  }, [xDomain, width, height])
+    return [centerY - halfExtent, centerY + halfExtent];
+  }, [xDomain, width, height]);
 
   const scaledXDomain = React.useMemo(() => {
-    const xScale = scaleLinear().domain(xDomain).range([0, width])
+    const xScale = scaleLinear().domain(xDomain).range([0, width]);
 
-    const zoomTransform = new ZoomTransform(zoom.s, zoom.tx, zoom.ty)
-    const newX = zoomTransform.rescaleX(xScale)
+    const zoomTransform = new ZoomTransform(zoom.s, zoom.tx, zoom.ty);
+    const newX = zoomTransform.rescaleX(xScale);
 
-    return newX
-  }, [xDomain, zoom, width])
+    return newX;
+  }, [xDomain, zoom, width]);
 
   const scaledYDomain = React.useMemo(() => {
-    const yScale = scaleLinear().domain(yDomain).range([0, height])
+    const yScale = scaleLinear().domain(yDomain).range([0, height]);
 
-    const zoomTransform = new ZoomTransform(zoom.s, zoom.tx, zoom.ty)
-    const newY = zoomTransform.rescaleY(yScale)
+    const zoomTransform = new ZoomTransform(zoom.s, zoom.tx, zoom.ty);
+    const newY = zoomTransform.rescaleY(yScale);
 
-    return newY
-  }, [yDomain, zoom, height])
+    return newY;
+  }, [yDomain, zoom, height]);
 
   const world = React.useMemo(() => {
     return (value: number) => {
-      const pxPerWorld = width / (scaledXDomain.domain()[1] - scaledXDomain.domain()[0])
-      return value / pxPerWorld
-    }
-  }, [scaledXDomain, width])
+      const pxPerWorld =
+        width / (scaledXDomain.domain()[1] - scaledXDomain.domain()[0]);
+      return value / pxPerWorld;
+    };
+  }, [scaledXDomain, width]);
 
-  renderer?.setSize(width, height, false)
+  renderer?.setSize(width, height, false);
 
-  const dirtyRef = React.useRef(false)
+  const dirtyRef = React.useRef(false);
 
   const frame = () => {
-    dirtyRef.current = false
+    dirtyRef.current = false;
 
     renderFunctions.forEach((func) => {
-      func(renderer)
-    })
-  }
+      func(renderer);
+    });
+  };
 
-  const frameRef = React.useRef(frame)
-  frameRef.current = frame
+  const frameRef = React.useRef(frame);
+  frameRef.current = frame;
 
   const requestFrame = React.useCallback(() => {
     if (!dirtyRef.current) {
-      requestAnimationFrame(() => frameRef.current())
+      requestAnimationFrame(() => frameRef.current());
 
-      dirtyRef.current = true
+      dirtyRef.current = true;
     }
-  }, [])
+  }, []);
 
   React.useEffect(() => {
-    requestFrame()
-  }, [width, height])
+    requestFrame();
+  }, [width, height]);
 
   const registerRenderFunction = (value) => {
-    setRenderFunctions([...renderFunctions, value])
-  }
+    setRenderFunctions([...renderFunctions, value]);
+  };
 
   React.useEffect(() => {
-    const value = new WebGLRenderer({ canvas: ref.current })
-    value.setPixelRatio(window.devicePixelRatio)
-    value.setClearColor('#ffffff')
+    const value = new WebGLRenderer({ canvas: ref.current });
+    value.setPixelRatio(window.devicePixelRatio);
+    value.setClearColor(
+      theme.colorScheme === 'dark' ? theme.colors.dark[8] : theme.colors.gray[0]
+    );
 
-    setRenderer(value)
-  }, [ref])
+    setRenderer(value);
+  }, [ref]);
 
   const visContext = React.useMemo(() => {
-    return new Visualization()
-  }, [])
+    return new Visualization();
+  }, []);
 
   React.useEffect(() => {
-    const controller = new MouseController()
+    const controller = new MouseController();
 
     controller.onMouseLeave = (event) =>
-      visContext.dispatchCommand(MOUSE_LEAVE, event)
+      visContext.dispatchCommand(MOUSE_LEAVE, event);
 
     controller.onMouseMove = (event) => {
-      visContext.dispatchCommand(MOUSE_HOVER, event)
-    }
+      visContext.dispatchCommand(MOUSE_HOVER, event);
+    };
     controller.onMouseUp = (event) =>
-      visContext.dispatchCommand(MOUSE_UP, event)
+      visContext.dispatchCommand(MOUSE_UP, event);
 
     controller.onDragStart = (event) => {
-      visContext.dispatchCommand(MOUSE_DRAG, event)
-    }
+      visContext.dispatchCommand(MOUSE_DRAG, event);
+    };
     controller.onDragMove = (event) => {
-      visContext.dispatchCommand(MOUSE_DRAGGING, event)
-    }
+      visContext.dispatchCommand(MOUSE_DRAGGING, event);
+    };
     controller.onDragEnd = (event) => {
-      visContext.dispatchCommand(MOUSE_DRAG_END, event)
-    }
+      visContext.dispatchCommand(MOUSE_DRAG_END, event);
+    };
 
     controller.onMouseWheel = (event) => {
-      visContext.dispatchCommand(MOUSE_WHEEL, event)
-    }
+      visContext.dispatchCommand(MOUSE_WHEEL, event);
+    };
 
-    controller.attach(ref.current)
+    controller.attach(ref.current);
 
     return () => {
       if (ref.current) {
-        controller.detach()
+        controller.detach();
       }
-    }
-  }, [visContext, ref])
+    };
+  }, [visContext, ref]);
 
   return (
     <VisContext.Provider
@@ -178,12 +184,12 @@ export const VisProvider = ({ children }) => {
         setZoom,
         scaledXDomain,
         scaledYDomain,
-        world
+        world,
       }}
     >
       <canvas
         onContextMenu={(event) => {
-          event.preventDefault()
+          event.preventDefault();
         }}
         style={{ position: 'absolute', width: '100%', height: '100%' }}
         width={dimensions.width}
@@ -193,15 +199,15 @@ export const VisProvider = ({ children }) => {
 
       {children}
     </VisContext.Provider>
-  )
-}
+  );
+};
 
 export function useVisContext() {
-  const visContext = useContext(VisContext)
+  const visContext = useContext(VisContext);
 
   if (visContext == null) {
-    console.error('VisContext.useVisContext: cannot find a VisContext')
+    console.error('VisContext.useVisContext: cannot find a VisContext');
   }
 
-  return visContext
+  return visContext;
 }

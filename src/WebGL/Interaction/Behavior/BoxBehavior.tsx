@@ -12,13 +12,20 @@ import {
   ActionIcon,
   Affix,
   Autocomplete,
+  Box,
   Button,
   Group,
   Menu,
   Overlay,
   ThemeIcon,
+  rem,
 } from '@mantine/core';
-import { IconArrowsMove } from '@tabler/icons-react';
+import {
+  IconArrowsMove,
+  IconArrowMoveUp,
+  IconArrowMoveRight,
+} from '@tabler/icons-react';
+
 import { SpatialModel } from '../../../Store/ModelSlice';
 import { openContextModal } from '@mantine/modals';
 import { useDispatch } from 'react-redux';
@@ -26,6 +33,8 @@ import { VectorLike } from '../../../Interfaces';
 import {
   addSubEmbedding,
   removeEmbedding,
+  setColor,
+  setShape,
   translateArea,
   updateEmbedding,
 } from '../../../Store/ViewSlice';
@@ -33,6 +42,8 @@ import { IconX } from '@tabler/icons-react';
 import { useMouseEvent } from './useMouseDrag';
 import { runCondenseLayout } from '../../../Layouts/Layouts';
 import { useAppSelector } from '../../../Store/hooks';
+import { schemeCategory10 } from 'd3-scale-chromatic';
+import { scaleOrdinal } from 'd3-scale';
 
 export function BoxBehavior({ parentModel }: { parentModel: SpatialModel }) {
   const { vis, scaledXDomain, scaledYDomain } = useVisContext();
@@ -148,18 +159,30 @@ export function BoxBehavior({ parentModel }: { parentModel: SpatialModel }) {
   );
 }
 
-function DragCover({ onMove }: { onMove: (amount: VectorLike) => void }) {
+function DragCover({
+  onMove,
+  style,
+  icon,
+}: {
+  onMove: (amount: VectorLike) => void;
+  style: React.CSSProperties;
+  icon;
+}) {
   const [drag, setDrag] = React.useState<VectorLike>(null);
 
   return (
     <>
       <ActionIcon
-        style={{ pointerEvents: 'initial' }}
+        size="sm"
+        style={style}
         onMouseDown={(event) => {
           setDrag({ x: event.screenX, y: event.screenY });
         }}
+        onContextMenu={(event) => {
+          event.preventDefault();
+        }}
       >
-        <IconArrowsMove />
+        {icon}
       </ActionIcon>
       {drag ? (
         <Overlay
@@ -189,15 +212,73 @@ function SingleBox({
   const dispatch = useDispatch();
   const data = useAppSelector((state) => state.data.rows);
 
-  React.useEffect(() => {
-    console.log('mount');
-  }, []);
-
   const handleCondense = async () => {
     const Y = await runCondenseLayout(parentModel.filter.length, area);
-    console.log(Y);
 
     dispatch(updateEmbedding({ id: parentModel.id, Y }));
+  };
+
+  const handleColor = () => {
+    const onFinish = (feature: string) => {
+      const filteredRows = parentModel.filter.map((i) => data[i]);
+      let color = scaleOrdinal(schemeCategory10).domain(
+        filteredRows.map((row) => row[feature])
+      );
+
+      const mappedColors = filteredRows.map((row) => color(row[feature]));
+
+      dispatch(
+        setColor({
+          id: parentModel.id,
+          colors: mappedColors
+            .map((hex) => {
+              let red = parseInt(hex.substring(1, 3), 16);
+              let green = parseInt(hex.substring(3, 5), 16);
+              let blue = parseInt(hex.substring(5, 7), 16);
+              return [red / 255, green / 255, blue / 255, 1];
+            })
+            .flat(),
+        })
+      );
+    };
+
+    openContextModal({
+      modal: 'colorby',
+      title: 'Color by',
+      innerProps: {
+        X: parentModel.filter.map((i) => data[i]),
+        area,
+        onFinish,
+      },
+    });
+  };
+
+  const handleShape = () => {
+    const onFinish = (feature: string) => {
+      const filteredRows = parentModel.filter.map((i) => data[i]);
+      let shape = scaleOrdinal([0, 1, 2, 3]).domain(
+        filteredRows.map((row) => row[feature])
+      );
+
+      const mappedColors = filteredRows.map((row) => shape(row[feature]));
+
+      dispatch(
+        setShape({
+          id: parentModel.id,
+          shape: mappedColors,
+        })
+      );
+    };
+
+    openContextModal({
+      modal: 'colorby',
+      title: 'Color by',
+      innerProps: {
+        X: parentModel.filter.map((i) => data[i]),
+        area,
+        onFinish,
+      },
+    });
   };
 
   const handleGroupBy = async () => {
@@ -217,37 +298,105 @@ function SingleBox({
 
   return (
     <Group
-      style={{
+      sx={(theme) => ({
         pointerEvents: 'none',
         position: 'absolute',
         left: scaledXDomain(area.x),
         top: scaledYDomain(area.y),
         width: scaledXDomain(area.x + area.width) - scaledXDomain(area.x),
         height: scaledYDomain(area.y + area.height) - scaledYDomain(area.y),
-        borderLeft: '1px solid black',
-        borderBottom: '1px solid black',
-      }}
+      })}
     >
+      <Box
+        sx={(theme) => ({
+          background:
+            theme.colorScheme !== 'dark' ? theme.colors.dark[7] : theme.white,
+          position: 'absolute',
+          width: 1,
+          top: rem(24),
+          height: `calc(100% - ${rem(48)})`,
+        })}
+      />
+      <Box
+        sx={(theme) => ({
+          background:
+            theme.colorScheme !== 'dark' ? theme.colors.dark[7] : theme.white,
+          position: 'absolute',
+          left: rem(24),
+          height: 1,
+          width: `calc(100% - ${rem(48)})`,
+          bottom: 0,
+        })}
+      />
+      <DragCover
+        onMove={(movement) => {
+          dispatch(
+            translateArea({
+              id: parentModel.id,
+              x: world(movement.x),
+              y: world(movement.y),
+            })
+          );
+        }}
+        style={{
+          pointerEvents: 'initial',
+          transform: 'translate(-50%, 50%)',
+          position: 'absolute',
+          bottom: 0,
+        }}
+        icon={<IconArrowsMove />}
+      />
+
+      <DragCover
+        onMove={(movement) => {
+          dispatch(
+            translateArea({
+              id: parentModel.id,
+              x: world(movement.x),
+              y: world(movement.y),
+            })
+          );
+        }}
+        style={{
+          pointerEvents: 'initial',
+          transform: 'translate(50%, 50%)',
+          position: 'absolute',
+          bottom: 0,
+          right: 0,
+        }}
+        icon={<IconArrowMoveRight />}
+      />
+
+      <DragCover
+        onMove={(movement) => {
+          dispatch(
+            translateArea({
+              id: parentModel.id,
+              x: world(movement.x),
+              y: world(movement.y),
+            })
+          );
+        }}
+        style={{
+          pointerEvents: 'initial',
+          transform: 'translate(-50%, -50%)',
+          position: 'absolute',
+          left: 0,
+          top: 0,
+        }}
+        icon={<IconArrowMoveUp />}
+      />
+
       <Group
         style={{
           position: 'absolute',
           top: 0,
+          left: rem(32),
         }}
       >
-        <DragCover
-          onMove={(movement) => {
-            dispatch(
-              translateArea({
-                id: parentModel.id,
-                x: world(movement.x),
-                y: world(movement.y),
-              })
-            );
-          }}
-        />
         <Menu shadow="md" width={200}>
           <Menu.Target>
-            <Button style={{ pointerEvents: 'initial' }}>More</Button>
+            <Button style={{ pointerEvents: 'initial' }}>X</Button>
           </Menu.Target>
 
           <Menu.Dropdown style={{ pointerEvents: 'initial' }}>
@@ -260,8 +409,8 @@ function SingleBox({
                   title: 't-SNE embedding',
                   size: '70%',
                   innerProps: {
-                    area,
-                    filter: parentModel.filter,
+                    id: parentModel.id,
+                    axis: 'x',
                     onFinish: (Y) => {
                       dispatch(updateEmbedding({ id: parentModel.id, Y }));
                     },
@@ -273,6 +422,47 @@ function SingleBox({
             </Menu.Item>
           </Menu.Dropdown>
         </Menu>
+
+        <Menu shadow="md" width={200}>
+          <Menu.Target>
+            <Button style={{ pointerEvents: 'initial' }}>Y</Button>
+          </Menu.Target>
+
+          <Menu.Dropdown style={{ pointerEvents: 'initial' }}>
+            <Menu.Item onClick={handleCondense}>Condense</Menu.Item>
+            <Menu.Item onClick={handleGroupBy}>Group by</Menu.Item>
+            <Menu.Item
+              onClick={() => {
+                openContextModal({
+                  modal: 'demonstration',
+                  title: 't-SNE embedding',
+                  size: '70%',
+                  innerProps: {
+                    id: parentModel.id,
+                    axis: 'y',
+                    onFinish: (Y) => {
+                      dispatch(updateEmbedding({ id: parentModel.id, Y }));
+                    },
+                  },
+                });
+              }}
+            >
+              UMAP
+            </Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
+
+        <Menu shadow="md" width={200}>
+          <Menu.Target>
+            <Button style={{ pointerEvents: 'initial' }}>Channel</Button>
+          </Menu.Target>
+
+          <Menu.Dropdown style={{ pointerEvents: 'initial' }}>
+            <Menu.Item onClick={handleColor}>Color</Menu.Item>
+            <Menu.Item onClick={handleShape}>Shape</Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
+
         <ActionIcon
           style={{ pointerEvents: 'auto', opacity: 1 }}
           onClick={() => {

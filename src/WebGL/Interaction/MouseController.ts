@@ -125,9 +125,6 @@ export class MouseController {
 
   mouseUp(event: MouseEvent) {
     event.preventDefault()
-    // event.stopPropagation()
-
-    console.log("MOUSE UP")
 
     if (this.mode === Mode.Drag) {
       this.mode = Mode.None

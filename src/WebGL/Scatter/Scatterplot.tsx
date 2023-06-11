@@ -3,6 +3,7 @@ import { SpatialModel } from '../../Store/ModelSlice';
 import { useVisContext } from '../VisualizationContext';
 import * as React from 'react';
 import { ScatterTrace } from './ScatterTrace';
+import { Scatter } from '../../Scatter/Scatter';
 
 type ColumnTemp = {
   values: number[];
@@ -25,25 +26,27 @@ export function Scatterplot({
   globalConfig = { pointSize: 16 },
   hover,
   interpolate = true,
+  shape,
 }: {
   n: number;
   x: number[];
   x2: string | ColumnTemp;
   y: number[];
   model: SpatialModel;
-  color?: string | string[];
+  color?: number[];
   size?: number[];
   opacity?: number[];
   globalConfig?: GlobalConfig;
   hover: number;
   interpolate: boolean;
+  shape?: number[];
 }) {
-  const [myRenderer, setRenderer] = useState<ScatterTrace>();
+  const [myRenderer, setRenderer] = useState<Scatter>();
 
   const [timestamp, setTimestamp] = React.useState(0);
+  const ref = React.useRef<HTMLCanvasElement>();
 
   const {
-    ref,
     width,
     height,
     registerRenderFunction,
@@ -53,45 +56,22 @@ export function Scatterplot({
     zoom,
   } = useVisContext();
 
-  const render = (renderer: THREE.WebGLRenderer) => {
-    if (!myRenderer) {
-      return;
-    }
-
-    myRenderer.render(renderer, 0, 0);
-  };
-
-  const renderRef = React.useRef(render);
-  renderRef.current = render;
-
   useEffect(() => {
-    myRenderer?.setColor(color);
+    myRenderer?.setColor(new Float32Array(color));
   }, [color, myRenderer]);
 
   useEffect(() => {
-    registerRenderFunction((renderer) => {
-      renderRef.current(renderer);
-    });
-    setTimeout(() => requestFrame(), 500);
-  }, []);
+    myRenderer?.setShape(new Float32Array(shape));
+  }, [shape, myRenderer]);
 
   useEffect(() => {
-    myRenderer?.setHover(hover);
+    myRenderer?.setHover([hover]);
   }, [hover, myRenderer]);
 
   useEffect(() => {
     if (!myRenderer) return;
 
-    myRenderer.updateBounds(
-      scaledXDomain.domain(),
-      scaledYDomain.domain(),
-      zoom,
-      width,
-      height,
-      model.bounds
-    );
-    // 600 / 10 -> 60
-    requestFrame();
+    myRenderer.updateBounds(scaledXDomain.domain(), scaledYDomain.domain());
   }, [
     scaledXDomain,
     scaledYDomain,
@@ -104,32 +84,73 @@ export function Scatterplot({
 
   useEffect(() => {
     if (myRenderer) {
-      myRenderer.setX(x);
-      myRenderer.setY(y);
+      //myRenderer.setX(x, interpolate);
+      //myRenderer.setY(y, interpolate);
 
+      const xy = new Float32Array(
+        Array.from({ length: n * 2 }).map(() => -2 + Math.random() * 4)
+      );
+      for (let i = 0; i < n; i++) {
+        xy[i * 2] = x[i];
+        xy[i * 2 + 1] = y[i];
+      }
+      myRenderer.setXY(xy);
       requestFrame();
     }
-  }, [x, y, myRenderer]);
+  }, [x, y, myRenderer, n, requestFrame]);
 
   useEffect(() => {
-    if (!model) return;
+    if (width !== 0 && height !== 0) {
+      ref.current.width = width * window.devicePixelRatio;
+      ref.current.height = height * window.devicePixelRatio;
+    }
+  }, [width, height]);
 
-    const rend = new ScatterTrace(n);
+  useEffect(() => {
+    let active = true;
 
-    rend.onDirty = () => {
-      requestFrame();
-    };
+    const scatter = new Scatter(n, ref.current.getContext('webgpu'), {
+      background: [1, 1, 1, 1],
+    });
+    const N = n;
+    
+    scatter.requestDevice().then(() => {
+      scatter.createBuffers().then(() => {
+        scatter.setXY(
+          new Float32Array(
+            Array.from({ length: N * 2 }).map(() => -2 + Math.random() * 4)
+          )
+        );
+        scatter.setColor(
+          new Float32Array(
+            Array.from({ length: N })
+              .map(() => [Math.random(), Math.random(), Math.random(), 1])
+              .flat()
+          )
+        );
+        scatter.frame();
 
-    rend.initialize({
-      x,
-      y,
-      bounds: model.bounds,
+        if (active) {
+          setRenderer(scatter);
+        }
+      });
     });
 
-    setRenderer(rend);
-
-    requestFrame();
+    return () => {
+      active = false;
+      scatter.dispose();
+    };
   }, [setRenderer, ref, n]);
 
-  return null;
+  return (
+    <canvas
+      ref={ref}
+      style={{
+        position: 'absolute',
+        width: '100%',
+        height: '100%',
+        pointerEvents: 'none',
+      }}
+    />
+  );
 }

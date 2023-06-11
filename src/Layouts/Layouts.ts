@@ -43,20 +43,20 @@ export function runLayout<T>(params: T, worker: Worker) {
 export function runCondenseLayout(n: number, area: IRectangle) {
   return runLayout(
     { n, area },
-    new Worker(new URL('../Workers/condense.worker.ts', import.meta.url))
+    new Worker(new URL('../Workers/condense.worker.ts', import.meta.url), {type: 'module'})
   );
 }
 
 export function runGroupLayout(X, area: IRectangle, feature: string) {
   return runLayout(
     { X, area, feature },
-    new Worker(new URL('../Workers/group.worker.ts', import.meta.url))
+    new Worker(new URL('../Workers/group.worker.ts', import.meta.url), {type: 'module'})
   );
 }
 
-export function runUMAPLayout(X, N, D, area) {
+export function runUMAPLayout({ X, N, D, area, axis, xLayout, yLayout }) {
   return runLayout(
-    { X, N, D, area },
-    new Worker(new URL('../Workers/umap.worker.ts', import.meta.url))
+    { X, N, D, area, axis, xLayout, yLayout },
+    new Worker(new URL('../Workers/umap.worker.ts', import.meta.url), {type: 'module'})
   );
 }

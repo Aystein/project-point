@@ -46,9 +46,10 @@ function MainView({
             x={x}
             x2=""
             y={y}
-            color={theme.colors.cyan[7]}
+            color={view.color}
             hover={hover}
-            interpolate={true}
+            interpolate={view.interpolate}
+            shape={view.shape}
           />
 
           <ZoomBehavior />

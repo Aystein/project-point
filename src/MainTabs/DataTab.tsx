@@ -11,6 +11,7 @@ import {
   Menu,
   rem,
   Stack,
+  Text
 } from '@mantine/core';
 import * as React from 'react';
 import { selectDatasets, useAppDispatch, useAppSelector } from '../Store/hooks';
@@ -78,9 +79,9 @@ export function DataTab() {
 function Statistics() {
   const { rows, columns } = useAppSelector((state) => state.data);
   return (
-    <div>
+    <Text>
       {rows.length} rows and {columns.length} columns
-    </div>
+    </Text>
   );
 }
 
@@ -97,7 +98,7 @@ function DatasetList() {
       <Stack spacing={'sm'}>
         {datasets.map((entry) => {
           return (
-            <Card shadow="sm" radius="md" key={entry.name}>
+            <Card shadow="sm" radius="md" key={entry.name} withBorder>
               <Card.Section withBorder inheritPadding py="xs">
                 <Group position="apart">
                   <Anchor weight={500} onClick={() => handleLoad(entry.name)}>

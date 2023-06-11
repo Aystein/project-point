@@ -12,6 +12,8 @@ import { VectorLike } from '../Interfaces';
 import { encode } from '../DataLoading/Encode';
 import { IRectangle } from '../WebGL/Math/Rectangle';
 import { runUMAPLayout } from '../Layouts/Layouts';
+import { useAppSelector } from '../Store/hooks';
+import { EntityId } from '@reduxjs/toolkit';
 
 export function TSNEModal({
   context,
@@ -19,10 +21,11 @@ export function TSNEModal({
   innerProps,
 }: ContextModalProps<{
   onFinish: (Y: VectorLike[]) => void;
-  filter: number[];
-  area: IRectangle;
+  id: EntityId;
+  axis: 'x' | 'y' | 'xy';
 }>) {
   const data = useSelector(Selectors.data);
+  const model = useAppSelector((state) => state.views.workspace.children?.find((e) => e.id === innerProps.id))
 
   const form = useForm({
     initialValues: {
@@ -56,9 +59,17 @@ export function TSNEModal({
   const run = async () => {
     const result = Array.from(selectedRows).map((value) => rows[value].name);
 
-    const { X, N, D } = encode(data, innerProps.filter, result);
+    const { X, N, D } = encode(data, model.filter, result);
 
-    const Y = await runUMAPLayout(X, N, D, innerProps.area);
+    const Y = await runUMAPLayout({
+      X,
+      N,
+      D,
+      area: model.area,
+      axis: innerProps.axis,
+      xLayout: model.spatial.map((x) => x.x),
+      yLayout: model.spatial.map((x) => x.y),
+    });
     innerProps.onFinish(Y);
   };
 

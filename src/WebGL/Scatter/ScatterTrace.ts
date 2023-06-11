@@ -301,7 +301,7 @@ export class ScatterTrace {
     this.markAsDirty()
   }
 
-  setX(value: number | number[]) {
+  setX(value: number | number[], interpolate = true) {
     const attribute = this.positionAttribute
 
     for (let i = 0; i < this.n; i++) {
@@ -318,8 +318,13 @@ export class ScatterTrace {
       }
     }
 
-    this.initInterpolation()
+    if (interpolate) {
+      this.initInterpolation()
+    }
+    
     this.positionAttribute.needsUpdate = true
+    this.position2Attribute.needsUpdate = true
+
     this.markAsDirty()
   }
 
@@ -344,7 +349,7 @@ export class ScatterTrace {
     this.markAsDirty()
   }
 
-  setY(value: number | number[]) {
+  setY(value: number | number[], interpolate = true) {
     const attribute = this.positionAttribute
 
     for (let i = 0; i < this.n; i++) {
@@ -361,8 +366,13 @@ export class ScatterTrace {
       }
     }
 
-    this.initInterpolation()
+    if (interpolate) {
+      this.initInterpolation()
+    }
+
     this.positionAttribute.needsUpdate = true
+    this.position2Attribute.needsUpdate = true
+    
     this.markAsDirty()
   }
 

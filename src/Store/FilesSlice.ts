@@ -124,10 +124,6 @@ export const loadDataset = createAsyncThunk(
     const file = await fileHandle.getFile();
     const reader = new FileReader();
 
-    // read meta
-    const meta = file.slice(0, 100);
-    console.log(await meta.text());
-
     reader.onload = async () => {
       const rows = await parseCSV(reader.result.toString());
       dispatch(loadDatasetGlobal(rows));

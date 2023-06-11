@@ -10,7 +10,8 @@ import { SpatialModel } from './ModelSlice';
 import { VectorLike } from '../Interfaces';
 import { getBounds } from '../Util';
 import { Rectangle } from '../WebGL/Math/Rectangle';
-import { scaleLinear } from 'd3-scale';
+import { scaleLinear, scaleOrdinal } from 'd3-scale';
+import { schemeCategory10 } from 'd3-scale-chromatic';
 
 export interface ViewsState {
   workspace: SpatialModel;
@@ -124,6 +125,38 @@ export const viewslice = createSlice({
       state.workspace.interpolate = true;
       state.workspace.flatSpatial = flatSpatial;
     },
+
+    setColor: (
+      state,
+      action: PayloadAction<{ id: EntityId; colors: number[] }>
+    ) => {
+      const { colors, id } = action.payload;
+
+      const model = state.workspace.children.find((value) => value.id === id);
+      model.color = Array.from({length: model.filter.length}).map(() => [1, 0, 0, 1]).flat()
+
+      
+
+      model.filter.forEach((i) => {
+        state.workspace.color[i * 4] = colors[i * 4 + 0]
+        state.workspace.color[i * 4 + 1] = colors[i * 4 + 1]
+        state.workspace.color[i * 4 + 2] = colors[i * 4 + 2]
+        state.workspace.color[i * 4 + 3] = colors[i * 4 + 3]
+      })
+    },
+    setShape: (
+      state,
+      action: PayloadAction<{ id: EntityId; shape: number[] }>
+    ) => {
+      const { shape, id } = action.payload;
+
+      const model = state.workspace.children.find((value) => value.id === id);
+      model.shape = shape
+
+      model.filter.forEach((i) => {
+        state.workspace.shape[i] = shape[i]
+      })
+    },
     addSubEmbedding: (
       state,
       action: PayloadAction<{
@@ -160,6 +193,8 @@ export const {
   updateEmbedding,
   removeEmbedding,
   translateArea,
+  setColor,
+  setShape
 } = viewslice.actions;
 
 export default viewslice.reducer;

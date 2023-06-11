@@ -1,28 +1,24 @@
 import React from 'react';
-import { Autocomplete, Button, Group, NumberInput, Select, Stack } from '@mantine/core';
+import { Button, Select } from '@mantine/core';
 import { ContextModalProps } from '@mantine/modals';
 import { useSelector } from 'react-redux';
 import { Selectors } from '../Store/Selectors';
 import { useForm } from '@mantine/form';
-import { groupBy as rowGrouper } from 'lodash';
-import 'react-data-grid/lib/styles.css';
-import DataGrid, { SelectColumn } from 'react-data-grid';
 import { VectorLike } from '../Interfaces';
-import { encode } from '../DataLoading/Encode';
 import { IRectangle } from '../WebGL/Math/Rectangle';
 import { runGroupLayout } from '../Layouts/Layouts';
 
-export function GroupByModal({
+export function ColorByModal({
   context,
   id,
   innerProps,
 }: ContextModalProps<{
-  onFinish: (Y: VectorLike[]) => void;
+  onFinish: (feature: string) => void;
   X: unknown[];
   area: IRectangle;
 }>) {
   const data = useSelector(Selectors.data);
-  console.log(data);
+
   const options = React.useMemo(() => {
     return data.columns.map((column) => column.key);
   }, [data]);
@@ -32,13 +28,11 @@ export function GroupByModal({
       feature: '',
     },
 
-    validate: {
-    },
+    validate: {},
   });
 
   const run = async (feature) => {
-    const Y = await runGroupLayout(innerProps.X, innerProps.area, feature);
-    innerProps.onFinish(Y);
+    innerProps.onFinish(feature)
   };
 
   return (

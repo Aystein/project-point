@@ -34,6 +34,12 @@ export interface SpatialModel extends BaseModel {
   area: IRectangle;
 
   interpolate: boolean;
+
+  x?: number[]
+  y?: number[]
+
+  color?: number[]
+  shape?: number[]
 }
 
 export type Model = SpatialModel;
