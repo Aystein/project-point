@@ -2,6 +2,7 @@ import { Notifications } from '@mantine/notifications';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { Provider } from 'react-redux';
+import { Provider as JotaiProvider } from 'jotai';
 import { AntApp } from './AntApp';
 import { store } from './Store/Store';
 import { ModalsProvider } from '@mantine/modals';
@@ -23,29 +24,35 @@ declare module '@mantine/modals' {
 }
 
 createRoot(document.getElementById('root')).render(
-  <Provider store={store}>
-    <MantineProvider
-      theme={{
-        globalStyles: (theme) => ({
-          body: {
-            ...theme.fn.fontStyles(),
-            backgroundColor:
-              theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.white,
-            color:
-              theme.colorScheme === 'dark' ? theme.colors.dark[0] : theme.black,
-            lineHeight: theme.lineHeight,
-            padding: 0,
-            margin: 0,
-          },
-        }),
-      }}
-    >
-      <ModalsProvider modals={modals}>
-        <Notifications />
-        <AntApp />
-      </ModalsProvider>
-    </MantineProvider>
-  </Provider>
+  <JotaiProvider>
+    <Provider store={store}>
+      <MantineProvider
+        theme={{
+          globalStyles: (theme) => ({
+            body: {
+              ...theme.fn.fontStyles(),
+              backgroundColor:
+                theme.colorScheme === 'dark'
+                  ? theme.colors.dark[7]
+                  : theme.white,
+              color:
+                theme.colorScheme === 'dark'
+                  ? theme.colors.dark[0]
+                  : theme.black,
+              lineHeight: theme.lineHeight,
+              padding: 0,
+              margin: 0,
+            },
+          }),
+        }}
+      >
+        <ModalsProvider modals={modals}>
+          <Notifications />
+          <AntApp />
+        </ModalsProvider>
+      </MantineProvider>
+    </Provider>
+  </JotaiProvider>
 );
 
 export * from './WebGL';

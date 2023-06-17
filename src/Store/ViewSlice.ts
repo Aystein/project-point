@@ -135,13 +135,11 @@ export const viewslice = createSlice({
       const model = state.workspace.children.find((value) => value.id === id);
       model.color = Array.from({length: model.filter.length}).map(() => [1, 0, 0, 1]).flat()
 
-      
-
-      model.filter.forEach((i) => {
-        state.workspace.color[i * 4] = colors[i * 4 + 0]
-        state.workspace.color[i * 4 + 1] = colors[i * 4 + 1]
-        state.workspace.color[i * 4 + 2] = colors[i * 4 + 2]
-        state.workspace.color[i * 4 + 3] = colors[i * 4 + 3]
+      model.filter.forEach((index, j) => {
+        state.workspace.color[index * 4] = colors[j * 4 + 0]
+        state.workspace.color[index * 4 + 1] = colors[j * 4 + 1]
+        state.workspace.color[index * 4 + 2] = colors[j * 4 + 2]
+        state.workspace.color[index * 4 + 3] = colors[j * 4 + 3]
       })
     },
     setShape: (

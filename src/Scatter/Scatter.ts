@@ -2,6 +2,9 @@ import wgsl from './Scatter.render.wgsl?raw';
 import computewgsl from './Scatter.compute.wgsl?raw';
 import image from '../Assets/square_white.png';
 import { createQuadBuffer, requestDevice } from './Util';
+import { YBuffer, createYBuffer } from './Test/YBuffer';
+import { defaultAlphaBlend } from './Test/Blending';
+import { YBufferGroup, createYBufferGroup } from './Test/YBufferGroup';
 
 export interface ScatterConfig {
   background: GPUColor;
@@ -69,15 +72,17 @@ export class Scatter {
 
   computeBindgroup: GPUBindGroup;
 
+  bufGroup: YBufferGroup
+
   buffers: {
-    color: GPUBuffer;
-    vertex: GPUBuffer;
-    particle: GPUBuffer;
-    shape: GPUBuffer;
+    color: YBuffer;
+    vertex: YBuffer;
+    particle: YBuffer;
+    shape: YBuffer;
 
     targetPosition: GPUBuffer;
     uniform: GPUBuffer;
-    hover: GPUBuffer;
+    hover: YBuffer;
   };
 
   requested = false;
@@ -132,7 +137,7 @@ export class Scatter {
       buffers: { color },
     } = this;
 
-    device.queue.writeBuffer(color, 0, data);
+    device.queue.writeBuffer(color._buffer, 0, data);
   }
 
   setShape(data: Float32Array) {
@@ -141,7 +146,7 @@ export class Scatter {
       buffers: { shape },
     } = this;
 
-    device.queue.writeBuffer(shape, 0, data);
+    device.queue.writeBuffer(shape._buffer, 0, data);
   }
 
   setHover(indices: number[]) {
@@ -157,7 +162,7 @@ export class Scatter {
       data[i] = 1;
     });
 
-    device.queue.writeBuffer(hover, 0, data);
+    device.queue.writeBuffer(hover._buffer, 0, data);
   }
 
   createComputePipeline() {
@@ -174,12 +179,11 @@ export class Scatter {
     });
 
     const computeBindgroup = device.createBindGroup({
-      label: 'test bg',
       layout: pipeline.getBindGroupLayout(0),
       entries: [
         {
           binding: 0,
-          resource: { buffer: this.buffers.particle },
+          resource: { buffer: this.buffers.particle._buffer },
         },
         {
           binding: 1,
@@ -216,28 +220,57 @@ export class Scatter {
 
     // Create vertex buffer
     const vertices = createQuadBuffer();
-    const vertexBuffer = device.createBuffer({
-      size: vertices.byteLength,
-      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-    });
-    device.queue.writeBuffer(vertexBuffer, /*bufferOffset=*/ 0, vertices);
 
-    const shape = device.createBuffer({
-      size: this.N * 4,
-      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-    });
-
-    const particleBuffer = device.createBuffer({
-      size: 8 * this.N,
+    const vertexBuffer = createYBuffer({
+      device,
+      layout: {
+        0: 'float32x2',
+        1: 'float32x2',
+      },
+      n: this.N,
       usage:
         GPUBufferUsage.VERTEX |
         GPUBufferUsage.STORAGE |
         GPUBufferUsage.COPY_DST,
+      stepMode: 'vertex',
+    });
+    device.queue.writeBuffer(
+      vertexBuffer._buffer,
+      /*bufferOffset=*/ 0,
+      vertices
+    );
+
+    const particleBuffer = createYBuffer({
+      device,
+      layout: {
+        2: 'float32x2',
+      },
+      n: this.N,
+      usage:
+        GPUBufferUsage.VERTEX |
+        GPUBufferUsage.STORAGE |
+        GPUBufferUsage.COPY_DST,
+      stepMode: 'instance',
     });
 
-    const hover = device.createBuffer({
-      size: 4 * this.N,
+    const shape = createYBuffer({
+      device,
+      layout: {
+        4: 'float32',
+      },
+      n: this.N,
       usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+      stepMode: 'instance',
+    });
+
+    const hover = createYBuffer({
+      device,
+      layout: {
+        5: 'float32',
+      },
+      n: this.N,
+      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+      stepMode: 'instance',
     });
 
     const targetPosition = device.createBuffer({
@@ -248,93 +281,32 @@ export class Scatter {
         GPUBufferUsage.COPY_DST,
     });
 
-    const colorBuffer = device.createBuffer({
-      size: 16 * this.N,
+    const colorBuffer = createYBuffer({
+      device,
+      layout: {
+        3: 'float32x4',
+      },
+      n: this.N,
       usage:
         GPUBufferUsage.VERTEX |
         GPUBufferUsage.STORAGE |
         GPUBufferUsage.COPY_DST,
+      stepMode: 'instance',
     });
-
-    /**device.queue.writeBuffer(
-      particleBuffer,
-      0,
-      new Float32Array([0.2, 0.2, 0, 0, 0, 0])
-    );**/
 
     // Create render pipeline
     const cellShaderModule = device.createShaderModule({
-      label: 'Cell shader',
       code: wgsl,
     });
 
+    this.bufGroup = createYBufferGroup(vertexBuffer, particleBuffer, colorBuffer, shape, hover)
+
     const cellPipeline = device.createRenderPipeline({
-      label: 'Cell pipeline',
       layout: 'auto',
       vertex: {
         module: cellShaderModule,
         entryPoint: 'vertexMain',
-        buffers: [
-          {
-            arrayStride: 16,
-            attributes: [
-              {
-                format: 'float32x2',
-                offset: 0,
-                shaderLocation: 0, // Position, see vertex shader
-              },
-              {
-                format: 'float32x2',
-                offset: 8,
-                shaderLocation: 1,
-              },
-            ],
-          },
-          {
-            arrayStride: 8,
-            stepMode: 'instance',
-            attributes: [
-              {
-                format: 'float32x2',
-                offset: 0,
-                shaderLocation: 2,
-              },
-            ],
-          },
-          {
-            arrayStride: 16,
-            stepMode: 'instance',
-            attributes: [
-              {
-                format: 'float32x4',
-                offset: 0,
-                shaderLocation: 3,
-              },
-            ],
-          },
-          {
-            arrayStride: 4,
-            stepMode: 'instance',
-            attributes: [
-              {
-                format: 'float32',
-                offset: 0,
-                shaderLocation: 4,
-              },
-            ],
-          },
-          {
-            arrayStride: 4,
-            stepMode: 'instance',
-            attributes: [
-              {
-                format: 'float32',
-                offset: 0,
-                shaderLocation: 5,
-              },
-            ],
-          },
-        ],
+        buffers: this.bufGroup.layout,
       },
       fragment: {
         module: cellShaderModule,
@@ -342,18 +314,7 @@ export class Scatter {
         targets: [
           {
             format: canvasFormat,
-            blend: {
-              color: {
-                srcFactor: 'src-alpha',
-                dstFactor: 'one-minus-src-alpha',
-                operation: 'add',
-              },
-              alpha: {
-                srcFactor: 'one',
-                dstFactor: 'one',
-                operation: 'add',
-              },
-            },
+            blend: defaultAlphaBlend(),
           },
         ],
       },
@@ -361,7 +322,6 @@ export class Scatter {
 
     // Create bind group
     const bindGroup = device.createBindGroup({
-      label: 'Cell renderer bind group',
       layout: cellPipeline.getBindGroupLayout(0),
       entries: [
         {
@@ -372,7 +332,6 @@ export class Scatter {
     });
 
     const bindGroup2 = device.createBindGroup({
-      label: 'Cell renderer bind',
       layout: cellPipeline.getBindGroupLayout(1),
       entries: [
         {
@@ -417,7 +376,6 @@ export class Scatter {
       context,
       cellPipeline,
       bindGroup,
-      buffers: { particle, color, vertex, shape, hover },
     } = this;
 
     if (this.requested) {
@@ -450,11 +408,9 @@ export class Scatter {
       });
 
       pass.setPipeline(cellPipeline);
-      pass.setVertexBuffer(0, vertex);
-      pass.setVertexBuffer(1, particle);
-      pass.setVertexBuffer(2, color);
-      pass.setVertexBuffer(3, shape);
-      pass.setVertexBuffer(4, hover);
+
+      this.bufGroup.bind(pass)
+
       pass.setBindGroup(0, bindGroup);
       pass.setBindGroup(1, this.bindGroup2);
 

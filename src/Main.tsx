@@ -7,10 +7,12 @@ import { ZoomBehavior } from './WebGL/Interaction/Behavior/ZoomBehavior';
 import { Scatterplot } from './WebGL/Scatter/Scatterplot';
 import { VisProvider } from './WebGL/VisualizationContext';
 import { BoxBehavior } from './WebGL/Interaction/Behavior/BoxBehavior';
-import {  useAppSelector } from './Store/hooks';
+import { useAppSelector } from './Store/hooks';
 import { useMantineTheme } from '@mantine/core';
 import { HoverBehavior } from './WebGL/Interaction/Behavior/HoverBehavior';
 import { SpatialModel } from './Store/ModelSlice';
+import { useHotkeys } from '@mantine/hooks';
+import { LassoSelectionPlugin } from './WebGL/Interaction/Behavior/LassoBehavior';
 
 function MainView({
   data,
@@ -24,6 +26,10 @@ function MainView({
   setHover: (index: number) => void;
 }) {
   const theme = useMantineTheme();
+
+  const handleLasso = () => {};
+
+  useHotkeys([['ctrl+S', handleLasso]]);
 
   const [x, y] = React.useMemo(() => {
     if (!view) {
@@ -56,6 +62,7 @@ function MainView({
           <PanBehavior />
           <BoxBehavior parentModel={view} />
           <HoverBehavior positions={view?.flatSpatial} onHover={setHover} />
+          <LassoSelectionPlugin />
         </VisProvider>
       );
   }

@@ -10,12 +10,17 @@ import {
   Header,
   Footer,
   Stack,
+  Kbd,
+  Button,
 } from '@mantine/core';
 import { IconHome2 } from '@tabler/icons';
 import { DataTab } from './MainTabs/DataTab';
 import { Main } from './Main';
 import { useAppDispatch } from './Store/hooks';
 import { initializeDatasets } from './Store/FilesSlice';
+import { atom, useAtom } from 'jotai';
+
+
 
 const useStyles = createStyles((theme) => ({
   wrapper: {
@@ -97,7 +102,9 @@ export function AntApp() {
           <div
             style={{ display: 'flex', alignItems: 'center', height: '100%' }}
           >
-            <Text>Ant Application</Text>
+            <Kbd mr={5}>Ctrl</Kbd>
+            <span>+</span>
+            <Kbd ml={5}>S</Kbd>
           </div>
         </Header>
       }

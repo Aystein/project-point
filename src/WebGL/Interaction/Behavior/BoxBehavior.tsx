@@ -159,7 +159,7 @@ export function BoxBehavior({ parentModel }: { parentModel: SpatialModel }) {
   );
 }
 
-function DragCover({
+export function DragCover({
   onMove,
   style,
   icon,
@@ -235,6 +235,7 @@ function SingleBox({
               let red = parseInt(hex.substring(1, 3), 16);
               let green = parseInt(hex.substring(3, 5), 16);
               let blue = parseInt(hex.substring(5, 7), 16);
+
               return [red / 255, green / 255, blue / 255, 1];
             })
             .flat(),
