@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { DataState } from './Store/DataSlice.';
 import { Selectors } from './Store/Selectors';
 import { PanBehavior } from './WebGL/Interaction/Behavior/PanBehavior';
@@ -13,19 +13,15 @@ import { HoverBehavior } from './WebGL/Interaction/Behavior/HoverBehavior';
 import { SpatialModel } from './Store/ModelSlice';
 import { useHotkeys } from '@mantine/hooks';
 import { LassoSelectionPlugin } from './WebGL/Interaction/Behavior/LassoBehavior';
+import { setHover } from './Store/ViewSlice';
 
-function MainView({
-  data,
-  view,
-  hover,
-  setHover,
-}: {
-  data: DataState;
-  view: SpatialModel;
-  hover: number;
-  setHover: (index: number) => void;
-}) {
-  const theme = useMantineTheme();
+function MainView({ data, view }: { data: DataState; view: SpatialModel }) {
+  const dispatch = useDispatch();
+  const hover = useAppSelector((state) => state.views.hover);
+
+  const handleHover = (index: number) => {
+    dispatch(setHover([index]));
+  };
 
   const handleLasso = () => {};
 
@@ -61,7 +57,7 @@ function MainView({
           <ZoomBehavior />
           <PanBehavior />
           <BoxBehavior parentModel={view} />
-          <HoverBehavior positions={view?.flatSpatial} onHover={setHover} />
+          <HoverBehavior positions={view?.flatSpatial} onHover={handleHover} />
           <LassoSelectionPlugin />
         </VisProvider>
       );
@@ -71,19 +67,8 @@ function MainView({
 export function Main() {
   const data = useSelector(Selectors.data);
   const view = useAppSelector((state) => state.views.workspace);
-  const [hover, setHover] = React.useState<number>(null);
 
   return (
-    <>
-      {view ? (
-        <MainView
-          key={view.id}
-          data={data}
-          view={view}
-          hover={hover}
-          setHover={setHover}
-        />
-      ) : null}
-    </>
+    <>{view ? <MainView key={view.id} data={data} view={view} /> : null}</>
   );
 }

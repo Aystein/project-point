@@ -10,11 +10,13 @@ import viewReducer from './ViewSlice';
 import { datasetReducer } from './FilesSlice';
 import { DataType } from '../Interfaces';
 import isNumber from 'lodash/isNumber';
+import { clusterReducer } from './ClusterSlice';
 
 const combined = combineReducers({
   data: dataReducer,
   views: viewReducer,
   datasets: datasetReducer,
+  clusters: clusterReducer
 });
 
 export type RootState = ReturnType<typeof combined>;
@@ -99,6 +101,8 @@ const reducer = createReducer<RootState>(undefined, (builder) => {
       x: -1 + Math.random() * 2,
       y: -1 + Math.random() * 2,
     }));
+
+    console.log(columns)
 
     state.views.workspace = {
       oid: 'spatial',

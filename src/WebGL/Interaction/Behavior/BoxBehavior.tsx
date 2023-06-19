@@ -29,7 +29,7 @@ import {
 import { SpatialModel } from '../../../Store/ModelSlice';
 import { openContextModal } from '@mantine/modals';
 import { useDispatch } from 'react-redux';
-import { VectorLike } from '../../../Interfaces';
+import { DataType, VectorLike } from '../../../Interfaces';
 import {
   addSubEmbedding,
   removeEmbedding,
@@ -40,10 +40,11 @@ import {
 } from '../../../Store/ViewSlice';
 import { IconX } from '@tabler/icons-react';
 import { useMouseEvent } from './useMouseDrag';
-import { runCondenseLayout } from '../../../Layouts/Layouts';
+import { runCondenseLayout, runForceLayout } from '../../../Layouts/Layouts';
 import { useAppSelector } from '../../../Store/hooks';
 import { schemeCategory10 } from 'd3-scale-chromatic';
-import { scaleOrdinal } from 'd3-scale';
+import { scaleLinear, scaleOrdinal } from 'd3-scale';
+import { getMinMax } from '../../../Util';
 
 export function BoxBehavior({ parentModel }: { parentModel: SpatialModel }) {
   const { vis, scaledXDomain, scaledYDomain } = useVisContext();
@@ -247,8 +248,6 @@ function SingleBox({
       modal: 'colorby',
       title: 'Color by',
       innerProps: {
-        X: parentModel.filter.map((i) => data[i]),
-        area,
         onFinish,
       },
     });
@@ -275,8 +274,6 @@ function SingleBox({
       modal: 'colorby',
       title: 'Color by',
       innerProps: {
-        X: parentModel.filter.map((i) => data[i]),
-        area,
         onFinish,
       },
     });
@@ -293,6 +290,46 @@ function SingleBox({
         X: parentModel.filter.map((i) => data[i]),
         area,
         onFinish,
+      },
+    });
+  };
+
+  const handleLinearScale = async (axis: 'x' | 'y') => {
+    const onFinish = async (feature: string) => {
+      const X = parentModel.filter
+        .map((i) => data[i])
+        .map((row) => row[feature]);
+
+      const [min, max] = getMinMax(X);
+
+      let scale = scaleLinear().domain([min, max]).range([0, 1]);
+
+      const mapped = X.map((value) => scale(value));
+
+      const Y = await runForceLayout({
+        N: parentModel.filter.length,
+        area,
+        X,
+        axis,
+        xLayout:
+          axis === 'x'
+            ? mapped
+            : parentModel.x ?? parentModel.spatial.map((vector) => vector.x),
+        yLayout:
+          axis === 'y'
+            ? mapped
+            : parentModel.y ?? parentModel.spatial.map((vector) => vector.y),
+      });
+
+      dispatch(updateEmbedding({ id: parentModel.id, Y }));
+    };
+
+    openContextModal({
+      modal: 'colorby',
+      title: 'Linear scale',
+      innerProps: {
+        onFinish,
+        dataType: DataType.Numeric,
       },
     });
   };
@@ -403,6 +440,9 @@ function SingleBox({
           <Menu.Dropdown style={{ pointerEvents: 'initial' }}>
             <Menu.Item onClick={handleCondense}>Condense</Menu.Item>
             <Menu.Item onClick={handleGroupBy}>Group by</Menu.Item>
+            <Menu.Item onClick={() => handleLinearScale('x')}>
+              Linear scale
+            </Menu.Item>
             <Menu.Item
               onClick={() => {
                 openContextModal({
@@ -432,6 +472,9 @@ function SingleBox({
           <Menu.Dropdown style={{ pointerEvents: 'initial' }}>
             <Menu.Item onClick={handleCondense}>Condense</Menu.Item>
             <Menu.Item onClick={handleGroupBy}>Group by</Menu.Item>
+            <Menu.Item onClick={() => handleLinearScale('y')}>
+              Linear scale
+            </Menu.Item>
             <Menu.Item
               onClick={() => {
                 openContextModal({

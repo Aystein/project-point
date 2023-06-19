@@ -37,7 +37,7 @@ export function Scatterplot({
   size?: number[];
   opacity?: number[];
   globalConfig?: GlobalConfig;
-  hover: number;
+  hover: number[];
   interpolate: boolean;
   shape?: number[];
 }) {
@@ -65,7 +65,7 @@ export function Scatterplot({
   }, [shape, myRenderer]);
 
   useEffect(() => {
-    myRenderer?.setHover([hover]);
+    myRenderer?.setHover(hover ?? []);
   }, [hover, myRenderer]);
 
   useEffect(() => {
@@ -113,7 +113,7 @@ export function Scatterplot({
       background: [1, 1, 1, 1],
     });
     const N = n;
-    
+
     scatter.requestDevice().then(() => {
       scatter.createBuffers().then(() => {
         scatter.setXY(

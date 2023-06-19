@@ -4,24 +4,23 @@ import { ContextModalProps } from '@mantine/modals';
 import { useSelector } from 'react-redux';
 import { Selectors } from '../Store/Selectors';
 import { useForm } from '@mantine/form';
-import { VectorLike } from '../Interfaces';
-import { IRectangle } from '../WebGL/Math/Rectangle';
-import { runGroupLayout } from '../Layouts/Layouts';
+import { DataType } from '../Interfaces';
 
 export function ColorByModal({
   context,
   id,
-  innerProps,
+  innerProps: { dataType, onFinish },
 }: ContextModalProps<{
   onFinish: (feature: string) => void;
-  X: unknown[];
-  area: IRectangle;
+  dataType?: DataType;
 }>) {
   const data = useSelector(Selectors.data);
 
   const options = React.useMemo(() => {
-    return data.columns.map((column) => column.key);
-  }, [data]);
+    return data.columns
+      .filter((column) => !dataType || column.type === dataType)
+      .map((column) => column.key);
+  }, [data, dataType]);
 
   const form = useForm({
     initialValues: {
@@ -32,7 +31,7 @@ export function ColorByModal({
   });
 
   const run = async (feature) => {
-    innerProps.onFinish(feature)
+    onFinish(feature);
   };
 
   return (

@@ -1,24 +1,21 @@
-import {
-  createEntityAdapter,
-  createSlice,
-  EntityId,
-  EntityState,
-  nanoid,
-} from '@reduxjs/toolkit';
+import { createSlice, EntityId, nanoid } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { SpatialModel } from './ModelSlice';
 import { VectorLike } from '../Interfaces';
 import { getBounds } from '../Util';
 import { Rectangle } from '../WebGL/Math/Rectangle';
-import { scaleLinear, scaleOrdinal } from 'd3-scale';
-import { schemeCategory10 } from 'd3-scale-chromatic';
+import { scaleLinear } from 'd3-scale';
 
 export interface ViewsState {
   workspace: SpatialModel;
+  hover: number[];
+  selection: number[];
 }
 
 const initialState: ViewsState = {
   workspace: undefined,
+  hover: undefined,
+  selection: undefined,
 };
 
 export const viewslice = createSlice({
@@ -125,7 +122,9 @@ export const viewslice = createSlice({
       state.workspace.interpolate = true;
       state.workspace.flatSpatial = flatSpatial;
     },
-
+    setHover: (state, action: PayloadAction<number[]>) => {
+      state.hover = action.payload;
+    },
     setColor: (
       state,
       action: PayloadAction<{ id: EntityId; colors: number[] }>
@@ -133,14 +132,16 @@ export const viewslice = createSlice({
       const { colors, id } = action.payload;
 
       const model = state.workspace.children.find((value) => value.id === id);
-      model.color = Array.from({length: model.filter.length}).map(() => [1, 0, 0, 1]).flat()
+      model.color = Array.from({ length: model.filter.length })
+        .map(() => [1, 0, 0, 1])
+        .flat();
 
       model.filter.forEach((index, j) => {
-        state.workspace.color[index * 4] = colors[j * 4 + 0]
-        state.workspace.color[index * 4 + 1] = colors[j * 4 + 1]
-        state.workspace.color[index * 4 + 2] = colors[j * 4 + 2]
-        state.workspace.color[index * 4 + 3] = colors[j * 4 + 3]
-      })
+        state.workspace.color[index * 4] = colors[j * 4 + 0];
+        state.workspace.color[index * 4 + 1] = colors[j * 4 + 1];
+        state.workspace.color[index * 4 + 2] = colors[j * 4 + 2];
+        state.workspace.color[index * 4 + 3] = colors[j * 4 + 3];
+      });
     },
     setShape: (
       state,
@@ -149,11 +150,11 @@ export const viewslice = createSlice({
       const { shape, id } = action.payload;
 
       const model = state.workspace.children.find((value) => value.id === id);
-      model.shape = shape
+      model.shape = shape;
 
       model.filter.forEach((i) => {
-        state.workspace.shape[i] = shape[i]
-      })
+        state.workspace.shape[i] = shape[i];
+      });
     },
     addSubEmbedding: (
       state,
@@ -192,7 +193,8 @@ export const {
   removeEmbedding,
   translateArea,
   setColor,
-  setShape
+  setShape,
+  setHover
 } = viewslice.actions;
 
 export default viewslice.reducer;

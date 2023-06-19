@@ -19,6 +19,7 @@ import { Main } from './Main';
 import { useAppDispatch } from './Store/hooks';
 import { initializeDatasets } from './Store/FilesSlice';
 import { atom, useAtom } from 'jotai';
+import { ClusterTab } from './MainTabs/ClusterTab';
 
 
 
@@ -67,8 +68,7 @@ const useStyles = createStyles((theme) => ({
 
 const mainLinksMockdata = [
   { icon: IconHome2, label: 'Home', index: 0 },
-  { icon: IconHome2, label: 'Home', index: 1 },
-  { icon: IconHome2, label: 'Home', index: 2 },
+  { icon: IconHome2, label: 'Cluster', index: 1 },
 ];
 
 export function AntApp() {
@@ -122,6 +122,10 @@ export function AntApp() {
               >
                 <Tabs.Panel value={mainLinksMockdata[0].label}>
                   <DataTab />
+                </Tabs.Panel>
+
+                <Tabs.Panel value={mainLinksMockdata[1].label}>
+                  <ClusterTab />
                 </Tabs.Panel>
               </Tabs>
             </div>
