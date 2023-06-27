@@ -4,12 +4,14 @@ import { createContext, useContext } from 'react';
 import { WebGLRenderer } from 'three';
 import {
   MOUSE_LEAVE,
-  MOUSE_DRAG,
+  MOUSE_DRAG_START,
   MOUSE_DRAGGING,
   MOUSE_UP,
   MOUSE_HOVER,
   MOUSE_WHEEL,
   MOUSE_DRAG_END,
+  MOUSE_DOWN,
+  MOUSE_CONTEXT,
 } from './Interaction/Commands';
 import { MouseController } from './Interaction/MouseController';
 import { Visualization } from './Visualization';
@@ -20,7 +22,6 @@ import { useMantineTheme } from '@mantine/core';
 export const VisContext = createContext<{
   vis: Visualization;
   ref;
-  requestFrame: () => void;
   registerRenderFunction: (value) => void;
   xDomain: number[];
   yDomain: number[];
@@ -36,13 +37,6 @@ export const VisContext = createContext<{
 }>(null);
 
 export const VisProvider = ({ children }) => {
-  const theme = useMantineTheme();
-
-  const [dimensions, setDimensions] = React.useState({
-    width: 600,
-    height: 400,
-  });
-
   const [zoom, setZoom] = React.useState({
     tx: 0,
     ty: 0,
@@ -91,50 +85,15 @@ export const VisProvider = ({ children }) => {
 
   renderer?.setSize(width, height, false);
 
-  const dirtyRef = React.useRef(false);
-
-  const frame = () => {
-    dirtyRef.current = false;
-
-    renderFunctions.forEach((func) => {
-      func(renderer);
-    });
-  };
-
-  const frameRef = React.useRef(frame);
-  frameRef.current = frame;
-
-  const requestFrame = React.useCallback(() => {
-    if (!dirtyRef.current) {
-      requestAnimationFrame(() => frameRef.current());
-
-      dirtyRef.current = true;
-    }
-  }, []);
-
-  React.useEffect(() => {
-    requestFrame();
-  }, [width, height]);
-
   const registerRenderFunction = (value) => {
     setRenderFunctions([...renderFunctions, value]);
   };
-
-  React.useEffect(() => {
-    const value = new WebGLRenderer({ canvas: ref.current });
-    value.setPixelRatio(window.devicePixelRatio);
-    value.setClearColor(
-      theme.colorScheme === 'dark' ? theme.colors.dark[8] : theme.colors.gray[0]
-    );
-
-    setRenderer(value);
-  }, [ref]);
 
   const visContext = React.useMemo(() => {
     return new Visualization();
   }, []);
 
-  React.useEffect(() => {
+  const mcontroller = React.useMemo(() => {
     const controller = new MouseController();
 
     controller.onMouseLeave = (event) =>
@@ -147,7 +106,7 @@ export const VisProvider = ({ children }) => {
       visContext.dispatchCommand(MOUSE_UP, event);
 
     controller.onDragStart = (event) => {
-      visContext.dispatchCommand(MOUSE_DRAG, event);
+      visContext.dispatchCommand(MOUSE_DRAG_START, event);
     };
     controller.onDragMove = (event) => {
       visContext.dispatchCommand(MOUSE_DRAGGING, event);
@@ -155,26 +114,24 @@ export const VisProvider = ({ children }) => {
     controller.onDragEnd = (event) => {
       visContext.dispatchCommand(MOUSE_DRAG_END, event);
     };
-
+    controller.onMouseDown = (event) => {
+      return visContext.dispatchCommand(MOUSE_DOWN, event);
+    };
+    controller.onContext = (event) => {
+      visContext.dispatchCommand(MOUSE_CONTEXT, event);
+    };
     controller.onMouseWheel = (event) => {
       visContext.dispatchCommand(MOUSE_WHEEL, event);
     };
 
-    controller.attach(ref.current);
-
-    return () => {
-      if (ref.current) {
-        controller.detach();
-      }
-    };
-  }, [visContext, ref]);
+    return controller;
+  }, [visContext]);
 
   return (
     <VisContext.Provider
       value={{
         width,
         height,
-        requestFrame,
         registerRenderFunction,
         xDomain: xDomain,
         yDomain: [0, 50],
@@ -187,17 +144,24 @@ export const VisProvider = ({ children }) => {
         world,
       }}
     >
-      <canvas
-        onContextMenu={(event) => {
-          event.preventDefault();
-        }}
-        style={{ position: 'absolute', width: '100%', height: '100%' }}
-        width={dimensions.width}
-        height={dimensions.height}
+      <div
+        style={{ width: '100%', height: '100%' }}
         ref={ref}
-      ></canvas>
-
-      {children}
+        onMouseDown={(event) => {
+          mcontroller.mouseDown(event.nativeEvent);
+        }}
+        onMouseUp={(event) => {
+          mcontroller.mouseUp(event.nativeEvent);
+        }}
+        onMouseMove={(event) => {
+          mcontroller.mouseMove(event.nativeEvent);
+        }}
+        onWheel={(event) => {
+          mcontroller.mouseWheel(event.nativeEvent);
+        }}
+      >
+        {children}
+      </div>
     </VisContext.Provider>
   );
 };

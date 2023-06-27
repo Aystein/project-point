@@ -1,17 +1,12 @@
 import * as React from 'react';
 import {
-  COMMAND_PRIORITY_CRITICAL,
   COMMAND_PRIORITY_NORMAL,
-  MOUSE_DRAG,
-  MOUSE_DRAGGING,
-  MOUSE_DRAG_END,
+  MOUSE_DRAG_START,
 } from '../../Interaction/Commands';
 import { useVisContext } from '../../VisualizationContext';
 import { IRectangle, Rectangle } from '../../Math/Rectangle';
 import {
   ActionIcon,
-  Affix,
-  Autocomplete,
   Box,
   Button,
   Group,
@@ -34,6 +29,7 @@ import {
   addSubEmbedding,
   removeEmbedding,
   setColor,
+  setLines,
   setShape,
   translateArea,
   updateEmbedding,
@@ -45,16 +41,19 @@ import { useAppSelector } from '../../../Store/hooks';
 import { schemeCategory10 } from 'd3-scale-chromatic';
 import { scaleLinear, scaleOrdinal } from 'd3-scale';
 import { getMinMax } from '../../../Util';
+import groupBy from 'lodash/groupBy';
+import { SimpleDragCover } from './DragCover';
 
 export function BoxBehavior({ parentModel }: { parentModel: SpatialModel }) {
   const { vis, scaledXDomain, scaledYDomain } = useVisContext();
 
+  const ref = React.useRef<HTMLDivElement>(null);
   const [rect, setRect] = React.useState<Rectangle>();
   const dispatch = useDispatch();
 
   // register to mousedrag...
   useMouseEvent(
-    MOUSE_DRAG,
+    MOUSE_DRAG_START,
     (event) => {
       if (event.button === 2) {
         setRect(new Rectangle(event.offsetX, event.offsetY, 0, 0));
@@ -67,75 +66,67 @@ export function BoxBehavior({ parentModel }: { parentModel: SpatialModel }) {
     []
   );
 
-  useMouseEvent(
-    MOUSE_DRAGGING,
-    (event) => {
-      if (rect && event.button === 2) {
-        setRect((value) => {
-          return new Rectangle(
-            value.x,
-            value.y,
-            event.offsetX - value.x,
-            event.offsetY - value.y
-          );
-        });
-        return true;
-      }
-
-      return false;
-    },
-    COMMAND_PRIORITY_NORMAL,
-    [rect, setRect]
-  );
-
-  useMouseEvent(
-    MOUSE_DRAG_END,
-    (event) => {
-      if (rect) {
-        const worldRect = new Rectangle(
-          scaledXDomain.invert(rect.x),
-          scaledYDomain.invert(rect.y),
-          scaledXDomain.invert(rect.x + rect.width) -
-            scaledXDomain.invert(rect.x),
-          scaledYDomain.invert(rect.y + rect.height) -
-            scaledYDomain.invert(rect.y)
-        );
-
-        const filter = new Array<number>();
-
-        parentModel.flatSpatial.forEach((value, key) => {
-          if (worldRect.within(value)) {
-            filter.push(key);
-          }
-        });
-
-        dispatch(
-          addSubEmbedding({
-            filter,
-            Y: null,
-            area: worldRect,
-          })
-        );
-
-        setRect(null);
-        return true;
-      }
-      return false;
-    },
-    COMMAND_PRIORITY_NORMAL,
-    [rect]
-  );
-
   return (
     <div
       style={{
         position: 'absolute',
         width: '100%',
         height: '100%',
+        top: 0,
+        left: 0,
         pointerEvents: 'none',
         overflow: 'hidden',
       }}
+      ref={ref}
     >
+      {rect ? (
+        <SimpleDragCover
+          boxRef={ref}
+          drag={{ x: rect.x, y: rect.y }}
+          setDrag={(value) => {
+            if (rect) {
+              const worldRect = new Rectangle(
+                scaledXDomain.invert(rect.x),
+                scaledYDomain.invert(rect.y),
+                scaledXDomain.invert(rect.x + rect.width) -
+                  scaledXDomain.invert(rect.x),
+                scaledYDomain.invert(rect.y + rect.height) -
+                  scaledYDomain.invert(rect.y)
+              );
+
+              const filter = new Array<number>();
+
+              parentModel.flatSpatial.forEach((value, key) => {
+                if (worldRect.within(value)) {
+                  filter.push(key);
+                }
+              });
+
+              dispatch(
+                addSubEmbedding({
+                  filter,
+                  Y: null,
+                  area: worldRect,
+                })
+              );
+
+              setRect(null);
+              return true;
+            }
+          }}
+          onMove={(_, event) => {
+            const bounds = ref.current.getBoundingClientRect();
+            setRect((value) => {
+              return new Rectangle(
+                value.x,
+                value.y,
+                event.offsetX - value.x - bounds.x,
+                event.offsetY - value.y - bounds.y
+              );
+            });
+          }}
+        />
+      ) : null}
       {rect ? (
         <div
           style={{
@@ -177,6 +168,11 @@ export function DragCover({
         size="sm"
         style={style}
         onMouseDown={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+
+          console.log('mouse down');
+
           setDrag({ x: event.screenX, y: event.screenY });
         }}
         onContextMenu={(event) => {
@@ -273,6 +269,32 @@ function SingleBox({
     openContextModal({
       modal: 'colorby',
       title: 'Color by',
+      innerProps: {
+        onFinish,
+      },
+    });
+  };
+
+  const handleLine = () => {
+    const onFinish = (feature: string) => {
+      const grouped = groupBy(data, (value) => value[feature]);
+      const lines = new Array<number>();
+
+      Object.keys(grouped).forEach((group) => {
+        const values = grouped[group];
+        values.forEach((row, i) => {
+          if (i < values.length - 1) {
+            lines.push(values[i].index, values[i + 1].index);
+          }
+        });
+      });
+
+      dispatch(setLines(lines));
+    };
+
+    openContextModal({
+      modal: 'colorby',
+      title: 'Line by',
       innerProps: {
         onFinish,
       },
@@ -432,12 +454,24 @@ function SingleBox({
           left: rem(32),
         }}
       >
-        <Menu shadow="md" width={200}>
+        <Menu shadow="md" width={200} withinPortal>
           <Menu.Target>
-            <Button style={{ pointerEvents: 'initial' }}>X</Button>
+            <Button
+              style={{ pointerEvents: 'initial' }}
+              onMouseDown={(event) => {
+                event.stopPropagation();
+              }}
+            >
+              X
+            </Button>
           </Menu.Target>
 
-          <Menu.Dropdown style={{ pointerEvents: 'initial' }}>
+          <Menu.Dropdown
+            style={{ pointerEvents: 'initial' }}
+            onMouseDown={(event) => {
+              event.stopPropagation();
+            }}
+          >
             <Menu.Item onClick={handleCondense}>Condense</Menu.Item>
             <Menu.Item onClick={handleGroupBy}>Group by</Menu.Item>
             <Menu.Item onClick={() => handleLinearScale('x')}>
@@ -466,10 +500,22 @@ function SingleBox({
 
         <Menu shadow="md" width={200}>
           <Menu.Target>
-            <Button style={{ pointerEvents: 'initial' }}>Y</Button>
+            <Button
+              style={{ pointerEvents: 'initial' }}
+              onMouseDown={(event) => {
+                event.stopPropagation();
+              }}
+            >
+              Y
+            </Button>
           </Menu.Target>
 
-          <Menu.Dropdown style={{ pointerEvents: 'initial' }}>
+          <Menu.Dropdown
+            style={{ pointerEvents: 'initial' }}
+            onMouseDown={(event) => {
+              event.stopPropagation();
+            }}
+          >
             <Menu.Item onClick={handleCondense}>Condense</Menu.Item>
             <Menu.Item onClick={handleGroupBy}>Group by</Menu.Item>
             <Menu.Item onClick={() => handleLinearScale('y')}>
@@ -498,18 +544,52 @@ function SingleBox({
 
         <Menu shadow="md" width={200}>
           <Menu.Target>
-            <Button style={{ pointerEvents: 'initial' }}>Channel</Button>
+            <Button
+              style={{ pointerEvents: 'initial' }}
+              onMouseDown={(event) => {
+                event.stopPropagation();
+              }}
+            >
+              Channel
+            </Button>
           </Menu.Target>
 
-          <Menu.Dropdown style={{ pointerEvents: 'initial' }}>
+          <Menu.Dropdown
+            style={{ pointerEvents: 'initial' }}
+            onMouseDown={(event) => {
+              event.stopPropagation();
+            }}
+          >
             <Menu.Item onClick={handleColor}>Color</Menu.Item>
             <Menu.Item onClick={handleShape}>Shape</Menu.Item>
+            <Menu.Item onClick={handleLine}>Line</Menu.Item>
+            <Menu.Item
+              onClick={() => {
+                openContextModal({
+                  modal: 'demonstration',
+                  title: 't-SNE embedding',
+                  size: '70%',
+                  innerProps: {
+                    id: parentModel.id,
+                    axis: 'xy',
+                    onFinish: (Y) => {
+                      dispatch(updateEmbedding({ id: parentModel.id, Y }));
+                    },
+                  },
+                });
+              }}
+            >
+              UMAP
+            </Menu.Item>
           </Menu.Dropdown>
         </Menu>
 
         <ActionIcon
           style={{ pointerEvents: 'auto', opacity: 1 }}
-          onClick={() => {
+          onMouseDown={(event) => {
+            event.stopPropagation();
+          }}
+          onClick={(event) => {
             dispatch(removeEmbedding({ id: parentModel.id }));
           }}
         >

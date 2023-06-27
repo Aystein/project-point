@@ -1,11 +1,3 @@
-struct Particle {
-    position: vec2<f32>
-}
-
-struct Particles {
-    particles: array<Particle>
-}
-
 struct Uniforms {
     xdomain: vec2f,
     ydomain: vec2f,
@@ -19,6 +11,10 @@ struct Uniforms {
 @group(1) @binding(0) var ourSampler: sampler;
 @group(1) @binding(1) var ourTexture: texture_2d<f32>;
 
+fn map(x: f32, in_min: f32, in_max: f32, out_min: f32, out_max: f32) -> f32
+{
+  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
 
 struct VertexInput {
     @location(0) vertexPosition: vec2f,
@@ -28,6 +24,7 @@ struct VertexInput {
     @location(3) color: vec4f,
     @location(4) shape: f32,
     @location(5) hover: f32,
+    @location(6) selection: u32,
 
     
     @builtin(instance_index) instance: u32,
@@ -40,10 +37,6 @@ struct VertexOutput {
     @location(1) color: vec4f,
 };
 
-fn map(x: f32, in_min: f32, in_max: f32, out_min: f32, out_max: f32) -> f32
-{
-  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
-}
 
 @vertex
 fn vertexMain(input: VertexInput) -> VertexOutput  {
@@ -53,10 +46,16 @@ fn vertexMain(input: VertexInput) -> VertexOutput  {
 
     output.pos = vec4f(map(input.position.x, uniforms.xdomain.x, uniforms.xdomain.y, -1, 1) + input.vertexPosition.x * uniforms.sizeX, map(input.position.y, uniforms.ydomain.x, uniforms.ydomain.y, 1, -1) + input.vertexPosition.y * uniforms.sizeY, 0, 1);
     
-    if (input.hover > 0.0) {
-        output.color = input.color * 1.5;
+    if (input.selection > 0) {
+        output.color = vec4(0.8, 0.0, 0.0, 1.0);
     } else {
         output.color = input.color;
+    }
+
+    if (input.hover > 0.0) {
+        output.color = output.color * 1.5;
+    } else {
+        output.color = output.color;
     }
     
 

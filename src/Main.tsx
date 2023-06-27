@@ -18,6 +18,8 @@ import { setHover } from './Store/ViewSlice';
 function MainView({ data, view }: { data: DataState; view: SpatialModel }) {
   const dispatch = useDispatch();
   const hover = useAppSelector((state) => state.views.hover);
+  const selection = useAppSelector((state) => state.views.selection);
+  const line = useAppSelector((state) => state.views.lines);
 
   const handleHover = (index: number) => {
     dispatch(setHover([index]));
@@ -52,13 +54,15 @@ function MainView({ data, view }: { data: DataState; view: SpatialModel }) {
             hover={hover}
             interpolate={view.interpolate}
             shape={view.shape}
+            line={line}
+            selection={selection}
           />
 
           <ZoomBehavior />
           <PanBehavior />
-          <BoxBehavior parentModel={view} />
           <HoverBehavior positions={view?.flatSpatial} onHover={handleHover} />
           <LassoSelectionPlugin />
+          <BoxBehavior parentModel={view} />
         </VisProvider>
       );
   }

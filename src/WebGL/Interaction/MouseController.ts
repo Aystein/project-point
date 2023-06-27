@@ -1,7 +1,7 @@
-import { DragEvent as GDragEvent } from './Commands'
+import { DragEvent as GDragEvent } from './Commands';
 
-const LEFT_BUTTON = 0
-const RIGHT_BUTTON = 2
+const LEFT_BUTTON = 0;
+const RIGHT_BUTTON = 2;
 
 enum Mode {
   None,
@@ -13,47 +13,49 @@ enum Mode {
  * Keeps track of the mouse state eg. press, click, move etc
  */
 export class MouseController {
-  pressed = new Array<boolean>(3).fill(false)
+  pressed = new Array<boolean>(3).fill(false);
 
-  pressedPosition = null
+  pressedPosition = null;
 
-  pressedButton = 0
+  pressedButton = 0;
 
-  mode: Mode = Mode.None
+  mode: Mode = Mode.None;
 
-  private mousePosition = { x: 0, y: 0 }
+  private mousePosition = { x: 0, y: 0 };
 
-  private prevX = 0
+  private prevX = 0;
 
-  private prevY = 0
+  private prevY = 0;
 
-  onDragStart: (event: GDragEvent, button: number, initial) => void
+  onDragStart: (event: GDragEvent, button: number, initial) => void;
 
-  onDragEnd: (event: MouseEvent, button: number) => void
+  onDragEnd: (event: MouseEvent, button: number) => void;
 
-  onDragMove: (event: GDragEvent, button: number) => void
+  onDragMove: (event: GDragEvent, button: number) => void;
 
-  onContext: (event: MouseEvent, button: number) => void
+  onContext: (event: MouseEvent, button: number) => void;
 
-  onMouseUp: (event: MouseEvent) => void
+  onMouseUp: (event: MouseEvent) => void;
 
-  onMouseMove: (event: MouseEvent) => void
+  onMouseMove: (event: MouseEvent) => void;
 
-  onMouseLeave: (event: MouseEvent) => void
+  onMouseLeave: (event: MouseEvent) => void;
 
-  onMouseWheel: (event: MouseEvent) => void
+  onMouseWheel: (event: MouseEvent) => void;
+
+  onMouseDown: (event: MouseEvent) => boolean;
 
   attachContext: {
-    rootElement: HTMLElement
-    mouseDown
-    mouseLeave
-    mouseUp
-    mouseMove
-    mouseWheel
-  }
+    rootElement: HTMLElement;
+    mouseDown;
+    mouseLeave;
+    mouseUp;
+    mouseMove;
+    mouseWheel;
+  };
 
   get currentMousePosition() {
-    return this.mousePosition
+    return this.mousePosition;
   }
 
   attach(element: HTMLElement) {
@@ -64,116 +66,122 @@ export class MouseController {
       mouseLeave: (event) => this.mouseLeave(event),
       mouseWheel: (event) => this.mouseWheel(event),
       rootElement: element,
-    }
+    };
 
-    element.addEventListener('mousedown', this.attachContext.mouseDown)
-    element.addEventListener('mouseup', this.attachContext.mouseUp)
-    element.addEventListener('mousemove', this.attachContext.mouseMove)
-    element.addEventListener('mouseleave', this.attachContext.mouseLeave)
-    element.addEventListener('wheel', this.attachContext.mouseWheel)
+    element.addEventListener('mousedown', this.attachContext.mouseDown);
+    element.addEventListener('mouseup', this.attachContext.mouseUp);
+    element.addEventListener('mousemove', this.attachContext.mouseMove);
+    element.addEventListener('mouseleave', this.attachContext.mouseLeave);
+    element.addEventListener('wheel', this.attachContext.mouseWheel);
   }
 
   detach() {
     this.attachContext.rootElement.removeEventListener(
       'mousedown',
       this.attachContext.mouseDown
-    )
+    );
     this.attachContext.rootElement.removeEventListener(
       'mousemove',
       this.attachContext.mouseMove
-    )
+    );
     this.attachContext.rootElement.removeEventListener(
       'mouseup',
       this.attachContext.mouseUp
-    )
+    );
     this.attachContext.rootElement.removeEventListener(
       'mouseleave',
       this.attachContext.mouseLeave
-    )
+    );
     this.attachContext.rootElement.removeEventListener(
       'wheel',
       this.attachContext.mouseWheel
-    )
+    );
   }
 
   mouseLeave(event: MouseEvent) {
     if (this.onMouseLeave) {
-      this.onMouseLeave(event)
+      this.onMouseLeave(event);
     }
   }
 
   mouseDown(event: MouseEvent) {
-    event.preventDefault()
+    event.preventDefault();
 
-    switch (event.button) {
-      case LEFT_BUTTON:
-        this.pressed[LEFT_BUTTON] = true
-        this.pressedPosition = { x: event.offsetX, y: event.offsetY }
-        this.pressedButton = LEFT_BUTTON
-        break
-      case RIGHT_BUTTON:
-        this.pressed[RIGHT_BUTTON] = true
-        this.pressedPosition = { x: event.offsetX, y: event.offsetY }
-        this.pressedButton = RIGHT_BUTTON
-        break
-      default:
-        break
+    let eat = false;
+    if (this.onMouseDown) {
+      eat = this.onMouseDown(event);
     }
 
-    this.mode = Mode.Pressed
+    if (!eat) {
+      switch (event.button) {
+        case LEFT_BUTTON:
+          this.pressed[LEFT_BUTTON] = true;
+          this.pressedPosition = { x: event.offsetX, y: event.offsetY };
+          this.pressedButton = LEFT_BUTTON;
+          break;
+        case RIGHT_BUTTON:
+          this.pressed[RIGHT_BUTTON] = true;
+          this.pressedPosition = { x: event.offsetX, y: event.offsetY };
+          this.pressedButton = RIGHT_BUTTON;
+          break;
+        default:
+          break;
+      }
+  
+      this.mode = Mode.Pressed;
+    }
   }
 
   mouseUp(event: MouseEvent) {
-    event.preventDefault()
+    event.preventDefault();
 
     if (this.mode === Mode.Drag) {
-      this.mode = Mode.None
+      this.mode = Mode.None;
       if (this.onDragEnd) {
-        this.onDragEnd(event, this.pressedButton)
+        this.onDragEnd(event, this.pressedButton);
       }
-      return
+      return;
     }
 
     switch (event.button) {
       case LEFT_BUTTON:
-        this.pressed[LEFT_BUTTON] = false
+        this.pressed[LEFT_BUTTON] = false;
 
         if (this.mode === Mode.Pressed) {
           if (this.onContext) {
-            this.onContext(event, LEFT_BUTTON)
+            this.onContext(event, LEFT_BUTTON);
           }
 
-          this.mode = Mode.None
+          this.mode = Mode.None;
         }
-        break
+        break;
       case RIGHT_BUTTON:
-        this.pressed[RIGHT_BUTTON] = false
+        this.pressed[RIGHT_BUTTON] = false;
 
         if (this.mode === Mode.Pressed) {
           if (this.onContext) {
-            this.onContext(event, RIGHT_BUTTON)
+            this.onContext(event, RIGHT_BUTTON);
           }
 
-          this.mode = Mode.None
+          this.mode = Mode.None;
         }
-        break
+        break;
       default:
-        break
+        break;
     }
   }
 
   mouseWheel(event: MouseEvent) {
-    event.preventDefault()
-
     if (this.onMouseWheel) {
-      this.onMouseWheel(event)
+      this.onMouseWheel(event);
     }
   }
 
   mouseMove(event: MouseEvent) {
-    const mousePosition = { x: event.offsetX, y: event.offsetY }
-    this.mousePosition = mousePosition
+    const mousePosition = { x: event.offsetX, y: event.offsetY };
+    this.mousePosition = mousePosition;
     if (this.mode === Mode.Drag) {
+      console.log("draggy")
       if (this.onDragMove) {
         this.onDragMove(
           {
@@ -184,10 +192,10 @@ export class MouseController {
             button: this.pressedButton,
           },
           this.pressedButton
-        )
+        );
       }
     } else if (this.onMouseMove) {
-      this.onMouseMove(event)
+      this.onMouseMove(event);
     }
 
     if (
@@ -196,6 +204,7 @@ export class MouseController {
       (Math.abs(this.pressedPosition.x - mousePosition.x) < 4 ||
         Math.abs(this.pressedPosition.y - mousePosition.y) < 4)
     ) {
+      console.log("drag startjdklfjlkdj")
       if (this.onDragStart) {
         this.onDragStart(
           {
@@ -207,12 +216,12 @@ export class MouseController {
           },
           this.pressedButton,
           this.pressedPosition
-        )
-        this.mode = Mode.Drag
+        );
+        this.mode = Mode.Drag;
       }
     }
 
-    this.prevX = event.screenX
-    this.prevY = event.screenY
+    this.prevX = event.screenX;
+    this.prevY = event.screenY;
   }
 }

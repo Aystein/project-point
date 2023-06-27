@@ -38,3 +38,31 @@ export function getBounds(spatial: VectorLike[]): Boundaries {
     maxY,
   };
 }
+
+
+/**
+ * Performs a test if a point is inside a polygon based on the idea from
+ * https://wrf.ecse.rpi.edu/Research/Short_Notes/pnpoly.html
+ * 
+ * This method will not need the same start/end point since it wraps around the edges of the array
+ * 
+ * @param {*} test a point to test against
+ * @param {*} polygon a polygon in the form [[x,y], [x,y], ...]
+ * @returns true if the point lies inside the polygon, false otherwise
+ */
+export function pointInPolygon(testx, testy, polygon) {
+  let intersections = 0;
+
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+      const [prevX, prevY] = polygon[j];
+      const [x, y] = polygon[i];
+
+      // count intersections
+      if (((y > testy) != (prevY > testy)) && (testx < (prevX - x) * (testy - y) / (prevY - y) + x)) {
+          intersections++;
+      }
+  }
+
+  // point is in polygon if intersection count is odd
+  return intersections & 1;
+}

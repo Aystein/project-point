@@ -16,7 +16,7 @@ const combined = combineReducers({
   data: dataReducer,
   views: viewReducer,
   datasets: datasetReducer,
-  clusters: clusterReducer
+  clusters: clusterReducer,
 });
 
 export type RootState = ReturnType<typeof combined>;
@@ -102,7 +102,7 @@ const reducer = createReducer<RootState>(undefined, (builder) => {
       y: -1 + Math.random() * 2,
     }));
 
-    console.log(columns)
+    console.log(columns);
 
     state.views.workspace = {
       oid: 'spatial',
@@ -128,6 +128,10 @@ const reducer = createReducer<RootState>(undefined, (builder) => {
 
 export const store = configureStore({
   reducer,
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      serializableCheck: false,
+    }),
 });
 
 // Inferred type: {posts: PostsState, comments: CommentsState, users: UsersState}

@@ -1,4 +1,5 @@
 import wgsl from './Scatter.render.wgsl?raw';
+import linewgsl from './Line.render.wgsl?raw';
 import computewgsl from './Scatter.compute.wgsl?raw';
 import image from '../Assets/square_white.png';
 import { createQuadBuffer, requestDevice } from './Util';
@@ -45,20 +46,6 @@ async function webGPUTextureFromImageUrl(gpuDevice, url) {
   return webGPUTextureFromImageBitmapOrCanvas(gpuDevice, imgBitmap);
 }
 
-async function createScatter({
-  N,
-  context,
-  config,
-}: {
-  N: number;
-  context: GPUCanvasContext;
-  config: ScatterConfig;
-}) {
-  const device = await requestDevice();
-
-  const scatter = new Scatter(N, context, config);
-}
-
 export class Scatter {
   cellPipeline: GPURenderPipeline;
 
@@ -72,7 +59,13 @@ export class Scatter {
 
   computeBindgroup: GPUBindGroup;
 
-  bufGroup: YBufferGroup
+  bufGroup: YBufferGroup;
+
+  bufferGroup: YBufferGroup;
+
+  renderPipeline: GPURenderPipeline;
+
+  lineBuffer: YBuffer;
 
   buffers: {
     color: YBuffer;
@@ -83,6 +76,7 @@ export class Scatter {
     targetPosition: GPUBuffer;
     uniform: GPUBuffer;
     hover: YBuffer;
+    selection: YBuffer;
   };
 
   requested = false;
@@ -165,6 +159,43 @@ export class Scatter {
     device.queue.writeBuffer(hover._buffer, 0, data);
   }
 
+  setSelection(indices: number[]) {
+    console.log(indices);
+    const {
+      device,
+      buffers: { selection },
+    } = this;
+
+    const data = new Float32Array(this.N);
+    data.fill(0);
+
+    indices.forEach((i) => {
+      data[i] = 1;
+    });
+
+    device.queue.writeBuffer(selection._buffer, 0, data);
+  }
+
+  setLine(line: number[]) {
+    this.lineBuffer = createYBuffer({
+      n: line ? line.length / 2 : 0,
+      layout: {
+        0: 'uint32',
+        1: 'uint32',
+      },
+      device: this.device,
+      stepMode: 'instance',
+      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+    });
+    this.device.queue.writeBuffer(
+      this.lineBuffer._buffer,
+      0,
+      new Uint32Array(line ?? [])
+    );
+
+    this.bufferGroup = createYBufferGroup(this.lineBuffer);
+  }
+
   createComputePipeline() {
     const { device } = this;
 
@@ -196,7 +227,7 @@ export class Scatter {
     this.computePipeline = pipeline;
   }
 
-  async createBuffers() {
+  async createBuffers(width: number, height: number) {
     const canvasFormat = navigator.gpu.getPreferredCanvasFormat();
 
     const { context, device } = this;
@@ -209,6 +240,16 @@ export class Scatter {
 
     // console.log(new URL(image));
     this.texture = await webGPUTextureFromImageUrl(device, image);
+    console.log(width, height);
+    this.sampleTexture = device.createTexture({
+      size: [
+        context.getCurrentTexture().width,
+        context.getCurrentTexture().height,
+      ],
+      sampleCount: 4,
+      format: navigator.gpu.getPreferredCanvasFormat(),
+      usage: GPUTextureUsage.RENDER_ATTACHMENT,
+    });
 
     // Create buffer
     const uniformArray = new Float32Array([0, 2, 0, 2, 0.01, 0.01]);
@@ -263,6 +304,16 @@ export class Scatter {
       stepMode: 'instance',
     });
 
+    const selection = createYBuffer({
+      device,
+      layout: {
+        6: 'uint32',
+      },
+      n: this.N,
+      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+      stepMode: 'instance',
+    });
+
     const hover = createYBuffer({
       device,
       layout: {
@@ -299,7 +350,14 @@ export class Scatter {
       code: wgsl,
     });
 
-    this.bufGroup = createYBufferGroup(vertexBuffer, particleBuffer, colorBuffer, shape, hover)
+    this.bufGroup = createYBufferGroup(
+      vertexBuffer,
+      particleBuffer,
+      colorBuffer,
+      shape,
+      hover,
+      selection
+    );
 
     const cellPipeline = device.createRenderPipeline({
       layout: 'auto',
@@ -318,6 +376,7 @@ export class Scatter {
           },
         ],
       },
+      multisample: { count: 4 },
     });
 
     // Create bind group
@@ -353,6 +412,7 @@ export class Scatter {
       shape,
       uniform: uniformBuffer,
       hover,
+      selection,
     };
 
     this.cellPipeline = cellPipeline;
@@ -360,6 +420,69 @@ export class Scatter {
     this.bindGroup2 = bindGroup2;
 
     this.createComputePipeline();
+    this.createLinePipeline();
+  }
+
+  createLinePipeline() {
+    const { context, device, N } = this;
+
+    const canvasFormat = navigator.gpu.getPreferredCanvasFormat();
+
+    this.lineBuffer = createYBuffer({
+      n: 500,
+      layout: {
+        0: 'uint32',
+        1: 'uint32',
+      },
+      device,
+      stepMode: 'instance',
+      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+    });
+    device.queue.writeBuffer(
+      this.lineBuffer._buffer,
+      0,
+      new Uint32Array(Array.from({ length: 1000 }).map((_, i) => i))
+    );
+
+    this.bufferGroup = createYBufferGroup(this.lineBuffer);
+
+    const cellShaderModule = device.createShaderModule({
+      code: linewgsl,
+    });
+
+    this.renderPipeline = device.createRenderPipeline({
+      layout: 'auto',
+      vertex: {
+        module: cellShaderModule,
+        entryPoint: 'vertexMain',
+        buffers: this.bufferGroup.layout,
+      },
+      fragment: {
+        module: cellShaderModule,
+        entryPoint: 'fragmentMain',
+        targets: [
+          {
+            format: canvasFormat,
+            blend: defaultAlphaBlend(),
+          },
+        ],
+      },
+      multisample: { count: 4 },
+    });
+
+    this.lineBindgroup = device.createBindGroup({
+      layout: this.renderPipeline.getBindGroupLayout(0),
+      entries: [
+        {
+          binding: 0,
+          resource: { buffer: this.buffers.particle._buffer },
+        },
+        {
+          binding: 1,
+          resource: { buffer: this.buffers.uniform },
+        },
+      ],
+    });
   }
 
   dispose() {
@@ -371,12 +494,7 @@ export class Scatter {
       return;
     }
 
-    const {
-      device,
-      context,
-      cellPipeline,
-      bindGroup,
-    } = this;
+    const { device, context, cellPipeline, bindGroup } = this;
 
     if (this.requested) {
       return;
@@ -396,7 +514,7 @@ export class Scatter {
 
       computePass.end();
 
-      const pass = encoder.beginRenderPass({
+      /**const pass2 = encoder.beginRenderPass({
         colorAttachments: [
           {
             view: context.getCurrentTexture().createView(),
@@ -407,9 +525,37 @@ export class Scatter {
         ],
       });
 
+      pass2.setPipeline(this.renderPipeline);
+
+      this.bufferGroup.bind(pass2);
+      pass2.setBindGroup(0, this.lineBindgroup);
+
+      pass2.draw(6, this.lineBuffer._buffer.size / 8);
+
+      pass2.end();**/
+
+      const pass = encoder.beginRenderPass({
+        colorAttachments: [
+          {
+            view: this.sampleTexture.createView(),
+            resolveTarget: context.getCurrentTexture().createView(),
+            clearValue: [1, 1, 1, 1],
+            loadOp: 'clear',
+            storeOp: 'store',
+          },
+        ],
+      });
+
+      pass.setPipeline(this.renderPipeline);
+
+      this.bufferGroup.bind(pass);
+      pass.setBindGroup(0, this.lineBindgroup);
+
+      pass.draw(6, this.lineBuffer._buffer.size / 8);
+
       pass.setPipeline(cellPipeline);
 
-      this.bufGroup.bind(pass)
+      this.bufGroup.bind(pass);
 
       pass.setBindGroup(0, bindGroup);
       pass.setBindGroup(1, this.bindGroup2);

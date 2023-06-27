@@ -10,12 +10,14 @@ export interface ViewsState {
   workspace: SpatialModel;
   hover: number[];
   selection: number[];
+  lines: number[];
 }
 
 const initialState: ViewsState = {
   workspace: undefined,
   hover: undefined,
   selection: undefined,
+  lines: undefined,
 };
 
 export const viewslice = createSlice({
@@ -24,6 +26,16 @@ export const viewslice = createSlice({
   reducers: {
     updatePosition: (state, action: PayloadAction<VectorLike[]>) => {
       state.workspace.spatial = action.payload;
+    },
+    updatePositionByFilter: (
+      state,
+      action: PayloadAction<{ position: VectorLike[]; filter: number[] }>
+    ) => {
+      const { filter, position } = action.payload;
+
+      filter.forEach((index, i) => {
+        state.workspace.flatSpatial[index] = position[i];
+      });
     },
     removeEmbedding: (state, action: PayloadAction<{ id: EntityId }>) => {
       state.workspace.children.splice(
@@ -125,6 +137,9 @@ export const viewslice = createSlice({
     setHover: (state, action: PayloadAction<number[]>) => {
       state.hover = action.payload;
     },
+    setSelection: (state, action: PayloadAction<number[]>) => {
+      state.selection = action.payload;
+    },
     setColor: (
       state,
       action: PayloadAction<{ id: EntityId; colors: number[] }>
@@ -155,6 +170,9 @@ export const viewslice = createSlice({
       model.filter.forEach((i) => {
         state.workspace.shape[i] = shape[i];
       });
+    },
+    setLines: (state, action: PayloadAction<number[]>) => {
+      state.lines = action.payload;
     },
     addSubEmbedding: (
       state,
@@ -188,13 +206,16 @@ export const viewslice = createSlice({
 // Action creators are generated for each case reducer function
 export const {
   updatePosition,
+  updatePositionByFilter,
   addSubEmbedding,
   updateEmbedding,
   removeEmbedding,
   translateArea,
   setColor,
   setShape,
-  setHover
+  setHover,
+  setSelection,
+  setLines,
 } = viewslice.actions;
 
 export default viewslice.reducer;

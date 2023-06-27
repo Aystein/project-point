@@ -19,7 +19,7 @@ export function HoverBehavior({
   positions: VectorLike[];
   onHover: (index: number) => void;
 }) {
-  const { scaledXDomain, scaledYDomain, requestFrame } = useVisContext();
+  const { scaledXDomain, scaledYDomain } = useVisContext();
   const [lastHover, setLastHover] = React.useState<number>(null);
   const data = useAppSelector((state) => state.data);
 
@@ -46,7 +46,6 @@ export function HoverBehavior({
 
       if (lastHover !== hover) {
         onHover(hover);
-        requestFrame();
         setLastHover(hover);
       }
 
@@ -68,7 +67,7 @@ export function HoverBehavior({
 }
 
 function HoverComponent({ row }: { row: Row }) {
-  const rows = keys(row).map((key) => (
+  const rows = keys(row).slice(0, 10).map((key) => (
     <tr key={key}>
       <td style={{ width: rem(150), overflow: 'hidden', textOverflow: 'ellipsis' }}>{key}</td>
       <td>{row[key]}</td>

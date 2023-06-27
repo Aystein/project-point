@@ -1,9 +1,10 @@
 import keys from 'lodash/keys';
 
 const sizeOf = {
+  uint32: 4,
   float32: 4,
   float32x2: 8,
-  float32x4: 16
+  float32x4: 16,
 };
 
 interface CreateBufferConfig {
