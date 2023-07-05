@@ -9,6 +9,7 @@ import {
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { parseCSV } from '../DataLoading/CSVLoader';
 import { loadDatasetGlobal, RootState } from './Store';
+import { Row } from './DataSlice.';
 
 export interface SingleFile {
   name: string;
@@ -124,12 +125,18 @@ export const loadDataset = createAsyncThunk(
     const file = await fileHandle.getFile();
     const reader = new FileReader();
 
-    reader.onload = async () => {
-      const rows = await parseCSV(reader.result.toString());
-      dispatch(loadDatasetGlobal(rows));
-    };
+    const rows = await new Promise<Row[]>((resolve) => {
+      reader.onload = async () => {
+        const rows = await parseCSV(reader.result.toString());
+        resolve(rows)
+      };
 
-    reader.readAsBinaryString(file.slice(100));
+      reader.readAsBinaryString(file.slice(100));
+    })
+
+    dispatch(loadDatasetGlobal(rows));
+
+    return rows
   }
 );
 

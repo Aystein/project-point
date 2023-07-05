@@ -18,6 +18,7 @@ import { useAppSelector } from '../../../Store/hooks';
 import { pointInPolygon } from '../../../Util';
 import { VectorLike } from '../../../Interfaces';
 import { runCondenseLayout } from '../../../Layouts/Layouts';
+import { useScatterStore } from '../../../Store/Zustand';
 
 export function lassoPath(lasso) {
   return (lasso ?? []).reduce((svg, [x, y], i) => {
@@ -77,7 +78,8 @@ export function LassoSelectionPlugin() {
 
   const [drag, setDrag] = React.useState<VectorLike>(null);
   const dispatch = useDispatch();
-  const spatial = useAppSelector((state) => state.views.workspace.flatSpatial);
+  const spatial = useScatterStore((state) => state.positions._buffer)
+  const updatePositions = useScatterStore((state) => state.updatePositions)
 
   const [points, setPoints] = React.useState<[number, number][]>([]);
 
@@ -109,7 +111,8 @@ export function LassoSelectionPlugin() {
       height: 4,
     });
 
-    dispatch(updatePositionByFilter({ filter: selection, position: Y }));
+    updatePositions(Y, selection)
+    // dispatch(updatePositionByFilter({ filter: selection, position: Y }));
   };
 
   return (

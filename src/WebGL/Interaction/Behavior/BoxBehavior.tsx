@@ -43,6 +43,7 @@ import { scaleLinear, scaleOrdinal } from 'd3-scale';
 import { getMinMax } from '../../../Util';
 import groupBy from 'lodash/groupBy';
 import { SimpleDragCover } from './DragCover';
+import { useScatterStore } from '../../../Store/Zustand';
 
 export function BoxBehavior({ parentModel }: { parentModel: SpatialModel }) {
   const { vis, scaledXDomain, scaledYDomain } = useVisContext();
@@ -209,10 +210,14 @@ function SingleBox({
   const dispatch = useDispatch();
   const data = useAppSelector((state) => state.data.rows);
 
+  const updatePositions = useScatterStore((state) => state.updatePositions);
+
   const handleCondense = async () => {
     const Y = await runCondenseLayout(parentModel.filter.length, area);
 
-    dispatch(updateEmbedding({ id: parentModel.id, Y }));
+    console.log(Y, parentModel.filter);
+    updatePositions(Y, parentModel.filter)
+    // dispatch(updateEmbedding({ id: parentModel.id, Y }));
   };
 
   const handleColor = () => {
@@ -303,7 +308,8 @@ function SingleBox({
 
   const handleGroupBy = async () => {
     const onFinish = (Y) => {
-      dispatch(updateEmbedding({ id: parentModel.id, Y }));
+      updatePositions(Y, parentModel.filter)
+      // dispatch(updateEmbedding({ id: parentModel.id, Y }));
     };
     openContextModal({
       modal: 'grouping',
@@ -343,7 +349,8 @@ function SingleBox({
             : parentModel.y ?? parentModel.spatial.map((vector) => vector.y),
       });
 
-      dispatch(updateEmbedding({ id: parentModel.id, Y }));
+      updatePositions(Y, parentModel.filter)
+      // dispatch(updateEmbedding({ id: parentModel.id, Y }));
     };
 
     openContextModal({
@@ -487,7 +494,8 @@ function SingleBox({
                     id: parentModel.id,
                     axis: 'x',
                     onFinish: (Y) => {
-                      dispatch(updateEmbedding({ id: parentModel.id, Y }));
+                      updatePositions(Y, parentModel.filter)
+                      // dispatch(updateEmbedding({ id: parentModel.id, Y }));
                     },
                   },
                 });
@@ -531,7 +539,8 @@ function SingleBox({
                     id: parentModel.id,
                     axis: 'y',
                     onFinish: (Y) => {
-                      dispatch(updateEmbedding({ id: parentModel.id, Y }));
+                      updatePositions(Y, parentModel.filter)
+                      // dispatch(updateEmbedding({ id: parentModel.id, Y }));
                     },
                   },
                 });
@@ -573,7 +582,8 @@ function SingleBox({
                     id: parentModel.id,
                     axis: 'xy',
                     onFinish: (Y) => {
-                      dispatch(updateEmbedding({ id: parentModel.id, Y }));
+                      updatePositions(Y, parentModel.filter)
+                      // dispatch(updateEmbedding({ id: parentModel.id, Y }));
                     },
                   },
                 });

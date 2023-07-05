@@ -25,6 +25,7 @@ import {
   IconFileZip,
   IconTrash,
 } from '@tabler/icons-react';
+import { useScatterStore } from '../Store/Zustand';
 
 export function DataTab() {
   const dispatch = useAppDispatch();
@@ -89,8 +90,11 @@ function DatasetList() {
   const datasets = useAppSelector(selectDatasets);
   const dispatch = useAppDispatch();
 
-  const handleLoad = (name: string) => {
-    dispatch(loadDataset(name));
+  const updatePositions = useScatterStore((state) => state.updatePositions)
+
+  const handleLoad = async (name: string) => {
+    const rows = await dispatch(loadDataset(name)).unwrap();
+    updatePositions(rows.map(() => ({ x: -1 + 2 * Math.random(), y: -1 + 2 * Math.random() })))
   };
 
   return (

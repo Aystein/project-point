@@ -43,7 +43,6 @@ function useDevice() {
 export function Scatterplot({
   n,
   x,
-  x2,
   y,
   model,
   color,
@@ -58,7 +57,6 @@ export function Scatterplot({
 }: {
   n: number;
   x: number[];
-  x2: string | ColumnTemp;
   y: number[];
   model: SpatialModel;
   color?: number[];
@@ -117,9 +115,6 @@ export function Scatterplot({
 
   useEffect(() => {
     if (myRenderer) {
-      //myRenderer.setX(x, interpolate);
-      //myRenderer.setY(y, interpolate);
-
       const xy = new Float32Array(
         Array.from({ length: n * 2 }).map(() => -2 + Math.random() * 4)
       );

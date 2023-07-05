@@ -14,6 +14,7 @@ import { SpatialModel } from './Store/ModelSlice';
 import { useHotkeys } from '@mantine/hooks';
 import { LassoSelectionPlugin } from './WebGL/Interaction/Behavior/LassoBehavior';
 import { setHover } from './Store/ViewSlice';
+import { useScatterStore } from './Store/Zustand';
 
 function MainView({ data, view }: { data: DataState; view: SpatialModel }) {
   const dispatch = useDispatch();
@@ -25,20 +26,22 @@ function MainView({ data, view }: { data: DataState; view: SpatialModel }) {
     dispatch(setHover([index]));
   };
 
-  const handleLasso = () => {};
+  const handleLasso = () => { };
 
   useHotkeys([['ctrl+S', handleLasso]]);
 
+  const spatial = useScatterStore((state) => state.positions)
+
   const [x, y] = React.useMemo(() => {
-    if (!view) {
+    if (!view || !spatial._buffer) {
       return [null, null];
     }
 
     return [
-      view.flatSpatial.map((value) => value.x),
-      view.flatSpatial.map((value) => value.y),
+      spatial._buffer.map((value) => value.x),
+      spatial._buffer.map((value) => value.y),
     ];
-  }, [view?.flatSpatial]);
+  }, [spatial]);
 
   switch (view?.oid) {
     default:
@@ -48,7 +51,6 @@ function MainView({ data, view }: { data: DataState; view: SpatialModel }) {
             n={view?.flatSpatial.length ?? null}
             model={view}
             x={x}
-            x2=""
             y={y}
             color={view.color}
             hover={hover}
@@ -60,7 +62,7 @@ function MainView({ data, view }: { data: DataState; view: SpatialModel }) {
 
           <ZoomBehavior />
           <PanBehavior />
-          <HoverBehavior positions={view?.flatSpatial} onHover={handleHover} />
+          <HoverBehavior positions={spatial?._buffer} onHover={handleHover} />
           <LassoSelectionPlugin />
           <BoxBehavior parentModel={view} />
         </VisProvider>

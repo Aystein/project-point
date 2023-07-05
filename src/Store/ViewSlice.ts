@@ -24,9 +24,6 @@ export const viewslice = createSlice({
   name: 'views',
   initialState,
   reducers: {
-    updatePosition: (state, action: PayloadAction<VectorLike[]>) => {
-      state.workspace.spatial = action.payload;
-    },
     updatePositionByFilter: (
       state,
       action: PayloadAction<{ position: VectorLike[]; filter: number[] }>
@@ -205,7 +202,6 @@ export const viewslice = createSlice({
 
 // Action creators are generated for each case reducer function
 export const {
-  updatePosition,
   updatePositionByFilter,
   addSubEmbedding,
   updateEmbedding,
