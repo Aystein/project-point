@@ -32,7 +32,7 @@ import {
   setLines,
   setShape,
   translateArea,
-  updateEmbedding,
+  updatePositionByFilter,
 } from '../../../Store/ViewSlice';
 import { IconX } from '@tabler/icons-react';
 import { useMouseEvent } from './useMouseDrag';
@@ -50,6 +50,8 @@ export function BoxBehavior({ parentModel }: { parentModel: SpatialModel }) {
   const ref = React.useRef<HTMLDivElement>(null);
   const [rect, setRect] = React.useState<Rectangle>();
   const dispatch = useDispatch();
+
+  const positions = useAppSelector((state) => state.views.positions)
 
   // register to mousedrag...
   useMouseEvent(
@@ -96,7 +98,7 @@ export function BoxBehavior({ parentModel }: { parentModel: SpatialModel }) {
 
               const filter = new Array<number>();
 
-              parentModel.flatSpatial.forEach((value, key) => {
+              positions.forEach((value, key) => {
                 if (worldRect.within(value)) {
                   filter.push(key);
                 }
@@ -208,11 +210,12 @@ function SingleBox({
   const { scaledXDomain, scaledYDomain, world } = useVisContext();
   const dispatch = useDispatch();
   const data = useAppSelector((state) => state.data.rows);
+  const positions = useAppSelector((state) => state.views.positions);
 
   const handleCondense = async () => {
     const Y = await runCondenseLayout(parentModel.filter.length, area);
 
-    dispatch(updateEmbedding({ id: parentModel.id, Y }));
+    dispatch(updatePositionByFilter({ position: Y, filter: parentModel.filter }));
   };
 
   const handleColor = () => {
@@ -303,7 +306,7 @@ function SingleBox({
 
   const handleGroupBy = async () => {
     const onFinish = (Y) => {
-      dispatch(updateEmbedding({ id: parentModel.id, Y }));
+      dispatch(updatePositionByFilter({ position: Y, filter: parentModel.filter }));
     };
     openContextModal({
       modal: 'grouping',
@@ -336,14 +339,14 @@ function SingleBox({
         xLayout:
           axis === 'x'
             ? mapped
-            : parentModel.x ?? parentModel.spatial.map((vector) => vector.x),
+            : parentModel.x ?? parentModel.filter.map((index) => positions[index].x),
         yLayout:
           axis === 'y'
             ? mapped
-            : parentModel.y ?? parentModel.spatial.map((vector) => vector.y),
+            : parentModel.y ?? parentModel.filter.map((index) => positions[index].y),
       });
 
-      dispatch(updateEmbedding({ id: parentModel.id, Y }));
+      dispatch(updatePositionByFilter({ position: Y, filter: parentModel.filter }));
     };
 
     openContextModal({
@@ -487,7 +490,7 @@ function SingleBox({
                     id: parentModel.id,
                     axis: 'x',
                     onFinish: (Y) => {
-                      dispatch(updateEmbedding({ id: parentModel.id, Y }));
+                      dispatch(updatePositionByFilter({ position: Y, filter: parentModel.filter }));
                     },
                   },
                 });
@@ -531,7 +534,7 @@ function SingleBox({
                     id: parentModel.id,
                     axis: 'y',
                     onFinish: (Y) => {
-                      dispatch(updateEmbedding({ id: parentModel.id, Y }));
+                      dispatch(updatePositionByFilter({ position: Y, filter: parentModel.filter }));
                     },
                   },
                 });
@@ -573,7 +576,7 @@ function SingleBox({
                     id: parentModel.id,
                     axis: 'xy',
                     onFinish: (Y) => {
-                      dispatch(updateEmbedding({ id: parentModel.id, Y }));
+                      dispatch(updatePositionByFilter({ position: Y, filter: parentModel.filter }));
                     },
                   },
                 });

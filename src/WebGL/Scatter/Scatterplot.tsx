@@ -51,7 +51,6 @@ export function Scatterplot({
   opacity,
   globalConfig = { pointSize: 16 },
   hover,
-  interpolate = true,
   selection,
   shape,
   line,
@@ -67,7 +66,6 @@ export function Scatterplot({
   globalConfig?: GlobalConfig;
   hover: number[];
   selection: number[];
-  interpolate: boolean;
   shape?: number[];
   line: number[];
 }) {
@@ -117,9 +115,6 @@ export function Scatterplot({
 
   useEffect(() => {
     if (myRenderer) {
-      //myRenderer.setX(x, interpolate);
-      //myRenderer.setY(y, interpolate);
-
       const xy = new Float32Array(
         Array.from({ length: n * 2 }).map(() => -2 + Math.random() * 4)
       );

@@ -20,6 +20,7 @@ function MainView({ data, view }: { data: DataState; view: SpatialModel }) {
   const hover = useAppSelector((state) => state.views.hover);
   const selection = useAppSelector((state) => state.views.selection);
   const line = useAppSelector((state) => state.views.lines);
+  const positions = useAppSelector((state) => state.views.positions);
 
   const handleHover = (index: number) => {
     dispatch(setHover([index]));
@@ -35,24 +36,23 @@ function MainView({ data, view }: { data: DataState; view: SpatialModel }) {
     }
 
     return [
-      view.flatSpatial.map((value) => value.x),
-      view.flatSpatial.map((value) => value.y),
+      positions.map((value) => value.x),
+      positions.map((value) => value.y),
     ];
-  }, [view?.flatSpatial]);
+  }, [positions]);
 
   switch (view?.oid) {
     default:
       return (
         <VisProvider>
           <Scatterplot
-            n={view?.flatSpatial.length ?? null}
+            n={positions.length ?? null}
             model={view}
             x={x}
             x2=""
             y={y}
             color={view.color}
             hover={hover}
-            interpolate={view.interpolate}
             shape={view.shape}
             line={line}
             selection={selection}
@@ -60,7 +60,7 @@ function MainView({ data, view }: { data: DataState; view: SpatialModel }) {
 
           <ZoomBehavior />
           <PanBehavior />
-          <HoverBehavior positions={view?.flatSpatial} onHover={handleHover} />
+          <HoverBehavior positions={positions} onHover={handleHover} />
           <LassoSelectionPlugin />
           <BoxBehavior parentModel={view} />
         </VisProvider>

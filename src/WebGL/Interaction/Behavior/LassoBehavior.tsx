@@ -10,7 +10,6 @@ import {
 import {
   setHover,
   setSelection,
-  updateEmbedding,
   updatePositionByFilter,
 } from '../../../Store/ViewSlice';
 import { useDispatch } from 'react-redux';
@@ -77,7 +76,7 @@ export function LassoSelectionPlugin() {
 
   const [drag, setDrag] = React.useState<VectorLike>(null);
   const dispatch = useDispatch();
-  const spatial = useAppSelector((state) => state.views.workspace.flatSpatial);
+  const spatial = useAppSelector((state) => state.views.positions);
 
   const [points, setPoints] = React.useState<[number, number][]>([]);
 

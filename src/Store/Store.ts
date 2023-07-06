@@ -102,12 +102,14 @@ const reducer = createReducer<RootState>(undefined, (builder) => {
       y: -1 + Math.random() * 2,
     }));
 
-    console.log(columns);
+    state.views.positions = rows.map((row) => ({
+      x: -1 + Math.random() * 2,
+      y: -1 + Math.random() * 2,
+    }))
 
     state.views.workspace = {
       oid: 'spatial',
       id: nanoid(),
-      spatial,
       bounds: {
         minX: 0,
         maxX: 1,
@@ -116,13 +118,12 @@ const reducer = createReducer<RootState>(undefined, (builder) => {
       },
       children: [],
       filter: null,
-      flatSpatial: spatial,
       area: null,
-      interpolate: true,
       color: rows.map(() => [0.5, 0.5, 0.5, 1]).flat(),
       shape: rows.map(() => 0),
     };
   });
+  
   builder.addDefaultCase(combined);
 });
 

@@ -17,12 +17,6 @@ export interface SpatialModel extends BaseModel {
 
   parameters?: EmbeddingParameters;
 
-  // The spatial data of this model (x, y coordinates)
-  spatial: VectorLike[];
-
-  // Hierarchically unnested spatial data. VERY useful as reactive state for spatial data
-  flatSpatial: VectorLike[];
-
   // The boundaries of the spatial data
   bounds: Boundaries;
 
@@ -32,8 +26,6 @@ export interface SpatialModel extends BaseModel {
   children: SpatialModel[];
 
   area: IRectangle;
-
-  interpolate: boolean;
 
   x?: number[]
   y?: number[]

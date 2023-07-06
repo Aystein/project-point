@@ -11,6 +11,8 @@ export interface ViewsState {
   hover: number[];
   selection: number[];
   lines: number[];
+  positions: VectorLike[];
+  lineWidth: number;
 }
 
 const initialState: ViewsState = {
@@ -18,23 +20,22 @@ const initialState: ViewsState = {
   hover: undefined,
   selection: undefined,
   lines: undefined,
+  positions: undefined,
+  lineWidth: 1,
 };
 
 export const viewslice = createSlice({
   name: 'views',
   initialState,
   reducers: {
-    updatePosition: (state, action: PayloadAction<VectorLike[]>) => {
-      state.workspace.spatial = action.payload;
-    },
     updatePositionByFilter: (
       state,
       action: PayloadAction<{ position: VectorLike[]; filter: number[] }>
     ) => {
       const { filter, position } = action.payload;
 
-      filter.forEach((index, i) => {
-        state.workspace.flatSpatial[index] = position[i];
+      filter.forEach((globalIndex, localIndex) => {
+        state.positions[globalIndex] = position[localIndex];
       });
     },
     removeEmbedding: (state, action: PayloadAction<{ id: EntityId }>) => {
@@ -44,36 +45,6 @@ export const viewslice = createSlice({
         ),
         1
       );
-
-      const flatSpatial = state.workspace.spatial.map((value) => ({
-        x: value.x,
-        y: value.y,
-      }));
-
-      state.workspace.children.forEach((child) => {
-        const scaleX = scaleLinear()
-          .domain([child.bounds.minX, child.bounds.maxX])
-          .range([
-            child.area.x + child.area.width * 0.01,
-            child.area.x + child.area.width * 0.99,
-          ]);
-        const scaleY = scaleLinear()
-          .domain([child.bounds.minY, child.bounds.maxY])
-          .range([
-            child.area.y + child.area.height * 0.01,
-            child.area.y + child.area.height * 0.99,
-          ]);
-
-        child.filter.forEach((i, k) => {
-          flatSpatial[i] = {
-            x: scaleX(child.spatial[k].x),
-            y: scaleY(child.spatial[k].y),
-          };
-        });
-      });
-
-      state.workspace.interpolate = true;
-      state.workspace.flatSpatial = flatSpatial;
     },
     translateArea: (
       state,
@@ -85,54 +56,10 @@ export const viewslice = createSlice({
       model.area.x += x;
       model.area.y += y;
 
-      model.spatial = model.spatial.map((value) => ({
-        x: value.x + x,
-        y: value.y + y,
-      }));
-
-      const flatSpatial = state.workspace.spatial.map((value) => ({
-        x: value.x,
-        y: value.y,
-      }));
-
-      state.workspace.children.forEach((child) => {
-        child.filter.forEach((i, k) => {
-          flatSpatial[i] = {
-            x: child.spatial[k].x,
-            y: child.spatial[k].y,
-          };
-        });
-      });
-
-      state.workspace.interpolate = false;
-      state.workspace.flatSpatial = flatSpatial;
-    },
-    updateEmbedding: (
-      state,
-      action: PayloadAction<{ id: EntityId; Y: VectorLike[] }>
-    ) => {
-      const { Y, id } = action.payload;
-
-      const model = state.workspace.children.find((value) => value.id === id);
-      model.spatial = Y;
-      model.bounds = getBounds(Y);
-
-      const flatSpatial = state.workspace.spatial.map((value) => ({
-        x: value.x,
-        y: value.y,
-      }));
-
-      state.workspace.children.forEach((child) => {
-        child.filter.forEach((i, k) => {
-          flatSpatial[i] = {
-            x: child.spatial[k].x,
-            y: child.spatial[k].y,
-          };
-        });
-      });
-
-      state.workspace.interpolate = true;
-      state.workspace.flatSpatial = flatSpatial;
+      model.filter.forEach((globalIndex) => {
+        state.positions[globalIndex].x += x;
+        state.positions[globalIndex].y += y;
+      })
     },
     setHover: (state, action: PayloadAction<number[]>) => {
       state.hover = action.payload;
@@ -184,18 +111,15 @@ export const viewslice = createSlice({
     ) => {
       const { filter, area } = action.payload;
 
-      const Y = filter.map((i) => state.workspace.flatSpatial[i]);
+      const Y = filter.map((i) => state.positions[i]);
 
       const subModel: SpatialModel = {
         oid: 'spatial',
         id: nanoid(),
-        spatial: Y,
-        flatSpatial: Y,
         bounds: Y ? getBounds(Y) : null,
         filter,
         area: area.serialize(),
         children: [],
-        interpolate: true,
       };
 
       state.workspace.children.push(subModel);
@@ -205,10 +129,8 @@ export const viewslice = createSlice({
 
 // Action creators are generated for each case reducer function
 export const {
-  updatePosition,
   updatePositionByFilter,
   addSubEmbedding,
-  updateEmbedding,
   removeEmbedding,
   translateArea,
   setColor,
