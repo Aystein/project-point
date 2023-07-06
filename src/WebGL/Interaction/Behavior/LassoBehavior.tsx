@@ -17,6 +17,7 @@ import { useAppSelector } from '../../../Store/hooks';
 import { pointInPolygon } from '../../../Util';
 import { VectorLike } from '../../../Interfaces';
 import { runCondenseLayout } from '../../../Layouts/Layouts';
+import { addCluster } from '../../../Store/ClusterSlice';
 
 export function lassoPath(lasso) {
   return (lasso ?? []).reduce((svg, [x, y], i) => {
@@ -132,7 +133,11 @@ export function LassoSelectionPlugin() {
         boxRef={ref}
         onClick={(position) => {
           handleCondense(position);
-
+          dispatch(addCluster({
+            name: 'Test',
+            label: '0',
+            indices: selection,
+          }))
           setDrag(null);
         }}
         onMove={(_, event) => {

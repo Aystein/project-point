@@ -1,19 +1,17 @@
-import React from 'react';
-import { Button, Group, Modal, NumberInput, Stack, Text } from '@mantine/core';
-import { openContextModal, ContextModalProps } from '@mantine/modals';
-import { useDispatch, useSelector } from 'react-redux';
-import { Selectors } from '../Store/Selectors';
+import { Button, Group, NumberInput, Stack } from '@mantine/core';
 import { useForm } from '@mantine/form';
-import { groupBy as rowGrouper } from 'lodash';
-import 'react-data-grid/lib/styles.css';
-import DataGrid, { SelectColumn } from 'react-data-grid';
-import { showNotification, updateNotification } from '@mantine/notifications';
-import { VectorLike } from '../Interfaces';
-import { encode } from '../DataLoading/Encode';
-import { IRectangle } from '../WebGL/Math/Rectangle';
-import { runUMAPLayout } from '../Layouts/Layouts';
-import { useAppSelector } from '../Store/hooks';
+import { ContextModalProps } from '@mantine/modals';
 import { EntityId } from '@reduxjs/toolkit';
+import { groupBy as rowGrouper } from 'lodash';
+import React from 'react';
+import DataGrid, { SelectColumn } from 'react-data-grid';
+import 'react-data-grid/lib/styles.css';
+import { useSelector } from 'react-redux';
+import { encode } from '../DataLoading/Encode';
+import { VectorLike } from '../Interfaces';
+import { runUMAPLayout } from '../Layouts/Layouts';
+import { Selectors } from '../Store/Selectors';
+import { useAppSelector } from '../Store/hooks';
 
 export function TSNEModal({
   context,
@@ -26,6 +24,7 @@ export function TSNEModal({
 }>) {
   const data = useSelector(Selectors.data);
   const model = useAppSelector((state) => state.views.workspace.children?.find((e) => e.id === innerProps.id))
+  const positions = useAppSelector((state) => state.views.positions)
 
   const form = useForm({
     initialValues: {
@@ -67,8 +66,8 @@ export function TSNEModal({
       D,
       area: model.area,
       axis: innerProps.axis,
-      xLayout: model.spatial.map((x) => x.x),
-      yLayout: model.spatial.map((x) => x.y),
+      xLayout: model.filter.map((i) => positions[i].x),
+      yLayout: model.filter.map((i) => positions[i].y),
     });
     innerProps.onFinish(Y);
   };

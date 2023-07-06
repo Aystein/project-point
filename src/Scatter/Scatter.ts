@@ -67,6 +67,10 @@ export class Scatter {
 
   lineBuffer: YBuffer;
 
+  sampleTexture;
+
+  lineBindgroup;
+
   buffers: {
     color: YBuffer;
     vertex: YBuffer;
