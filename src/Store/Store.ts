@@ -97,33 +97,28 @@ const reducer = createReducer<RootState>(undefined, (builder) => {
     state.data.rows = rows;
     state.data.columns = columns;
 
-    const spatial = rows.map((row) => ({
+    state.views.positions = rows.map((row) => ({
       x: -1 + Math.random() * 2,
       y: -1 + Math.random() * 2,
     }));
 
-    state.views.positions = rows.map((row) => ({
-      x: -1 + Math.random() * 2,
-      y: -1 + Math.random() * 2,
-    }))
-
+    state.views.filter = Array.from({ length: rows.length }).map((_, i) => {
+      return i;
+    })
     state.views.workspace = {
-      oid: 'spatial',
       id: nanoid(),
-      bounds: {
-        minX: 0,
-        maxX: 1,
-        minY: 0,
-        maxY: 1,
-      },
       children: [],
-      filter: null,
+      filter: Array.from({ length: rows.length }).map((_, i) => {
+        return i;
+      }),
       area: null,
       color: rows.map(() => [0.5, 0.5, 0.5, 1]).flat(),
       shape: rows.map(() => 0),
+      x: state.views.positions.map((value) => 0.5),
+      y: state.views.positions.map((value) => 0.5),
     };
   });
-  
+
   builder.addDefaultCase(combined);
 });
 

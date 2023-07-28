@@ -11,7 +11,7 @@ import {
   Menu,
   rem,
   Stack,
-  Text
+  Text,
 } from '@mantine/core';
 import * as React from 'react';
 import { selectDatasets, useAppDispatch, useAppSelector } from '../Store/hooks';
@@ -47,7 +47,7 @@ export function DataTab() {
   };
 
   return (
-    <Flex direction={'column'} p="sm" gap="md">
+    <Flex direction={'column'} p="sm" gap="md" style={{ overflowY: 'auto' }}>
       <Statistics />
 
       <FileInput

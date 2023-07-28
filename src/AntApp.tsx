@@ -20,8 +20,8 @@ import { useAppDispatch } from './Store/hooks';
 import { initializeDatasets } from './Store/FilesSlice';
 import { atom, useAtom } from 'jotai';
 import { ClusterTab } from './MainTabs/ClusterTab';
-
-
+import { HistoryTab } from './MainTabs/HistoryTab';
+import { EncodingTab } from './MainTabs/EncodingTab';
 
 const useStyles = createStyles((theme) => ({
   wrapper: {
@@ -35,14 +35,14 @@ const useStyles = createStyles((theme) => ({
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    borderRight: `1px solid ${
-      theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.colors.gray[3]
-    }`,
+    borderRight: `1px solid ${theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.colors.gray[3]
+      }`,
   },
 
   main: {
+    display: 'flex',
+    flexDirection: 'column',
     flex: 1,
-    maxHeight: '100vh',
   },
 
   mainLink: {
@@ -69,7 +69,23 @@ const useStyles = createStyles((theme) => ({
 const mainLinksMockdata = [
   { icon: IconHome2, label: 'Home', index: 0 },
   { icon: IconHome2, label: 'Cluster', index: 1 },
+  { icon: IconHome2, label: 'History', index: 2 },
+  { icon: IconHome2, label: 'Encoding', index: 3 },
 ];
+
+export function AntApp2() {
+  return <AppShell layout='alt' header={<Header height={60} p="xs">HEADER</Header>}
+    navbar={
+      <Navbar width={{ sm: 300 }}>
+        <Navbar.Section grow style={{ display: 'flex' }}>
+          <div style={{ flex: 1, overflow: 'auto' }}>
+            {Array.from({ length: 100 }).map(() => <div>hihi</div>)}
+          </div>
+        </Navbar.Section>
+      </Navbar>
+    }
+  >test</AppShell>
+}
 
 export function AntApp() {
   const { classes, cx } = useStyles();
@@ -114,21 +130,35 @@ export function AntApp() {
             <Stack className={classes.aside} pt="xs" spacing="xs">
               {mainLinks}
             </Stack>
-            <div className={classes.main}>
-              <Tabs
-                defaultValue={mainLinksMockdata[0].label}
-                value={active}
-                orientation="vertical"
-              >
-                <Tabs.Panel value={mainLinksMockdata[0].label}>
-                  <DataTab />
-                </Tabs.Panel>
+            <Tabs
+              defaultValue={mainLinksMockdata[0].label}
+              value={active}
+              style={{ flexDirection: 'column', display: 'flex', flex: 1 }}
+              sx={{
+                '> div': {
+                  overflowY: 'auto',
+                  flexGrow: 1,
+                  height: 0,
+                  flexDirection: 'column'
+                }
+              }}
+            >
+              <Tabs.Panel value={mainLinksMockdata[0].label} style={{ display: active === mainLinksMockdata[0].label ? 'flex' : 'none' }}>
+                <DataTab />
+              </Tabs.Panel>
 
-                <Tabs.Panel value={mainLinksMockdata[1].label}>
-                  <ClusterTab />
-                </Tabs.Panel>
-              </Tabs>
-            </div>
+              <Tabs.Panel value={mainLinksMockdata[1].label} style={{ display: active === mainLinksMockdata[1].label ? 'flex' : 'none' }}>
+                <ClusterTab />
+              </Tabs.Panel>
+
+              <Tabs.Panel value={mainLinksMockdata[2].label} style={{ display: active === mainLinksMockdata[2].label ? 'flex' : 'none' }}>
+                <HistoryTab />
+              </Tabs.Panel>
+
+              <Tabs.Panel value={mainLinksMockdata[3].label} style={{ display: active === mainLinksMockdata[3].label ? 'flex' : 'none' }}>
+                <EncodingTab />
+              </Tabs.Panel>
+            </Tabs>
           </Navbar.Section>
         </Navbar>
       }
@@ -139,7 +169,7 @@ export function AntApp() {
           backgroundColor:
             theme.colorScheme === 'dark'
               ? theme.colors.dark[8]
-              : theme.colors.gray[0],
+              : theme.colors.white,
         },
       })}
     >

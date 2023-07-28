@@ -36,12 +36,14 @@ export const VisContext = createContext<{
   world: (value: number) => number;
 }>(null);
 
-export const VisProvider = ({ children }) => {
-  const [zoom, setZoom] = React.useState({
-    tx: 0,
-    ty: 0,
-    s: 1,
-  });
+export const VisProvider = ({ children, defaultZoom }) => {
+  const [zoom, setZoom] = React.useState(
+    defaultZoom ?? {
+      tx: 0,
+      ty: 0,
+      s: 1,
+    }
+  );
 
   const { ref, width, height } = useElementSize();
   const [renderer, setRenderer] = React.useState<WebGLRenderer>();
@@ -127,6 +129,16 @@ export const VisProvider = ({ children }) => {
     return controller;
   }, [visContext]);
 
+  const checkTarget = (target: HTMLElement) => {
+    if (target.tagName.toLowerCase() !== 'div') {
+      return false;
+    }
+    if (target.hasAttribute('data-interaction')) {
+      return false
+    }
+    return true
+  }
+
   return (
     <VisContext.Provider
       value={{
@@ -148,12 +160,24 @@ export const VisProvider = ({ children }) => {
         style={{ width: '100%', height: '100%' }}
         ref={ref}
         onMouseDown={(event) => {
+          if (!checkTarget(event.target as HTMLElement)) {
+            return;
+          }
+          
           mcontroller.mouseDown(event.nativeEvent);
         }}
         onMouseUp={(event) => {
+          if (!checkTarget(event.target as HTMLElement)) {
+            return;
+          }
+
           mcontroller.mouseUp(event.nativeEvent);
         }}
         onMouseMove={(event) => {
+          if (!checkTarget(event.target as HTMLElement)) {
+            return;
+          }
+
           mcontroller.mouseMove(event.nativeEvent);
         }}
         onWheel={(event) => {

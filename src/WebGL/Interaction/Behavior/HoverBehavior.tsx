@@ -67,12 +67,22 @@ export function HoverBehavior({
 }
 
 function HoverComponent({ row }: { row: Row }) {
-  const rows = keys(row).slice(0, 10).map((key) => (
-    <tr key={key}>
-      <td style={{ width: rem(150), overflow: 'hidden', textOverflow: 'ellipsis' }}>{key}</td>
-      <td>{row[key]}</td>
-    </tr>
-  ));
+  const rows = keys(row)
+    .slice(0, 10)
+    .map((key) => (
+      <tr key={key}>
+        <td
+          style={{
+            width: rem(150),
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}
+        >
+          {key}
+        </td>
+        <td>{row[key]}</td>
+      </tr>
+    ));
 
   return (
     <div

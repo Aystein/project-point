@@ -78,6 +78,7 @@ export function LassoSelectionPlugin() {
   const [drag, setDrag] = React.useState<VectorLike>(null);
   const dispatch = useDispatch();
   const spatial = useAppSelector((state) => state.views.positions);
+  const globalFilter = useAppSelector((state) => state.views.filter);
 
   const [points, setPoints] = React.useState<[number, number][]>([]);
 
@@ -102,12 +103,18 @@ export function LassoSelectionPlugin() {
   );
 
   const handleCondense = async (position: VectorLike) => {
-    const Y = await runCondenseLayout(selection.length, {
-      x: scaledXDomain.invert(position.x) - 2,
-      y: scaledYDomain.invert(position.y) - 2,
-      width: 4,
-      height: 4,
-    });
+    const { Y } = await runCondenseLayout(
+      selection.length,
+      {
+        x: scaledXDomain.invert(position.x) - 2,
+        y: scaledYDomain.invert(position.y) - 2,
+        width: 4,
+        height: 4,
+      },
+      'xy',
+      undefined,
+      undefined
+    );
 
     dispatch(updatePositionByFilter({ filter: selection, position: Y }));
   };
@@ -118,8 +125,8 @@ export function LassoSelectionPlugin() {
         style={{
           width: '100%',
           height: '100%',
-          pointerEvents: 'all',
           position: 'absolute',
+          pointerEvents: 'none',
           top: 0,
           left: 0,
         }}
@@ -133,11 +140,13 @@ export function LassoSelectionPlugin() {
         boxRef={ref}
         onClick={(position) => {
           handleCondense(position);
-          dispatch(addCluster({
-            name: 'Test',
-            label: '0',
-            indices: selection,
-          }))
+          dispatch(
+            addCluster({
+              name: 'Test',
+              label: '0',
+              indices: selection,
+            })
+          );
           setDrag(null);
         }}
         onMove={(_, event) => {
@@ -161,11 +170,11 @@ export function LassoSelectionPlugin() {
 
           spatial.forEach((xy, i) => {
             if (pointInPolygon(xy.x, xy.y, worldPoints)) {
-              indices.push(i);
+              indices.push(globalFilter[i]);
             }
           });
 
-          dispatch(setSelection(indices));
+          dispatch(setSelection(indices.length === 0 ? undefined : indices));
 
           setDrag(null);
           setPoints([]);

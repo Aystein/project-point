@@ -4,9 +4,13 @@ import { IRectangle, Rectangle } from '../WebGL/Math/Rectangle';
 import { scaleLinear } from 'd3-scale';
 import groupBy from 'lodash/groupBy';
 import keys from 'lodash/keys';
-import range from 'lodash/range';
 import { VectorLike } from '../Interfaces';
-import { convergeLayout, forceNormalization } from '../Layouts/ForceUtil';
+import {
+  convergeLayout,
+  forceNormalization,
+  forceNormalizationNew,
+} from '../Layouts/ForceUtil';
+import { LabelContainer } from '../Store/ModelSlice';
 
 interface Props {
   data: {
@@ -14,22 +18,29 @@ interface Props {
     area: IRectangle;
     feature: string;
     type: string;
+    axis: 'x' | 'y';
+    xLayout: number[];
+    yLayout: number[];
   };
 }
 
-const SPACE_PER_UNIT = 0.006 * 0.006;
-
-self.onmessage = ({ data: { X, area, type, feature } }: Props) => {
+self.onmessage = ({
+  data: { X, area, type, feature, xLayout, yLayout },
+}: Props) => {
   if (type !== 'init') {
     return;
   }
+
+  const labels: LabelContainer = {
+    discriminator: 'positionedlabels',
+    type: 'x',
+    labels: [],
+  };
 
   self.postMessage({
     type: 'message',
     message: 'Calculating groups',
   });
-
-  const areaRect = Rectangle.deserialize(area);
 
   const relativeIndices = X.map((value, i) => ({
     relativeIndex: i,
@@ -43,24 +54,29 @@ self.onmessage = ({ data: { X, area, type, feature } }: Props) => {
 
   const Y = new Array<VectorLike>(N);
 
-  const [scaleX, scaleY, radius] = forceNormalization(area);
+  const [scaleX, scaleY, worldX, worldY, radius] = forceNormalizationNew(area);
 
-  const destinationRect = areaRect;
-
-  const padding = destinationRect.width / (keys(groups).length + 10);
+  const padding = 1 / (keys(groups).length + 10);
   let usedSpace = padding;
 
-  let leftSpace = destinationRect.width - padding * (keys(groups).length + 1);
+  let leftSpace = 1 - padding * (keys(groups).length + 1);
 
   for (const key of keys(groups)) {
     const group = groups[key];
 
     const portion = leftSpace * (group.length / N);
-    const centerX = destinationRect.x + usedSpace + portion / 2;
+    const centerX = usedSpace + portion / 2;
 
-    const centerY = destinationRect.centerY;
+    labels.labels.push({ position: centerX, content: key });
 
-    const nodes = group.map(() => ({ x: centerX, y: centerY }));
+    const Y_group = group.map((entry) => ({
+      x: centerX,
+      y: yLayout[entry.relativeIndex],
+    }));
+    const nodes = group.map((entry) => ({
+      x: centerX,
+      y: yLayout[entry.relativeIndex],
+    }));
     usedSpace += portion + padding;
 
     function boxingForce() {
@@ -78,8 +94,20 @@ self.onmessage = ({ data: { X, area, type, feature } }: Props) => {
 
     var simulation = d3
       .forceSimulation(nodes)
-      .force('collision', d3.forceCollide().radius(radius).strength(5))
-      .force('center', d3.forceCenter(scaleX(centerX), scaleY(centerY)))
+      .force('collision', d3.forceCollide().radius(radius))
+      //.force('center', d3.forceCenter(scaleX(centerX), scaleY(centerY)))
+      .force(
+        'x',
+        d3.forceX().x(function (d) {
+          return scaleX(Y_group[d.index].x);
+        })
+      )
+      .force(
+        'y',
+        d3.forceY().y(function (d) {
+          return scaleY(Y_group[d.index].y);
+        })
+      )
       .force('bound', boxingForce)
       .stop();
 
@@ -98,6 +126,9 @@ self.onmessage = ({ data: { X, area, type, feature } }: Props) => {
   self.postMessage({
     type: 'finish',
     // @ts-ignore
-    Y,
+    Y: Y.map((value) => ({ x: worldX(value.x), y: worldY(value.y) })),
+    xLayout: Y.map((value) => value.x),
+    yLayout: Y.map((value) => value.y),
+    labels,
   });
 };

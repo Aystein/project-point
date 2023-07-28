@@ -1,26 +1,26 @@
-import { VectorLike } from '../../Interfaces'
+import { VectorLike } from '../../Interfaces';
 
 export interface IRectangle {
-  x: number
-  y: number
-  width: number
-  height: number
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }
 
 export class Rectangle {
-  x: number
+  x: number;
 
-  y: number
+  y: number;
 
-  width: number
+  width: number;
 
-  height: number
+  height: number;
 
   constructor(x: number, y: number, width: number, height: number) {
-    this.x = x
-    this.y = y
-    this.width = width
-    this.height = height
+    this.x = x;
+    this.y = y;
+    this.width = width;
+    this.height = height;
   }
 
   within(vector: VectorLike) {
@@ -29,7 +29,7 @@ export class Rectangle {
       vector.x < this.x + this.width &&
       vector.y > this.y &&
       vector.y < this.y + this.height
-    )
+    );
   }
 
   serialize(): IRectangle {
@@ -38,18 +38,18 @@ export class Rectangle {
       y: this.y,
       width: this.width,
       height: this.height,
-    }
+    };
   }
 
   get centerX() {
-    return this.x + this.width / 2
+    return this.x + this.width / 2;
   }
 
   get centerY() {
-    return this.y + this.height / 2
+    return this.y + this.height / 2;
   }
 
   static deserialize(dump: IRectangle) {
-    return new Rectangle(dump.x, dump.y, dump.width, dump.height)
+    return new Rectangle(dump.x, dump.y, dump.width, dump.height);
   }
 }

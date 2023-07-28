@@ -1,48 +1,56 @@
-import * as React from 'react';
-import {
-  COMMAND_PRIORITY_NORMAL,
-  MOUSE_DRAG_START,
-} from '../../Interaction/Commands';
-import { useVisContext } from '../../VisualizationContext';
-import { IRectangle, Rectangle } from '../../Math/Rectangle';
 import {
   ActionIcon,
   Box,
   Button,
   Group,
   Menu,
-  Overlay,
-  ThemeIcon,
-  rem,
+  rem
 } from '@mantine/core';
 import {
-  IconArrowsMove,
-  IconArrowMoveUp,
   IconArrowMoveRight,
+  IconArrowMoveUp,
+  IconArrowsMove,
 } from '@tabler/icons-react';
-
-import { SpatialModel } from '../../../Store/ModelSlice';
+import * as React from 'react';
+import {
+  COMMAND_PRIORITY_NORMAL,
+  MOUSE_DRAG_START,
+} from '../../Interaction/Commands';
+import { IRectangle, Rectangle } from '../../Math/Rectangle';
+import { useVisContext } from '../../VisualizationContext';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faPaintRoller } from '@fortawesome/free-solid-svg-icons'
 import { openContextModal } from '@mantine/modals';
+import { IconX } from '@tabler/icons-react';
+import { color } from 'd3-color';
+import { scaleLinear, scaleOrdinal } from 'd3-scale';
+import { schemeCategory10 } from 'd3-scale-chromatic';
+import groupBy from 'lodash/groupBy';
 import { useDispatch } from 'react-redux';
 import { DataType, VectorLike } from '../../../Interfaces';
 import {
+  runCondenseLayout,
+  runForceLayout,
+  runGroupLayout,
+} from '../../../Layouts/Layouts';
+import { LabelContainer, SpatialModel } from '../../../Store/ModelSlice';
+import {
   addSubEmbedding,
+  changeSize,
   removeEmbedding,
   setColor,
   setLines,
   setShape,
   translateArea,
+  updateLabels,
   updatePositionByFilter,
+  updateTrueEmbedding,
 } from '../../../Store/ViewSlice';
-import { IconX } from '@tabler/icons-react';
-import { useMouseEvent } from './useMouseDrag';
-import { runCondenseLayout, runForceLayout } from '../../../Layouts/Layouts';
 import { useAppSelector } from '../../../Store/hooks';
-import { schemeCategory10 } from 'd3-scale-chromatic';
-import { scaleLinear, scaleOrdinal } from 'd3-scale';
 import { getMinMax } from '../../../Util';
-import groupBy from 'lodash/groupBy';
 import { SimpleDragCover } from './DragCover';
+import { LabelsOverlay } from './LabelsOverlay';
+import { useMouseEvent } from './useMouseDrag';
 
 export function BoxBehavior({ parentModel }: { parentModel: SpatialModel }) {
   const { vis, scaledXDomain, scaledYDomain } = useVisContext();
@@ -51,7 +59,10 @@ export function BoxBehavior({ parentModel }: { parentModel: SpatialModel }) {
   const [rect, setRect] = React.useState<Rectangle>();
   const dispatch = useDispatch();
 
-  const positions = useAppSelector((state) => state.views.positions)
+  const x = useAppSelector((state) => state.views.workspace.x);
+  const y = useAppSelector((state) => state.views.workspace.y);
+
+  const positions = useAppSelector((state) => state.views.positions);
 
   // register to mousedrag...
   useMouseEvent(
@@ -79,21 +90,24 @@ export function BoxBehavior({ parentModel }: { parentModel: SpatialModel }) {
         pointerEvents: 'none',
         overflow: 'hidden',
       }}
+
       ref={ref}
     >
       {rect ? (
         <SimpleDragCover
           boxRef={ref}
           drag={{ x: rect.x, y: rect.y }}
-          setDrag={(value) => {
+          setDrag={async (value) => {
             if (rect) {
+              setRect(null);
+
               const worldRect = new Rectangle(
                 scaledXDomain.invert(rect.x),
                 scaledYDomain.invert(rect.y),
                 scaledXDomain.invert(rect.x + rect.width) -
-                  scaledXDomain.invert(rect.x),
+                scaledXDomain.invert(rect.x),
                 scaledYDomain.invert(rect.y + rect.height) -
-                  scaledYDomain.invert(rect.y)
+                scaledYDomain.invert(rect.y)
               );
 
               const filter = new Array<number>();
@@ -112,7 +126,16 @@ export function BoxBehavior({ parentModel }: { parentModel: SpatialModel }) {
                 })
               );
 
-              setRect(null);
+              const { Y } = await runForceLayout({
+                N: filter.length,
+                area: worldRect,
+                axis: 'xy',
+                xLayout: filter.map((index) => x[index]),
+                yLayout: filter.map((index) => y[index]),
+              });
+
+              dispatch(updatePositionByFilter({ position: Y, filter }));
+
               return true;
             }
           }}
@@ -153,53 +176,6 @@ export function BoxBehavior({ parentModel }: { parentModel: SpatialModel }) {
   );
 }
 
-export function DragCover({
-  onMove,
-  style,
-  icon,
-}: {
-  onMove: (amount: VectorLike) => void;
-  style: React.CSSProperties;
-  icon;
-}) {
-  const [drag, setDrag] = React.useState<VectorLike>(null);
-
-  return (
-    <>
-      <ActionIcon
-        size="sm"
-        style={style}
-        onMouseDown={(event) => {
-          event.preventDefault();
-          event.stopPropagation();
-
-          console.log('mouse down');
-
-          setDrag({ x: event.screenX, y: event.screenY });
-        }}
-        onContextMenu={(event) => {
-          event.preventDefault();
-        }}
-      >
-        {icon}
-      </ActionIcon>
-      {drag ? (
-        <Overlay
-          style={{ pointerEvents: 'initial' }}
-          opacity={0}
-          fixed
-          onMouseMove={(event) => {
-            onMove({ x: event.movementX, y: event.movementY });
-          }}
-          onMouseUp={(event) => {
-            setDrag(null);
-          }}
-        />
-      ) : null}
-    </>
-  );
-}
-
 function SingleBox({
   area,
   parentModel,
@@ -210,22 +186,51 @@ function SingleBox({
   const { scaledXDomain, scaledYDomain, world } = useVisContext();
   const dispatch = useDispatch();
   const data = useAppSelector((state) => state.data.rows);
-  const positions = useAppSelector((state) => state.views.positions);
+  const xLayout = useAppSelector((state) => state.views.workspace.x);
+  const yLayout = useAppSelector((state) => state.views.workspace.y);
 
-  const handleCondense = async () => {
-    const Y = await runCondenseLayout(parentModel.filter.length, area);
+  const [drag, setDrag] = React.useState<{
+    direction: 'x' | 'y' | 'xy';
+    position: VectorLike;
+  }>();
 
-    dispatch(updatePositionByFilter({ position: Y, filter: parentModel.filter }));
+  const handleCondense = async (axis: 'x' | 'y' | 'xy') => {
+    const { Y, x, y } = await runCondenseLayout(
+      parentModel.filter.length,
+      area,
+      axis,
+      parentModel.filter.map((index) => xLayout[index]),
+      parentModel.filter.map((index) => yLayout[index])
+    );
+
+    dispatch(updateLabels({
+      id: parentModel.id, labels: {
+        discriminator: 'positionedlabels',
+        type: axis !== 'xy' ? axis : 'absolute',
+        labels: [],
+      }
+    }));
+    dispatch(updateTrueEmbedding({ id: parentModel.id, x, y }));
+    dispatch(
+      updatePositionByFilter({ position: Y, filter: parentModel.filter })
+    );
   };
 
   const handleColor = () => {
-    const onFinish = (feature: string) => {
-      const filteredRows = parentModel.filter.map((i) => data[i]);
-      let color = scaleOrdinal(schemeCategory10).domain(
-        filteredRows.map((row) => row[feature])
-      );
+    const onFinish = (feature: string, type: string) => {
+      const filteredRows = parentModel.filter
+        .map((i) => data[i])
+        .map((row) => row[feature]);
+      const extent = getMinMax(filteredRows);
 
-      const mappedColors = filteredRows.map((row) => color(row[feature]));
+      let colorScale =
+        type === 'categorical'
+          ? scaleOrdinal(schemeCategory10).domain(filteredRows)
+          : scaleLinear<string>().domain(extent).range(['red', 'green']);
+
+      const mappedColors = filteredRows.map((row) =>
+        color(colorScale(row)).formatHex()
+      );
 
       dispatch(
         setColor({
@@ -255,6 +260,7 @@ function SingleBox({
   const handleShape = () => {
     const onFinish = (feature: string) => {
       const filteredRows = parentModel.filter.map((i) => data[i]);
+
       let shape = scaleOrdinal([0, 1, 2, 3]).domain(
         filteredRows.map((row) => row[feature])
       );
@@ -304,16 +310,31 @@ function SingleBox({
     });
   };
 
-  const handleGroupBy = async () => {
-    const onFinish = (Y) => {
-      dispatch(updatePositionByFilter({ position: Y, filter: parentModel.filter }));
+  const handleGroupBy = async (axis: 'x' | 'y') => {
+    const onFinish = async (feature: string) => {
+      const X = parentModel.filter.map((i) => data[i]);
+      const { Y, x, y, labels } = await runGroupLayout(
+        X,
+        area,
+        feature,
+        axis,
+        parentModel.filter.map((index) => xLayout[index]),
+        parentModel.filter.map((index) => yLayout[index])
+      );
+
+      console.log(labels);
+
+      dispatch(updateLabels({ id: parentModel.id, labels }));
+      dispatch(updateTrueEmbedding({ id: parentModel.id, x, y }));
+      dispatch(
+        updatePositionByFilter({ position: Y, filter: parentModel.filter })
+      );
     };
+
     openContextModal({
-      modal: 'grouping',
+      modal: 'colorby',
       title: 'Group by',
       innerProps: {
-        X: parentModel.filter.map((i) => data[i]),
-        area,
         onFinish,
       },
     });
@@ -325,28 +346,40 @@ function SingleBox({
         .map((i) => data[i])
         .map((row) => row[feature]);
 
-      const [min, max] = getMinMax(X);
+      const domain = getMinMax(X);
 
-      let scale = scaleLinear().domain([min, max]).range([0, 1]);
+      let scale = scaleLinear().domain(domain).range([0, 1]);
 
       const mapped = X.map((value) => scale(value));
 
-      const Y = await runForceLayout({
+      const { Y, x, y } = await runForceLayout({
         N: parentModel.filter.length,
         area,
-        X,
         axis,
         xLayout:
           axis === 'x'
             ? mapped
-            : parentModel.x ?? parentModel.filter.map((index) => positions[index].x),
+            : parentModel.filter.map((index) => xLayout[index]),
         yLayout:
           axis === 'y'
             ? mapped
-            : parentModel.y ?? parentModel.filter.map((index) => positions[index].y),
+            : parentModel.filter.map((index) => yLayout[index]),
       });
 
-      dispatch(updatePositionByFilter({ position: Y, filter: parentModel.filter }));
+      const labels: LabelContainer = {
+        discriminator: 'scalelabels',
+        type: axis,
+        labels: {
+          domain,
+          range: [0, 1],
+        },
+      };
+
+      dispatch(updateLabels({ id: parentModel.id, labels }));
+      dispatch(updateTrueEmbedding({ id: parentModel.id, x, y }));
+      dispatch(
+        updatePositionByFilter({ position: Y, filter: parentModel.filter })
+      );
     };
 
     openContextModal({
@@ -361,37 +394,152 @@ function SingleBox({
 
   return (
     <Group
-      sx={(theme) => ({
+      style={{
         pointerEvents: 'none',
         position: 'absolute',
         left: scaledXDomain(area.x),
         top: scaledYDomain(area.y),
         width: scaledXDomain(area.x + area.width) - scaledXDomain(area.x),
         height: scaledYDomain(area.y + area.height) - scaledYDomain(area.y),
-      })}
+        background: '#f8f9fa',
+      }}
     >
-      <Box
-        sx={(theme) => ({
-          background:
-            theme.colorScheme !== 'dark' ? theme.colors.dark[7] : theme.white,
-          position: 'absolute',
-          width: 1,
-          top: rem(24),
-          height: `calc(100% - ${rem(48)})`,
-        })}
-      />
-      <Box
-        sx={(theme) => ({
-          background:
-            theme.colorScheme !== 'dark' ? theme.colors.dark[7] : theme.white,
-          position: 'absolute',
-          left: rem(24),
-          height: 1,
-          width: `calc(100% - ${rem(48)})`,
-          bottom: 0,
-        })}
-      />
-      <DragCover
+      <Menu shadow="md" width={200} position='left' withArrow>
+        <Menu.Target>
+
+          <Box
+            px={7}
+            sx={(theme) => ({
+              position: 'absolute',
+              width: 16,
+              top: rem(24),
+              left: -8,
+              height: `calc(100% - ${rem(48)})`,
+              '&:hover': {
+                '> div': { background: '#1c7ed6' },
+              },
+              pointerEvents: 'initial'
+            })}
+            data-interaction
+          >
+            <Box data-interaction sx={(theme) => ({
+              height: '100%',
+              background:
+                theme.colorScheme !== 'dark' ? theme.colors.dark[2] : theme.white,
+            })}></Box>
+          </Box>
+        </Menu.Target>
+
+        <Menu.Dropdown
+          style={{ pointerEvents: 'initial' }}
+
+          onMouseDown={(event) => {
+            event.stopPropagation();
+          }}
+        >
+          <Menu.Item onClick={() => handleCondense('y')}>Condense</Menu.Item>
+          <Menu.Item onClick={() => handleGroupBy('y')}>Group by</Menu.Item>
+          <Menu.Item onClick={() => handleLinearScale('y')}>
+            Linear scale
+          </Menu.Item>
+          <Menu.Item
+            onClick={() => {
+              openContextModal({
+                modal: 'demonstration',
+                title: 't-SNE embedding',
+                size: '70%',
+                innerProps: {
+                  id: parentModel.id,
+                  axis: 'y',
+                  onFinish: ({ Y, x, y }) => {
+                    dispatch(
+                      updateTrueEmbedding({ y, x, id: parentModel.id })
+                    );
+                    dispatch(
+                      updatePositionByFilter({
+                        position: Y,
+                        filter: parentModel.filter,
+                      })
+                    );
+                  },
+                },
+              });
+            }}
+          >
+            UMAP
+          </Menu.Item>
+        </Menu.Dropdown>
+      </Menu>
+
+      <Menu shadow="md" width={200} position="bottom">
+        <Menu.Target>
+          <Box
+            py={7}
+            sx={(theme) => ({
+              position: 'absolute',
+              left: rem(24),
+              height: 16,
+              width: `calc(100% - ${rem(48)})`,
+              bottom: -8,
+              '&:hover': {
+                '> div': { background: '#1c7ed6' },
+              },
+              pointerEvents: 'initial'
+            })}
+            data-interaction
+          >
+            <Box data-interaction sx={(theme) => ({
+              height: '100%',
+              background:
+                theme.colorScheme !== 'dark' ? theme.colors.dark[2] : theme.white,
+            })}></Box>
+          </Box>
+
+        </Menu.Target>
+
+        <Menu.Dropdown
+          style={{ pointerEvents: 'initial' }}
+          onMouseDown={(event) => {
+            event.stopPropagation();
+          }}
+        >
+          <Menu.Item onClick={() => handleCondense('y')}>Condense</Menu.Item>
+          <Menu.Item onClick={() => handleGroupBy('y')}>Group by</Menu.Item>
+          <Menu.Item onClick={() => handleLinearScale('y')}>
+            Linear scale
+          </Menu.Item>
+          <Menu.Item
+            onClick={() => {
+              openContextModal({
+                modal: 'demonstration',
+                title: 't-SNE embedding',
+                size: '70%',
+                innerProps: {
+                  id: parentModel.id,
+                  axis: 'y',
+                  onFinish: ({ Y, x, y }) => {
+                    dispatch(
+                      updateTrueEmbedding({ y, x, id: parentModel.id })
+                    );
+                    dispatch(
+                      updatePositionByFilter({
+                        position: Y,
+                        filter: parentModel.filter,
+                      })
+                    );
+                  },
+                },
+              });
+            }}
+          >
+            UMAP
+          </Menu.Item>
+        </Menu.Dropdown>
+      </Menu>
+
+
+
+      <SimpleDragCover
         onMove={(movement) => {
           dispatch(
             translateArea({
@@ -401,22 +549,51 @@ function SingleBox({
             })
           );
         }}
+        setDrag={(position) => {
+          setDrag(position ? { position, direction: 'xy' } : null);
+        }}
+        drag={drag?.direction === 'xy' ? drag.position : null}
         style={{
           pointerEvents: 'initial',
           transform: 'translate(-50%, 50%)',
           position: 'absolute',
           bottom: 0,
+
         }}
+        data-interaction
         icon={<IconArrowsMove />}
       />
 
-      <DragCover
+      <SimpleDragCover
+        setDrag={async (position) => {
+          setDrag(position ? { position, direction: 'x' } : null);
+
+          if (!position) {
+            const { Y } = await runForceLayout({
+              N: parentModel.filter.length,
+              area: parentModel.area,
+              axis: 'xy',
+              xLayout: parentModel.filter.map((index) => xLayout[index]),
+              yLayout: parentModel.filter.map((index) => yLayout[index]),
+            });
+
+            dispatch(
+              updatePositionByFilter({
+                position: Y,
+                filter: parentModel.filter,
+              })
+            );
+          }
+        }}
+        drag={drag?.direction === 'x' ? drag.position : null}
         onMove={(movement) => {
           dispatch(
-            translateArea({
+            changeSize({
               id: parentModel.id,
-              x: world(movement.x),
-              y: world(movement.y),
+              width:
+                parentModel.area.width +
+                (scaledXDomain.invert(movement.x) - scaledXDomain.invert(0)),
+              height: parentModel.area.height,
             })
           );
         }}
@@ -430,13 +607,15 @@ function SingleBox({
         icon={<IconArrowMoveRight />}
       />
 
-      <DragCover
+      <SimpleDragCover
         onMove={(movement) => {
           dispatch(
-            translateArea({
+            changeSize({
               id: parentModel.id,
-              x: world(movement.x),
-              y: world(movement.y),
+              height:
+                parentModel.area.height +
+                (scaledYDomain.invert(movement.y) - scaledYDomain.invert(0)),
+              width: parentModel.area.width,
             })
           );
         }}
@@ -448,113 +627,23 @@ function SingleBox({
           top: 0,
         }}
         icon={<IconArrowMoveUp />}
+        setDrag={(position) => {
+          setDrag(position ? { position, direction: 'y' } : null);
+        }}
+        drag={drag?.direction === 'y' ? drag.position : null}
       />
 
       <Group
         style={{
           position: 'absolute',
+          right: 0,
           top: 0,
-          left: rem(32),
+          transform: 'translateY(-100%)',
         }}
       >
-        <Menu shadow="md" width={200} withinPortal>
-          <Menu.Target>
-            <Button
-              style={{ pointerEvents: 'initial' }}
-              onMouseDown={(event) => {
-                event.stopPropagation();
-              }}
-            >
-              X
-            </Button>
-          </Menu.Target>
-
-          <Menu.Dropdown
-            style={{ pointerEvents: 'initial' }}
-            onMouseDown={(event) => {
-              event.stopPropagation();
-            }}
-          >
-            <Menu.Item onClick={handleCondense}>Condense</Menu.Item>
-            <Menu.Item onClick={handleGroupBy}>Group by</Menu.Item>
-            <Menu.Item onClick={() => handleLinearScale('x')}>
-              Linear scale
-            </Menu.Item>
-            <Menu.Item
-              onClick={() => {
-                openContextModal({
-                  modal: 'demonstration',
-                  title: 't-SNE embedding',
-                  size: '70%',
-                  innerProps: {
-                    id: parentModel.id,
-                    axis: 'x',
-                    onFinish: (Y) => {
-                      dispatch(updatePositionByFilter({ position: Y, filter: parentModel.filter }));
-                    },
-                  },
-                });
-              }}
-            >
-              UMAP
-            </Menu.Item>
-          </Menu.Dropdown>
-        </Menu>
-
         <Menu shadow="md" width={200}>
           <Menu.Target>
-            <Button
-              style={{ pointerEvents: 'initial' }}
-              onMouseDown={(event) => {
-                event.stopPropagation();
-              }}
-            >
-              Y
-            </Button>
-          </Menu.Target>
-
-          <Menu.Dropdown
-            style={{ pointerEvents: 'initial' }}
-            onMouseDown={(event) => {
-              event.stopPropagation();
-            }}
-          >
-            <Menu.Item onClick={handleCondense}>Condense</Menu.Item>
-            <Menu.Item onClick={handleGroupBy}>Group by</Menu.Item>
-            <Menu.Item onClick={() => handleLinearScale('y')}>
-              Linear scale
-            </Menu.Item>
-            <Menu.Item
-              onClick={() => {
-                openContextModal({
-                  modal: 'demonstration',
-                  title: 't-SNE embedding',
-                  size: '70%',
-                  innerProps: {
-                    id: parentModel.id,
-                    axis: 'y',
-                    onFinish: (Y) => {
-                      dispatch(updatePositionByFilter({ position: Y, filter: parentModel.filter }));
-                    },
-                  },
-                });
-              }}
-            >
-              UMAP
-            </Menu.Item>
-          </Menu.Dropdown>
-        </Menu>
-
-        <Menu shadow="md" width={200}>
-          <Menu.Target>
-            <Button
-              style={{ pointerEvents: 'initial' }}
-              onMouseDown={(event) => {
-                event.stopPropagation();
-              }}
-            >
-              Channel
-            </Button>
+            <FontAwesomeIcon icon={faPaintRoller} />
           </Menu.Target>
 
           <Menu.Dropdown
@@ -575,8 +664,16 @@ function SingleBox({
                   innerProps: {
                     id: parentModel.id,
                     axis: 'xy',
-                    onFinish: (Y) => {
-                      dispatch(updatePositionByFilter({ position: Y, filter: parentModel.filter }));
+                    onFinish: ({ Y, x, y }) => {
+                      dispatch(
+                        updateTrueEmbedding({ y, x, id: parentModel.id })
+                      );
+                      dispatch(
+                        updatePositionByFilter({
+                          position: Y,
+                          filter: parentModel.filter,
+                        })
+                      );
                     },
                   },
                 });
@@ -599,6 +696,8 @@ function SingleBox({
           <IconX />
         </ActionIcon>
       </Group>
+
+      <LabelsOverlay labels={parentModel.labels} />
     </Group>
   );
 }

@@ -12,8 +12,8 @@ function ClusterItem({ cluster }: { cluster: Cluster }) {
   };
 
   const handleClick = () => {
-    dispatch(setSelection(cluster.indices))
-  }
+    dispatch(setSelection(cluster.indices));
+  };
 
   return (
     <NavLink
@@ -28,7 +28,7 @@ function ClusterItem({ cluster }: { cluster: Cluster }) {
 
 export function ClusterTab() {
   const clusters = useSelector(selectClusters);
-  
+
   return (
     <Stack>
       <div>test</div>

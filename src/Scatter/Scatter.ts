@@ -2,10 +2,11 @@ import wgsl from './Scatter.render.wgsl?raw';
 import linewgsl from './Line.render.wgsl?raw';
 import computewgsl from './Scatter.compute.wgsl?raw';
 import image from '../Assets/square_white.png';
-import { createQuadBuffer, requestDevice } from './Util';
+import { createQuadBuffer } from './Util';
 import { YBuffer, createYBuffer } from './Test/YBuffer';
 import { defaultAlphaBlend } from './Test/Blending';
 import { YBufferGroup, createYBufferGroup } from './Test/YBufferGroup';
+import { POINT_RADIUS } from '../Layouts/Globals';
 
 export interface ScatterConfig {
   background: GPUColor;
@@ -87,6 +88,8 @@ export class Scatter {
 
   disposed = false;
 
+  interpolateBetweenFrames = true;
+
   constructor(
     public N: number,
     protected context: GPUCanvasContext,
@@ -110,10 +113,14 @@ export class Scatter {
   setXY(data: Float32Array) {
     const {
       device,
-      buffers: { targetPosition },
+      buffers: { targetPosition, particle },
     } = this;
 
-    device.queue.writeBuffer(targetPosition, 0, data);
+    if (this.interpolateBetweenFrames) {
+      device.queue.writeBuffer(targetPosition, 0, data);
+    } else {
+      device.queue.writeBuffer(particle._buffer, 0, data);
+    }
   }
 
   updateBounds(xdomain, ydomain) {
@@ -123,8 +130,8 @@ export class Scatter {
       new Float32Array([
         ...xdomain,
         ...ydomain,
-        (2 / (xdomain[1] - xdomain[0])) * 0.006,
-        (2 / (ydomain[1] - ydomain[0])) * 0.006,
+        (2 / (xdomain[1] - xdomain[0])) * POINT_RADIUS,
+        (2 / (ydomain[1] - ydomain[0])) * POINT_RADIUS,
       ])
     );
   }
@@ -164,7 +171,6 @@ export class Scatter {
   }
 
   setSelection(indices: number[]) {
-    console.log(indices);
     const {
       device,
       buffers: { selection },
@@ -239,7 +245,8 @@ export class Scatter {
     context.configure({
       device: device,
       format: canvasFormat,
-      alphaMode: 'opaque',
+      // alphaMode: 'opaque',
+      alphaMode: 'premultiplied',
     });
 
     // console.log(new URL(image));
@@ -380,7 +387,7 @@ export class Scatter {
           },
         ],
       },
-      multisample: { count: 4 },
+      // multisample: { count: 4 },
     });
 
     // Create bind group
@@ -471,7 +478,7 @@ export class Scatter {
           },
         ],
       },
-      multisample: { count: 4 },
+      // multisample: { count: 4 },
     });
 
     this.lineBindgroup = device.createBindGroup({
@@ -510,13 +517,15 @@ export class Scatter {
 
       const encoder = device.createCommandEncoder();
 
-      const computePass = encoder.beginComputePass();
+      if (this.interpolateBetweenFrames) {
+        const computePass = encoder.beginComputePass();
 
-      computePass.setPipeline(this.computePipeline);
-      computePass.setBindGroup(0, this.computeBindgroup);
-      computePass.dispatchWorkgroups(Math.ceil(this.N / 256));
+        computePass.setPipeline(this.computePipeline);
+        computePass.setBindGroup(0, this.computeBindgroup);
+        computePass.dispatchWorkgroups(Math.ceil(this.N / 256));
 
-      computePass.end();
+        computePass.end();
+      }
 
       /**const pass2 = encoder.beginRenderPass({
         colorAttachments: [
@@ -541,9 +550,9 @@ export class Scatter {
       const pass = encoder.beginRenderPass({
         colorAttachments: [
           {
-            view: this.sampleTexture.createView(),
-            resolveTarget: context.getCurrentTexture().createView(),
-            clearValue: [1, 1, 1, 1],
+            view: context.getCurrentTexture().createView(), // this.sampleTexture.createView(),
+            // resolveTarget: context.getCurrentTexture().createView(),
+            clearValue: [0, 0, 0, 0],
             loadOp: 'clear',
             storeOp: 'store',
           },

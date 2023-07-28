@@ -4,13 +4,13 @@ import {
   CommandPayloadType,
   CommandListener,
   CommandListenerPriority,
-} from './Interaction/Commands'
+} from './Interaction/Commands';
 
 export class Visualization {
-  _commands: Commands
+  _commands: Commands;
 
   constructor() {
-    this._commands = new Map()
+    this._commands = new Map();
   }
 
   triggerCommandListeners<TCommand extends LexicalCommand<unknown>>(
@@ -18,33 +18,33 @@ export class Visualization {
     payload: CommandPayloadType<TCommand>
   ): boolean {
     for (let i = 4; i >= 0; i--) {
-      const commandListeners = this._commands
-      const listenerInPriorityOrder = commandListeners.get(type)
+      const commandListeners = this._commands;
+      const listenerInPriorityOrder = commandListeners.get(type);
 
       if (listenerInPriorityOrder !== undefined) {
-        const listenersSet = listenerInPriorityOrder[i]
+        const listenersSet = listenerInPriorityOrder[i];
 
         if (listenersSet !== undefined) {
-          const listeners = Array.from(listenersSet)
-          const listenersLength = listeners.length
+          const listeners = Array.from(listenersSet);
+          const listenersLength = listeners.length;
 
           for (let j = 0; j < listenersLength; j++) {
             if (listeners[j](payload, this) === true) {
-              return true
+              return true;
             }
           }
         }
       }
     }
 
-    return false
+    return false;
   }
 
   dispatchCommand<TCommand extends LexicalCommand<unknown>>(
     type: TCommand,
     payload: CommandPayloadType<TCommand>
   ): boolean {
-    return this.triggerCommandListeners(type, payload)
+    return this.triggerCommandListeners(type, payload);
   }
 
   registerCommand<P>(
@@ -56,7 +56,7 @@ export class Visualization {
       //invariant(false, 'Listener for type "command" requires a "priority".');
     }
 
-    const commandsMap = this._commands
+    const commandsMap = this._commands;
 
     if (!commandsMap.has(command)) {
       commandsMap.set(command, [
@@ -65,10 +65,10 @@ export class Visualization {
         new Set(),
         new Set(),
         new Set(),
-      ])
+      ]);
     }
 
-    const listenersInPriorityOrder = commandsMap.get(command)
+    const listenersInPriorityOrder = commandsMap.get(command);
 
     if (listenersInPriorityOrder === undefined) {
       /**invariant(
@@ -78,18 +78,18 @@ export class Visualization {
            );**/
     }
 
-    const listeners = listenersInPriorityOrder[priority]
-    listeners.add(listener as CommandListener<unknown>)
+    const listeners = listenersInPriorityOrder[priority];
+    listeners.add(listener as CommandListener<unknown>);
     return () => {
-      listeners.delete(listener as CommandListener<unknown>)
+      listeners.delete(listener as CommandListener<unknown>);
 
       if (
         listenersInPriorityOrder.every(
           (listenersSet) => listenersSet.size === 0
         )
       ) {
-        commandsMap.delete(command)
+        commandsMap.delete(command);
       }
-    }
+    };
   }
 }

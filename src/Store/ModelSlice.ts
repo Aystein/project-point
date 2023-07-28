@@ -11,14 +11,22 @@ export type EmbeddingParameters = {
   perplexity: number;
 };
 
+export type LabelContainer =
+  | {
+      discriminator: 'positionedlabels';
+      type: 'x' | 'y' | 'absolute';
+      labels: { position: number; content: string }[];
+    }
+  | {
+      discriminator: 'scalelabels';
+      type: 'x' | 'y';
+      labels: { domain: number[]; range: number[] };
+    };
+
 export interface SpatialModel extends BaseModel {
-  oid: 'spatial';
   id: EntityId;
 
   parameters?: EmbeddingParameters;
-
-  // The boundaries of the spatial data
-  bounds: Boundaries;
 
   // The indices of the rows this model operates on
   filter: number[];
@@ -27,11 +35,13 @@ export interface SpatialModel extends BaseModel {
 
   area: IRectangle;
 
-  x?: number[]
-  y?: number[]
+  x?: number[];
+  y?: number[];
 
-  color?: number[]
-  shape?: number[]
+  color?: number[];
+  shape?: number[];
+
+  labels?: LabelContainer[];
 }
 
 export type Model = SpatialModel;

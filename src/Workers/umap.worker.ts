@@ -2,9 +2,14 @@
 import { UMAP } from 'umap-js';
 import * as d3 from 'd3-force';
 import { scaleLinear } from 'd3-scale';
-import { getBounds } from '../Util';
+import { getBounds, getMinMax, normalizeVectors01 } from '../Util';
 import { VectorLike } from '../Interfaces';
-import { convergeLayout, forceNormalization } from '../Layouts/ForceUtil';
+import {
+  convergeLayout,
+  forceNormalization,
+  forceNormalizationNew,
+} from '../Layouts/ForceUtil';
+import { POINT_RADIUS } from '../Layouts/Globals';
 
 interface UMAPWorkerProps {
   data: {
@@ -46,30 +51,22 @@ self.onmessage = ({
   let nodes: VectorLike[];
 
   if (axis === 'x') {
-    Y = embedding.map((arr, i) => ({ x: arr[0], y: yLayout[i] }));
+    const data = embedding.map((arr) => arr[0]);
+    const scale = scaleLinear().domain(getMinMax(data)).range([0, 1]);
+    Y = data.map((arr, i) => ({ x: scale(arr), y: yLayout[i] }));
   } else if (axis === 'y') {
-    Y = embedding.map((arr, i) => ({ y: arr[0], x: xLayout[i] }));
+    const data = embedding.map((arr) => arr[0]);
+    const scale = scaleLinear().domain(getMinMax(data)).range([0, 1]);
+    Y = data.map((arr, i) => ({ y: scale(arr), x: xLayout[i] }));
   } else if (axis === 'xy') {
     Y = embedding.map((arr) => ({ x: arr[0], y: arr[1] }));
+    Y = normalizeVectors01(Y);
   }
 
   nodes = structuredClone(Y);
 
-  const [normalizeX, normalizeY, radius] = forceNormalization(area);
-
-  const embeddingBounds = getBounds(Y);
-
-  const scaleX = scaleLinear()
-    .domain([embeddingBounds.minX, embeddingBounds.maxX])
-    .range([area.x + area.width * 0.01, area.x + area.width * 0.99]);
-  const scaleY = scaleLinear()
-    .domain([embeddingBounds.minY, embeddingBounds.maxY])
-    .range([area.y + area.height * 0.01, area.y + area.height * 0.99]);
-
-  Y = Y.map((value) => ({
-    x: normalizeX(scaleX(value.x)),
-    y: normalizeY(scaleY(value.y)),
-  }));
+  const [normalizeX, normalizeY, worldX, worldY, radius] =
+    forceNormalizationNew(area);
 
   self.postMessage({
     type: 'message',
@@ -79,29 +76,60 @@ self.onmessage = ({
   var simulation = d3
     .forceSimulation(nodes)
     .force('collision', d3.forceCollide().radius(radius))
-    .force(
+    .stop();
+
+  if (axis === 'x') {
+    simulation.force(
       'x',
       d3.forceX().x(function (d) {
-        return Y[d.index].x;
+        return normalizeX(Y[d.index].x);
       })
-    )
-    .force(
+    );
+    simulation.force(
+      'y',
+      d3.forceY().y((node, i) => {
+        return normalizeY(yLayout[i]);
+      })
+    );
+  }
+  if (axis === 'y') {
+    simulation.force(
+      'x',
+      d3.forceX().x((node, i) => {
+        return normalizeX(xLayout[i]);
+      })
+    );
+    simulation.force(
       'y',
       d3.forceY().y(function (d) {
-        return Y[d.index].y;
+        return normalizeY(Y[d.index].y);
       })
-    )
-    .stop();
+    );
+  }
+  if (axis === 'xy') {
+    simulation.force(
+      'x',
+      d3.forceX().x(function (d) {
+        return normalizeX(Y[d.index].x);
+      })
+    );
+    simulation.force(
+      'y',
+      d3.forceY().y(function (d) {
+        return normalizeY(Y[d.index].y);
+      })
+    );
+  }
 
   convergeLayout(simulation);
 
   self.postMessage({
     type: 'finish',
     Y: simulation.nodes().map((node) => ({
-      x: normalizeX.invert(node.x),
-      y: normalizeY.invert(node.y),
+      x: worldX(normalizeX.invert(node.x)),
+      y: worldY(normalizeY.invert(node.y)),
     })),
-    xLayout: Y.map((value) => normalizeX.invert(value.x)),
-    yLayout: Y.map((value) => normalizeY.invert(value.y)),
+    xLayout: Y.map((value) => value.x),
+    yLayout: Y.map((value) => value.y),
   });
 };

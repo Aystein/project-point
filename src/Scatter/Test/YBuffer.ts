@@ -18,10 +18,7 @@ interface CreateBufferConfig {
 export function createYBuffer(config: CreateBufferConfig) {
   const { device, n, stepMode, layout, usage } = config;
 
-  const buffer = new YBuffer(device, stepMode, layout).create(
-    n,
-    usage
-  );
+  const buffer = new YBuffer(device, stepMode, layout).create(n, usage);
 
   return buffer;
 }

@@ -9,10 +9,10 @@ export class YBufferGroup {
     });
   }
 
-  get layout () {
+  get layout() {
     return this.buffers.map((buffer) => {
-        return buffer._layout
-    })
+      return buffer._layout;
+    });
   }
 }
 

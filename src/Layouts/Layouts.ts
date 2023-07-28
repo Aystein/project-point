@@ -1,6 +1,7 @@
 import { showNotification, updateNotification } from '@mantine/notifications';
 import { IRectangle } from '../WebGL/Math/Rectangle';
 import { VectorLike } from '../Interfaces';
+import { LabelContainer } from '../Store/ModelSlice';
 
 export function runLayout<T>(params: T, worker: Worker) {
   worker.postMessage({
@@ -17,15 +18,26 @@ export function runLayout<T>(params: T, worker: Worker) {
     color: 'teal',
   });
 
-  return new Promise<VectorLike[]>((resolve) => {
+  return new Promise<{
+    Y: VectorLike[];
+    x: number[];
+    y: number[];
+    labels: LabelContainer;
+  }>((resolve) => {
     worker.onmessage = ({
-      data: { type, Y },
+      data: { type, Y, xLayout, yLayout, labels },
     }: {
-      data: { Y: VectorLike[]; type: string };
+      data: {
+        Y: VectorLike[];
+        type: string;
+        xLayout: number[];
+        yLayout: number[];
+        labels: LabelContainer;
+      };
     }) => {
       switch (type) {
         case 'finish':
-          resolve(Y);
+          resolve({ Y, x: xLayout, y: yLayout, labels });
 
           updateNotification({
             id: 'tsne',
@@ -40,18 +52,31 @@ export function runLayout<T>(params: T, worker: Worker) {
   });
 }
 
-export function runCondenseLayout(n: number, area: IRectangle) {
+export function runCondenseLayout(
+  n: number,
+  area: IRectangle,
+  axis,
+  xLayout,
+  yLayout
+) {
   return runLayout(
-    { n, area },
+    { n, area, axis, xLayout, yLayout },
     new Worker(new URL('../Workers/condense.worker.ts', import.meta.url), {
       type: 'module',
     })
   );
 }
 
-export function runGroupLayout(X, area: IRectangle, feature: string) {
+export function runGroupLayout(
+  X,
+  area: IRectangle,
+  feature: string,
+  axis: 'x' | 'y',
+  xLayout: number[],
+  yLayout: number[]
+) {
   return runLayout(
-    { X, area, feature },
+    { X, area, feature, axis, xLayout, yLayout },
     new Worker(new URL('../Workers/group.worker.ts', import.meta.url), {
       type: 'module',
     })
@@ -72,18 +97,16 @@ export function runForceLayout({
   area,
   xLayout,
   yLayout,
-  X,
   axis,
 }: {
   N: number;
   area: IRectangle;
   xLayout: number[];
   yLayout: number[];
-  X: number[];
-  axis: 'x' | 'y'
+  axis: 'x' | 'y' | 'xy';
 }) {
   return runLayout(
-    { N, area, xLayout, yLayout, X, axis },
+    { N, area, xLayout, yLayout, axis },
     new Worker(new URL('../Workers/force.worker.ts', import.meta.url), {
       type: 'module',
     })

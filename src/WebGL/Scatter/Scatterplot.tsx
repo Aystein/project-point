@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import { SpatialModel } from '../../Store/ModelSlice';
 import { useVisContext } from '../VisualizationContext';
 import * as React from 'react';
-import { ScatterTrace } from './ScatterTrace';
 import { Scatter } from '../../Scatter/Scatter';
 import { Lines } from '../../Scatter/Lines';
 
@@ -43,9 +42,7 @@ function useDevice() {
 export function Scatterplot({
   n,
   x,
-  x2,
   y,
-  model,
   color,
   size,
   opacity,
@@ -54,20 +51,20 @@ export function Scatterplot({
   selection,
   shape,
   line,
+  interpolate,
 }: {
   n: number;
   x: number[];
-  x2: string | ColumnTemp;
   y: number[];
-  model: SpatialModel;
   color?: number[];
   size?: number[];
   opacity?: number[];
   globalConfig?: GlobalConfig;
-  hover: number[];
-  selection: number[];
+  hover?: number[];
+  selection?: number[];
   shape?: number[];
-  line: number[];
+  line?: number[];
+  interpolate?: boolean;
 }) {
   const [myRenderer, setRenderer] = useState<Scatter>();
   const [lines, setLines] = useState<Lines>();
@@ -78,6 +75,12 @@ export function Scatterplot({
   const [device, adapter] = useDevice();
 
   const { width, height, scaledXDomain, scaledYDomain, zoom } = useVisContext();
+
+  useEffect(() => {
+    if (myRenderer) {
+      myRenderer.interpolateBetweenFrames = interpolate;
+    }
+  }, [interpolate, myRenderer]);
 
   useEffect(() => {
     myRenderer?.setColor(new Float32Array(color));
@@ -169,7 +172,7 @@ export function Scatterplot({
       scatter.setColor(
         new Float32Array(
           Array.from({ length: N })
-            .map(() => [Math.random(), Math.random(), Math.random(), 1])
+            .map(() => [0.5, 0.5, 0.5, 1])
             .flat()
         )
       );
@@ -189,6 +192,8 @@ export function Scatterplot({
   return (
     <canvas
       ref={ref}
+      width={width}
+      height={height}
       style={{
         position: 'absolute',
         width: '100%',

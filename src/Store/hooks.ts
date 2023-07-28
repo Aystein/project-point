@@ -23,4 +23,4 @@ const clusterSelectors = clusterAdapter.getSelectors<RootState>(
   (state) => state.clusters.clusters
 );
 
-export const selectClusters = clusterSelectors.selectAll
+export const selectClusters = clusterSelectors.selectAll;

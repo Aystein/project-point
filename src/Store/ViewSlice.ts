@@ -1,17 +1,25 @@
 import { createSlice, EntityId, nanoid } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
-import { SpatialModel } from './ModelSlice';
+import { LabelContainer, SpatialModel } from './ModelSlice';
 import { VectorLike } from '../Interfaces';
-import { getBounds } from '../Util';
+import { getBounds, normalizeVectors } from '../Util';
 import { Rectangle } from '../WebGL/Math/Rectangle';
 import { scaleLinear } from 'd3-scale';
 
+export type Selection = {
+  global: number[];
+  local: number[];
+}
+
 export interface ViewsState {
+  history: SpatialModel[];
   workspace: SpatialModel;
   hover: number[];
   selection: number[];
+  localSelection: number[];
   lines: number[];
   positions: VectorLike[];
+  filter: number[];
   lineWidth: number;
 }
 
@@ -19,9 +27,12 @@ const initialState: ViewsState = {
   workspace: undefined,
   hover: undefined,
   selection: undefined,
+  localSelection: undefined,
   lines: undefined,
   positions: undefined,
   lineWidth: 1,
+  filter: [],
+  history: [],
 };
 
 export const viewslice = createSlice({
@@ -38,6 +49,51 @@ export const viewslice = createSlice({
         state.positions[globalIndex] = position[localIndex];
       });
     },
+    swapView: (state, action: PayloadAction<{ id: EntityId }>) => {
+      const children = state.workspace.children;
+      const swap = state.history.find((value) => value.id === action.payload.id);
+      state.workspace = { ...swap };
+      state.workspace.children = children;
+      state.selection = []
+      state.positions = state.workspace.x.map((x, i) => ({ x, y: state.workspace.y[i] }))
+      state.filter = swap.filter;
+    },
+    updateLabels: (
+      state,
+      action: PayloadAction<{ id: EntityId; labels: LabelContainer }>
+    ) => {
+      const { id, labels } = action.payload;
+      const model = state.workspace.children.find((value) => value.id === id);
+
+      if (labels) {
+        model.labels =
+          model.labels?.filter((value) => value.type !== labels.type) ?? [];
+        model.labels.push(labels);
+      }
+    },
+    updateTrueEmbedding: (
+      state,
+      action: PayloadAction<{
+        id: EntityId;
+        x?: number[];
+        y?: number[];
+      }>
+    ) => {
+      const { id, x, y } = action.payload;
+      const model = state.workspace.children.find((value) => value.id === id);
+
+      if (x) {
+        model.filter.forEach((index, local) => {
+          state.workspace.x[index] = x[local];
+        });
+      }
+
+      if (y) {
+        model.filter.forEach((index, local) => {
+          state.workspace.y[index] = y[local];
+        });
+      }
+    },
     removeEmbedding: (state, action: PayloadAction<{ id: EntityId }>) => {
       state.workspace.children.splice(
         state.workspace.children.findIndex(
@@ -45,6 +101,21 @@ export const viewslice = createSlice({
         ),
         1
       );
+    },
+    addView: (state, action: PayloadAction<{ filter: number[], localSelection: number[] }>) => {
+      const { filter, localSelection } = action.payload;
+
+      const positions = localSelection.map((index) => state.positions[index]);
+      const normalizedPositions = normalizeVectors(positions);
+
+      state.history.push({
+        id: nanoid(),
+        filter,
+        children: [],
+        area: null,
+        x: normalizedPositions.map((value) => value.x),
+        y: normalizedPositions.map((value) => value.y),
+      });
     },
     translateArea: (
       state,
@@ -59,13 +130,37 @@ export const viewslice = createSlice({
       model.filter.forEach((globalIndex) => {
         state.positions[globalIndex].x += x;
         state.positions[globalIndex].y += y;
-      })
+      });
+    },
+    changeSize: (
+      state,
+      action: PayloadAction<{ id: EntityId; width: number; height: number }>
+    ) => {
+      const { id, width, height } = action.payload;
+      const model = state.workspace.children.find((value) => value.id === id);
+
+      model.area.width = width;
+      model.area.height = height;
     },
     setHover: (state, action: PayloadAction<number[]>) => {
       state.hover = action.payload;
     },
     setSelection: (state, action: PayloadAction<number[]>) => {
-      state.selection = action.payload;
+      const globalSelection = action.payload;
+
+      state.selection = globalSelection;
+
+      const localSelection = []
+
+      for (const globalIndex of globalSelection ?? []) {
+        const i = state.filter ? state.filter.indexOf(globalIndex) : globalIndex;
+
+        if (i >= 0) {
+          localSelection.push(i);
+        }
+      }
+
+      state.localSelection = localSelection;
     },
     setColor: (
       state,
@@ -114,9 +209,7 @@ export const viewslice = createSlice({
       const Y = filter.map((i) => state.positions[i]);
 
       const subModel: SpatialModel = {
-        oid: 'spatial',
         id: nanoid(),
-        bounds: Y ? getBounds(Y) : null,
         filter,
         area: area.serialize(),
         children: [],
@@ -138,6 +231,11 @@ export const {
   setHover,
   setSelection,
   setLines,
+  addView,
+  updateTrueEmbedding,
+  updateLabels,
+  changeSize,
+  swapView,
 } = viewslice.actions;
 
 export default viewslice.reducer;

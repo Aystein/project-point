@@ -18,13 +18,24 @@ export function TSNEModal({
   id,
   innerProps,
 }: ContextModalProps<{
-  onFinish: (Y: VectorLike[]) => void;
+  onFinish: ({
+    Y,
+    x,
+    y,
+  }: {
+    Y: VectorLike[];
+    x: number[];
+    y: number[];
+  }) => void;
   id: EntityId;
   axis: 'x' | 'y' | 'xy';
 }>) {
   const data = useSelector(Selectors.data);
-  const model = useAppSelector((state) => state.views.workspace.children?.find((e) => e.id === innerProps.id))
-  const positions = useAppSelector((state) => state.views.positions)
+  const model = useAppSelector((state) =>
+    state.views.workspace.children?.find((e) => e.id === innerProps.id)
+  );
+  const xl = useAppSelector((state) => state.views.workspace.x);
+  const yl = useAppSelector((state) => state.views.workspace.y);
 
   const form = useForm({
     initialValues: {
@@ -60,16 +71,16 @@ export function TSNEModal({
 
     const { X, N, D } = encode(data, model.filter, result);
 
-    const Y = await runUMAPLayout({
+    const { Y, x, y } = await runUMAPLayout({
       X,
       N,
       D,
       area: model.area,
       axis: innerProps.axis,
-      xLayout: model.filter.map((i) => positions[i].x),
-      yLayout: model.filter.map((i) => positions[i].y),
+      xLayout: model.filter.map((i) => xl[i]),
+      yLayout: model.filter.map((i) => yl[i]),
     });
-    innerProps.onFinish(Y);
+    innerProps.onFinish({ Y, x, y });
   };
 
   return (

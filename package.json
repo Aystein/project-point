@@ -12,7 +12,7 @@
     "build-storybook": "build-storybook",
     "serve": "npx webpack serve",
     "lint": "eslint --ext .js,.jsx,.ts,.tsx src --color",
-    "format": "prettier --write 'src/**/*.{ts,tsx,scss,css,json}'"
+    "format": "prettier --write src/**/*.{ts,tsx,scss,css,json}"
   },
   "keywords": [],
   "author": "",
@@ -70,6 +70,10 @@
   },
   "dependencies": {
     "@emotion/react": "^11.10.5",
+    "@fortawesome/fontawesome-free": "^6.4.0",
+    "@fortawesome/fontawesome-svg-core": "^6.4.0",
+    "@fortawesome/free-solid-svg-icons": "^6.4.0",
+    "@fortawesome/react-fontawesome": "^0.2.0",
     "@mantine/core": "^6.0.10",
     "@mantine/form": "^6.0.10",
     "@mantine/hooks": "^6.0.10",

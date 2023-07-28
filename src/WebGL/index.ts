@@ -1,1 +1,1 @@
-export * from './Math/ZoomTransform'
+export * from './Math/ZoomTransform';

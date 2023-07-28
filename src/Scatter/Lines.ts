@@ -35,7 +35,11 @@ export class Lines {
       stepMode: 'instance',
       usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
     });
-    device.queue.writeBuffer(this.lineBuffer._buffer, 0, new Uint32Array([0, 1]));
+    device.queue.writeBuffer(
+      this.lineBuffer._buffer,
+      0,
+      new Uint32Array([0, 1])
+    );
 
     this.bufferGroup = createYBufferGroup(this.lineBuffer);
 

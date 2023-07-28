@@ -127,7 +127,7 @@ export class MouseController {
         default:
           break;
       }
-  
+
       this.mode = Mode.Pressed;
     }
   }
@@ -181,7 +181,6 @@ export class MouseController {
     const mousePosition = { x: event.offsetX, y: event.offsetY };
     this.mousePosition = mousePosition;
     if (this.mode === Mode.Drag) {
-      console.log("draggy")
       if (this.onDragMove) {
         this.onDragMove(
           {
@@ -204,7 +203,6 @@ export class MouseController {
       (Math.abs(this.pressedPosition.x - mousePosition.x) < 4 ||
         Math.abs(this.pressedPosition.y - mousePosition.y) < 4)
     ) {
-      console.log("drag startjdklfjlkdj")
       if (this.onDragStart) {
         this.onDragStart(
           {

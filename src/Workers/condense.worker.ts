@@ -1,42 +1,66 @@
-/* eslint-disable no-restricted-globals */
 import * as d3 from 'd3-force';
 import { IRectangle } from '../WebGL/Math/Rectangle';
 import { convergeLayout, forceNormalization } from '../Layouts/ForceUtil';
 import { VectorLike } from '../Interfaces';
+import { scaleLinear } from 'd3-scale';
+import { UpdateText } from './util';
 
 interface Props {
   data: {
     n: number;
     area: IRectangle;
+    axis: 'x' | 'y' | 'xy';
     type: string;
+    xLayout?: number[];
+    yLayout?: number[];
   };
 }
 
-self.onmessage = ({ data: { n, area, type } }: Props) => {
+self.onmessage = ({
+  data: { n, area, type, axis, xLayout, yLayout },
+}: Props) => {
   if (type !== 'init') {
     return;
   }
 
-  self.postMessage({
-    type: 'message',
-    message: 'Calculating embedding ...',
-  });
+  UpdateText(self, 'Calculating embedding...');
 
   let nodes: Partial<VectorLike>[] = Array.from({ length: n }).map(() => ({}));
 
+  const layoutScaleX = scaleLinear()
+    .domain([0, 1])
+    .range([area.x, area.x + area.width]);
+  const layoutScaleY = scaleLinear()
+    .domain([0, 1])
+    .range([area.y, area.y + area.height]);
+
   const [scaleX, scaleY, radius] = forceNormalization(area);
 
-  self.postMessage({
-    type: 'message',
-    message: 'Force layout ...',
-  });
+  UpdateText(self, 'Force layout...');
 
   var simulation = d3
     .forceSimulation(nodes)
-    .force('collision', d3.forceCollide().radius(radius))
-    .force('x', d3.forceX(scaleX(area.x + area.width / 2)))
-    .force('y', d3.forceY(scaleY(area.y + area.height / 2)))
-    .stop();
+    .force('collision', d3.forceCollide().radius(radius));
+
+  if (axis === 'x') {
+    simulation.force('x', d3.forceX(scaleX(area.x + area.width / 2)));
+    simulation.force(
+      'y',
+      d3.forceY().y((node, i) => scaleY(layoutScaleY(yLayout[i])))
+    );
+  }
+  if (axis === 'y') {
+    simulation.force('y', d3.forceY(scaleY(area.y + area.height / 2)));
+    simulation.force(
+      'x',
+      d3.forceX().x((node, i) => scaleX(layoutScaleX(xLayout[i])))
+    );
+  }
+  if (axis === 'xy') {
+    simulation.force('x', d3.forceX(scaleX(area.x + area.width / 2)));
+    simulation.force('y', d3.forceY(scaleY(area.y + area.height / 2)));
+  }
+  simulation.stop();
 
   convergeLayout(simulation);
 
@@ -46,5 +70,8 @@ self.onmessage = ({ data: { n, area, type } }: Props) => {
     Y: simulation
       .nodes()
       .map((node) => ({ x: scaleX.invert(node.x), y: scaleY.invert(node.y) })),
+
+    xLayout: axis != 'y' ? simulation.nodes().map(() => 0.5) : xLayout,
+    yLayout: axis != 'x' ? simulation.nodes().map(() => 0.5) : yLayout,
   });
 };

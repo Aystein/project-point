@@ -2,10 +2,9 @@ import * as React from 'react';
 import {
   LexicalCommand,
   CommandListener,
-  CommandListenerPriority
+  CommandListenerPriority,
 } from '../../Interaction/Commands';
 import { useVisContext } from '../../VisualizationContext';
-
 
 export function useMouseEvent<T>(
   command: LexicalCommand<T>,

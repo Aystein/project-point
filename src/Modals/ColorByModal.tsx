@@ -11,7 +11,7 @@ export function ColorByModal({
   id,
   innerProps: { dataType, onFinish },
 }: ContextModalProps<{
-  onFinish: (feature: string) => void;
+  onFinish: (feature: string, type: string) => void;
   dataType?: DataType;
 }>) {
   const data = useSelector(Selectors.data);
@@ -25,13 +25,14 @@ export function ColorByModal({
   const form = useForm({
     initialValues: {
       feature: '',
+      type: '',
     },
 
     validate: {},
   });
 
-  const run = async (feature) => {
-    onFinish(feature);
+  const run = async (feature, type) => {
+    onFinish(feature, type);
   };
 
   return (
@@ -39,7 +40,7 @@ export function ColorByModal({
       <form
         onSubmit={form.onSubmit((values) => {
           context.closeModal(id);
-          run(values.feature);
+          run(values.feature, values.type);
         })}
       >
         <Select
@@ -50,6 +51,15 @@ export function ColorByModal({
           nothingFound="No options"
           data={options}
           {...form.getInputProps('feature')}
+        />
+
+        <Select
+          label="Type"
+          placeholder="Pick one"
+          withinPortal
+          nothingFound="No options"
+          data={['categorical', 'numeric']}
+          {...form.getInputProps('type')}
         />
 
         <Button mt="1.5rem" type="submit">

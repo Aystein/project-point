@@ -3,7 +3,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { Provider } from 'react-redux';
 import { Provider as JotaiProvider } from 'jotai';
-import { AntApp } from './AntApp';
+import { AntApp, AntApp2 } from './AntApp';
 import { store } from './Store/Store';
 import { ModalsProvider } from '@mantine/modals';
 import { MantineProvider } from '@mantine/core';

@@ -14,12 +14,12 @@ export function createYPass({
   device,
   canvasFormat,
   buffers,
-  shader: { code, vertexEntry, fragmentEntry }
+  shader: { code, vertexEntry, fragmentEntry },
 }: {
   device: GPUDevice;
   canvasFormat?: GPUTextureFormat;
   buffers: YBuffer[];
-  shader: { code: string, vertexEntry: string, fragmentEntry: string }
+  shader: { code: string; vertexEntry: string; fragmentEntry: string };
 }) {
   const pass = new YPass();
 

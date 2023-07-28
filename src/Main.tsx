@@ -13,12 +13,13 @@ import { HoverBehavior } from './WebGL/Interaction/Behavior/HoverBehavior';
 import { SpatialModel } from './Store/ModelSlice';
 import { useHotkeys } from '@mantine/hooks';
 import { LassoSelectionPlugin } from './WebGL/Interaction/Behavior/LassoBehavior';
-import { setHover } from './Store/ViewSlice';
+import { addView, setHover } from './Store/ViewSlice';
 
 function MainView({ data, view }: { data: DataState; view: SpatialModel }) {
   const dispatch = useDispatch();
   const hover = useAppSelector((state) => state.views.hover);
-  const selection = useAppSelector((state) => state.views.selection);
+  const selection = useAppSelector((state) => state.views.localSelection);
+  const globalSelection = useAppSelector((state) => state.views.selection);
   const line = useAppSelector((state) => state.views.lines);
   const positions = useAppSelector((state) => state.views.positions);
 
@@ -26,9 +27,11 @@ function MainView({ data, view }: { data: DataState; view: SpatialModel }) {
     dispatch(setHover([index]));
   };
 
-  const handleLasso = () => {};
+  const addViewF = () => {
+    dispatch(addView({ filter: globalSelection ?? view.filter, localSelection: selection }));
+  };
 
-  useHotkeys([['ctrl+S', handleLasso]]);
+  useHotkeys([['ctrl+S', addViewF]]);
 
   const [x, y] = React.useMemo(() => {
     if (!view) {
@@ -41,31 +44,27 @@ function MainView({ data, view }: { data: DataState; view: SpatialModel }) {
     ];
   }, [positions]);
 
-  switch (view?.oid) {
-    default:
-      return (
-        <VisProvider>
-          <Scatterplot
-            n={positions.length ?? null}
-            model={view}
-            x={x}
-            x2=""
-            y={y}
-            color={view.color}
-            hover={hover}
-            shape={view.shape}
-            line={line}
-            selection={selection}
-          />
-
-          <ZoomBehavior />
-          <PanBehavior />
-          <HoverBehavior positions={positions} onHover={handleHover} />
-          <LassoSelectionPlugin />
-          <BoxBehavior parentModel={view} />
-        </VisProvider>
-      );
-  }
+  return (
+    <VisProvider defaultZoom={{ s: 1, tx: 0, ty: 0 }}>
+      <ZoomBehavior />
+      <PanBehavior />
+      <HoverBehavior positions={positions} onHover={handleHover} />
+      
+      <BoxBehavior parentModel={view} />
+      <LassoSelectionPlugin />
+      <Scatterplot
+        n={positions.length ?? null}
+        x={x}
+        y={y}
+        color={view.color}
+        hover={hover}
+        shape={view.shape}
+        line={line}
+        selection={selection}
+        interpolate={true}
+      />
+    </VisProvider>
+  );
 }
 
 export function Main() {
