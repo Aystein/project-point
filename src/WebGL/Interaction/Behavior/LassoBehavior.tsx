@@ -80,6 +80,8 @@ export function LassoSelectionPlugin() {
   const spatial = useAppSelector((state) => state.views.positions);
   const globalFilter = useAppSelector((state) => state.views.filter);
 
+  const [ripple, setRipple] = React.useState<VectorLike>()
+
   const [points, setPoints] = React.useState<[number, number][]>([]);
 
   const ref = React.useRef(null);
@@ -140,13 +142,7 @@ export function LassoSelectionPlugin() {
         boxRef={ref}
         onClick={(position) => {
           handleCondense(position);
-          dispatch(
-            addCluster({
-              name: 'Test',
-              label: '0',
-              indices: selection,
-            })
-          );
+          setRipple(position)
           setDrag(null);
         }}
         onMove={(_, event) => {

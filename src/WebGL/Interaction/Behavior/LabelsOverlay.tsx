@@ -56,8 +56,6 @@ export function ScaleLabels({
 export function LabelsOverlay({ labels }: { labels: LabelContainer[] }) {
   if (!labels) return <></>;
 
-  console.log(labels);
-
   return (
     <>
       {labels.map((container) => {

@@ -251,7 +251,7 @@ export class Scatter {
 
     // console.log(new URL(image));
     this.texture = await webGPUTextureFromImageUrl(device, image);
-    console.log(width, height);
+
     this.sampleTexture = device.createTexture({
       size: [
         context.getCurrentTexture().width,

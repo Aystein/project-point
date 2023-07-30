@@ -15,7 +15,7 @@ export function ColorByModal({
   dataType?: DataType;
 }>) {
   const data = useSelector(Selectors.data);
-
+  
   const options = React.useMemo(() => {
     return data.columns
       .filter((column) => !dataType || column.type === dataType)

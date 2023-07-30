@@ -40,8 +40,8 @@ export function HoverBehavior({
       }
 
       const hover = tree.find(
-        scaledXDomain.invert(event.offsetX),
-        scaledYDomain.invert(event.offsetY)
+        scaledXDomain.invert(event.x),
+        scaledYDomain.invert(event.y)
       ).index;
 
       if (lastHover !== hover) {

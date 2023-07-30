@@ -3,17 +3,15 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { Provider } from 'react-redux';
 import { Provider as JotaiProvider } from 'jotai';
-import { AntApp, AntApp2 } from './AntApp';
+import { AntApp } from './AntApp';
 import { store } from './Store/Store';
 import { ModalsProvider } from '@mantine/modals';
-import { MantineProvider } from '@mantine/core';
+import { ColorScheme, ColorSchemeProvider, MantineProvider } from '@mantine/core';
 import { TSNEModal } from './Modals/tSNEModal';
-import { GroupByModal } from './Modals/GroupByModal';
 import { ColorByModal } from './Modals/ColorByModal';
 
 const modals = {
   demonstration: TSNEModal,
-  grouping: GroupByModal,
   colorby: ColorByModal,
 };
 
@@ -23,11 +21,17 @@ declare module '@mantine/modals' {
   }
 }
 
-createRoot(document.getElementById('root')).render(
-  <JotaiProvider>
+function RootApplication() {
+  const [colorScheme, setColorScheme] = React.useState<ColorScheme>('light');
+  const toggleColorScheme = (value?: ColorScheme) =>
+    setColorScheme(value || (colorScheme === 'dark' ? 'light' : 'dark'));
+
+  return <JotaiProvider>
     <Provider store={store}>
+
       <MantineProvider
         theme={{
+          colorScheme: colorScheme,
           globalStyles: (theme) => ({
             body: {
               ...theme.fn.fontStyles(),
@@ -46,13 +50,19 @@ createRoot(document.getElementById('root')).render(
           }),
         }}
       >
-        <ModalsProvider modals={modals}>
-          <Notifications />
-          <AntApp />
-        </ModalsProvider>
+        <ColorSchemeProvider colorScheme={colorScheme} toggleColorScheme={toggleColorScheme}>
+          <ModalsProvider modals={modals}>
+            <Notifications />
+            <AntApp />
+          </ModalsProvider>
+        </ColorSchemeProvider>
       </MantineProvider>
     </Provider>
   </JotaiProvider>
+}
+
+createRoot(document.getElementById('root')).render(
+  <RootApplication />
 );
 
 export * from './WebGL';

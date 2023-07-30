@@ -14,6 +14,7 @@ export type Selection = {
 export interface ViewsState {
   history: SpatialModel[];
   workspace: SpatialModel;
+
   hover: number[];
   selection: number[];
   localSelection: number[];
@@ -21,6 +22,7 @@ export interface ViewsState {
   positions: VectorLike[];
   filter: number[];
   lineWidth: number;
+  activeHistory: number;
 }
 
 const initialState: ViewsState = {
@@ -33,6 +35,7 @@ const initialState: ViewsState = {
   lineWidth: 1,
   filter: [],
   history: [],
+  activeHistory: -1
 };
 
 export const viewslice = createSlice({
@@ -53,10 +56,19 @@ export const viewslice = createSlice({
       const children = state.workspace.children;
       const swap = state.history.find((value) => value.id === action.payload.id);
       state.workspace = { ...swap };
+      state.activeHistory = state.history.indexOf(swap);
       state.workspace.children = children;
       state.selection = []
       state.positions = state.workspace.x.map((x, i) => ({ x, y: state.workspace.y[i] }))
       state.filter = swap.filter;
+    },
+    deleteHistory: (state, action: PayloadAction<{ historyIndex: number }>) => {
+      const { historyIndex } = action.payload;
+
+      state.history.splice(historyIndex, 1)
+      if (historyIndex === state.activeHistory) {
+        state.activeHistory = -1;
+      }
     },
     updateLabels: (
       state,
@@ -108,11 +120,18 @@ export const viewslice = createSlice({
       const positions = localSelection.map((index) => state.positions[index]);
       const normalizedPositions = normalizeVectors(positions);
 
+      const bounds = getBounds(normalizedPositions);
+
       state.history.push({
         id: nanoid(),
         filter,
         children: [],
-        area: null,
+        area: {
+          x: bounds.minX,
+          y: bounds.minY,
+          width: bounds.extentX,
+          height: bounds.extentY
+        },
         x: normalizedPositions.map((value) => value.x),
         y: normalizedPositions.map((value) => value.y),
       });
@@ -187,10 +206,9 @@ export const viewslice = createSlice({
       const { shape, id } = action.payload;
 
       const model = state.workspace.children.find((value) => value.id === id);
-      model.shape = shape;
 
-      model.filter.forEach((i) => {
-        state.workspace.shape[i] = shape[i];
+      model.filter.forEach((i, local) => {
+        state.workspace.shape[i] = shape[local];
       });
     },
     setLines: (state, action: PayloadAction<number[]>) => {
@@ -236,6 +254,7 @@ export const {
   updateLabels,
   changeSize,
   swapView,
+  deleteHistory
 } = viewslice.actions;
 
 export default viewslice.reducer;

@@ -14,12 +14,12 @@ import {
 import * as React from 'react';
 import {
   COMMAND_PRIORITY_NORMAL,
+  MOUSE_DOWN,
   MOUSE_DRAG_START,
 } from '../../Interaction/Commands';
 import { IRectangle, Rectangle } from '../../Math/Rectangle';
 import { useVisContext } from '../../VisualizationContext';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faPaintRoller } from '@fortawesome/free-solid-svg-icons'
+
 import { openContextModal } from '@mantine/modals';
 import { IconX } from '@tabler/icons-react';
 import { color } from 'd3-color';
@@ -32,6 +32,7 @@ import {
   runCondenseLayout,
   runForceLayout,
   runGroupLayout,
+  runSpaghettiLayout,
 } from '../../../Layouts/Layouts';
 import { LabelContainer, SpatialModel } from '../../../Store/ModelSlice';
 import {
@@ -66,7 +67,7 @@ export function BoxBehavior({ parentModel }: { parentModel: SpatialModel }) {
 
   // register to mousedrag...
   useMouseEvent(
-    MOUSE_DRAG_START,
+    MOUSE_DOWN,
     (event) => {
       if (event.button === 2) {
         setRect(new Rectangle(event.offsetX, event.offsetY, 0, 0));
@@ -87,10 +88,8 @@ export function BoxBehavior({ parentModel }: { parentModel: SpatialModel }) {
         height: '100%',
         top: 0,
         left: 0,
-        pointerEvents: 'none',
         overflow: 'hidden',
       }}
-
       ref={ref}
     >
       {rect ? (
@@ -310,9 +309,39 @@ function SingleBox({
     });
   };
 
-  const handleGroupBy = async (axis: 'x' | 'y') => {
+  const handleSpaghettiBy = async (axis: 'x' | 'y') => {
+
     const onFinish = async (feature: string) => {
       const X = parentModel.filter.map((i) => data[i]);
+
+      const { Y, x, y, labels } = await runSpaghettiLayout(
+        X,
+        area,
+        feature,
+        axis,
+      );
+
+      dispatch(updateLabels({ id: parentModel.id, labels }));
+      dispatch(updateTrueEmbedding({ id: parentModel.id, x, y }));
+      dispatch(
+        updatePositionByFilter({ position: Y, filter: parentModel.filter })
+      );
+    };
+
+    openContextModal({
+      modal: 'colorby',
+      title: 'Group by',
+      innerProps: {
+        onFinish,
+      },
+    });
+  };
+
+  const handleGroupBy = async (axis: 'x' | 'y') => {
+
+    const onFinish = async (feature: string) => {
+      const X = parentModel.filter.map((i) => data[i]);
+
       const { Y, x, y, labels } = await runGroupLayout(
         X,
         area,
@@ -321,8 +350,6 @@ function SingleBox({
         parentModel.filter.map((index) => xLayout[index]),
         parentModel.filter.map((index) => yLayout[index])
       );
-
-      console.log(labels);
 
       dispatch(updateLabels({ id: parentModel.id, labels }));
       dispatch(updateTrueEmbedding({ id: parentModel.id, x, y }));
@@ -395,7 +422,6 @@ function SingleBox({
   return (
     <Group
       style={{
-        pointerEvents: 'none',
         position: 'absolute',
         left: scaledXDomain(area.x),
         top: scaledYDomain(area.y),
@@ -439,6 +465,7 @@ function SingleBox({
         >
           <Menu.Item onClick={() => handleCondense('y')}>Condense</Menu.Item>
           <Menu.Item onClick={() => handleGroupBy('y')}>Group by</Menu.Item>
+          <Menu.Item onClick={() => handleSpaghettiBy('y')}>Spaghetti</Menu.Item>
           <Menu.Item onClick={() => handleLinearScale('y')}>
             Linear scale
           </Menu.Item>
@@ -503,9 +530,10 @@ function SingleBox({
             event.stopPropagation();
           }}
         >
-          <Menu.Item onClick={() => handleCondense('y')}>Condense</Menu.Item>
-          <Menu.Item onClick={() => handleGroupBy('y')}>Group by</Menu.Item>
-          <Menu.Item onClick={() => handleLinearScale('y')}>
+          <Menu.Item onClick={() => handleCondense('x')}>Condense</Menu.Item>
+          <Menu.Item onClick={() => handleGroupBy('x')}>Group by</Menu.Item>
+          <Menu.Item onClick={() => handleSpaghettiBy('x')}>Spaghetti</Menu.Item>
+          <Menu.Item onClick={() => handleLinearScale('x')}>
             Linear scale
           </Menu.Item>
           <Menu.Item
@@ -516,7 +544,7 @@ function SingleBox({
                 size: '70%',
                 innerProps: {
                   id: parentModel.id,
-                  axis: 'y',
+                  axis: 'x',
                   onFinish: ({ Y, x, y }) => {
                     dispatch(
                       updateTrueEmbedding({ y, x, id: parentModel.id })
@@ -536,7 +564,6 @@ function SingleBox({
           </Menu.Item>
         </Menu.Dropdown>
       </Menu>
-
 
 
       <SimpleDragCover
@@ -641,10 +668,10 @@ function SingleBox({
           transform: 'translateY(-100%)',
         }}
       >
+        <Button variant="subtle" style={{ pointerEvents: 'auto' }} size="xs" color="gray" onClick={() => handleColor()}>color</Button>
+        <Button variant="subtle" style={{ pointerEvents: 'auto' }} size="xs" color="gray" onClick={() => handleShape()}>shape</Button>
+        <Button variant="subtle" style={{ pointerEvents: 'auto' }} size="xs" color="gray" onClick={() => handleLine()}>line</Button>
         <Menu shadow="md" width={200}>
-          <Menu.Target>
-            <FontAwesomeIcon icon={faPaintRoller} />
-          </Menu.Target>
 
           <Menu.Dropdown
             style={{ pointerEvents: 'initial' }}
@@ -695,6 +722,8 @@ function SingleBox({
         >
           <IconX />
         </ActionIcon>
+
+
       </Group>
 
       <LabelsOverlay labels={parentModel.labels} />

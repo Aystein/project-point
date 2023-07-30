@@ -52,16 +52,16 @@ export function normalizeVectors(positions: VectorLike[]) {
 
   if (bounds.extentX >= bounds.extentY) {
     const scale = bounds.extentY / bounds.extentX;
-    xScale = scaleLinear().domain([bounds.minX, bounds.maxX]).range([-1, 1]);
+    xScale = scaleLinear().domain([bounds.minX, bounds.maxX]).range([-bounds.extentX / 2, bounds.extentX / 2]);
     yScale = scaleLinear()
       .domain([bounds.minY, bounds.maxY])
-      .range([-1 * scale, 1 * scale]);
+      .range([(-bounds.extentY / 2) * scale, (bounds.extentY / 2) * scale]);
   } else {
     const scale = bounds.extentX / bounds.extentY;
     xScale = scaleLinear()
       .domain([bounds.minX, bounds.maxX])
-      .range([-1 * scale, 1 * scale]);
-    yScale = scaleLinear().domain([bounds.minY, bounds.maxY]).range([-1, 1]);
+      .range([(-bounds.extentX / 2) * scale, (bounds.extentX / 2) * scale]);
+    yScale = scaleLinear().domain([bounds.minY, bounds.maxY]).range([-bounds.extentY / 2, bounds.extentY / 2]);
   }
 
   return positions.map((value) => ({ x: xScale(value.x), y: yScale(value.y) }));

@@ -48,10 +48,12 @@ function MainView({ data, view }: { data: DataState; view: SpatialModel }) {
     <VisProvider defaultZoom={{ s: 1, tx: 0, ty: 0 }}>
       <ZoomBehavior />
       <PanBehavior />
-      <HoverBehavior positions={positions} onHover={handleHover} />
+      
       
       <BoxBehavior parentModel={view} />
+      <HoverBehavior positions={positions} onHover={handleHover} />
       <LassoSelectionPlugin />
+      
       <Scatterplot
         n={positions.length ?? null}
         x={x}
@@ -63,6 +65,7 @@ function MainView({ data, view }: { data: DataState; view: SpatialModel }) {
         selection={selection}
         interpolate={true}
       />
+      
     </VisProvider>
   );
 }

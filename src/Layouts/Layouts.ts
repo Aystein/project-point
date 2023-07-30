@@ -83,6 +83,20 @@ export function runGroupLayout(
   );
 }
 
+export function runSpaghettiLayout(
+  X,
+  area: IRectangle,
+  feature: string,
+  axis: 'x' | 'y',
+) {
+  return runLayout(
+    { X, area, feature, axis },
+    new Worker(new URL('../Workers/spaghetti.worker.ts', import.meta.url), {
+      type: 'module',
+    })
+  );
+}
+
 export function runUMAPLayout({ X, N, D, area, axis, xLayout, yLayout }) {
   return runLayout(
     { X, N, D, area, axis, xLayout, yLayout },

@@ -12,9 +12,16 @@ import {
   Stack,
   Kbd,
   Button,
+  Group,
+  ActionIcon,
+  useMantineColorScheme,
 } from '@mantine/core';
 import { IconHome2 } from '@tabler/icons';
+import { IconClock } from '@tabler/icons'
+import { IconMoon } from '@tabler/icons-react';
 import { DataTab } from './MainTabs/DataTab';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faClock } from '@fortawesome/free-solid-svg-icons'
 import { Main } from './Main';
 import { useAppDispatch } from './Store/hooks';
 import { initializeDatasets } from './Store/FilesSlice';
@@ -69,28 +76,16 @@ const useStyles = createStyles((theme) => ({
 const mainLinksMockdata = [
   { icon: IconHome2, label: 'Home', index: 0 },
   { icon: IconHome2, label: 'Cluster', index: 1 },
-  { icon: IconHome2, label: 'History', index: 2 },
+  { icon: IconClock, label: 'History', index: 2 },
   { icon: IconHome2, label: 'Encoding', index: 3 },
 ];
 
-export function AntApp2() {
-  return <AppShell layout='alt' header={<Header height={60} p="xs">HEADER</Header>}
-    navbar={
-      <Navbar width={{ sm: 300 }}>
-        <Navbar.Section grow style={{ display: 'flex' }}>
-          <div style={{ flex: 1, overflow: 'auto' }}>
-            {Array.from({ length: 100 }).map(() => <div>hihi</div>)}
-          </div>
-        </Navbar.Section>
-      </Navbar>
-    }
-  >test</AppShell>
-}
 
 export function AntApp() {
   const { classes, cx } = useStyles();
   const [active, setActive] = React.useState(mainLinksMockdata[0].label);
   const dispatch = useAppDispatch();
+  const colorScheme = useMantineColorScheme();
 
   React.useEffect(() => {
     dispatch(initializeDatasets());
@@ -104,7 +99,7 @@ export function AntApp() {
           [classes.mainLinkActive]: link.label === active,
         })}
       >
-        <link.icon stroke={1.5} />
+        <link.icon />
       </UnstyledButton>
     </Tooltip>
   ));
@@ -114,18 +109,22 @@ export function AntApp() {
       padding={0}
       layout="alt"
       header={
-        <Header height={60} p="md">
-          <div
-            style={{ display: 'flex', alignItems: 'center', height: '100%' }}
-          >
-            <Kbd mr={5}>Ctrl</Kbd>
-            <span>+</span>
-            <Kbd ml={5}>S</Kbd>
-          </div>
+        <Header height={60}>
+          <Group position='apart' style={{ width: '100%', height: '100%' }} p='xs'>
+            <Group>
+              <Kbd mr={5}>Ctrl</Kbd>
+              <span>+</span>
+              <Kbd ml={5}>S</Kbd>
+            </Group>
+
+            <ActionIcon variant="default" size="lg" onClick={() => {
+              colorScheme.toggleColorScheme()
+            }}><IconMoon stroke={1} /></ActionIcon>
+          </Group>
         </Header>
       }
       navbar={
-        <Navbar width={{ sm: 300 }}>
+        <Navbar width={{ sm: 360 }}>
           <Navbar.Section grow className={classes.wrapper}>
             <Stack className={classes.aside} pt="xs" spacing="xs">
               {mainLinks}

@@ -1,4 +1,5 @@
 import { Visualization } from '../Visualization';
+import { NormalizedMouseEvent } from './MouseController';
 
 export type CommandListener<P> = (payload: P, editor: Visualization) => boolean;
 
@@ -49,5 +50,5 @@ export const MOUSE_CONTEXT: LexicalCommand<MouseEvent> = {
   type: 'mousecontext',
 };
 
-export const MOUSE_HOVER: LexicalCommand<MouseEvent> = { type: 'mousehover' };
+export const MOUSE_HOVER: LexicalCommand<NormalizedMouseEvent> = { type: 'mousehover' };
 export const MOUSE_WHEEL: LexicalCommand<MouseEvent> = { type: 'wheel' };

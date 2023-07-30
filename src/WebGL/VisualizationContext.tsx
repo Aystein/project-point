@@ -36,7 +36,7 @@ export const VisContext = createContext<{
   world: (value: number) => number;
 }>(null);
 
-export const VisProvider = ({ children, defaultZoom }) => {
+export const VisProvider = ({ children, defaultZoom, defaultXDomain }: { defaultZoom?, children, defaultXDomain?: number[] }) => {
   const [zoom, setZoom] = React.useState(
     defaultZoom ?? {
       tx: 0,
@@ -50,7 +50,7 @@ export const VisProvider = ({ children, defaultZoom }) => {
 
   const [renderFunctions, setRenderFunctions] = React.useState([]);
 
-  const [xDomain, setXDomain] = React.useState([-2, 2]);
+  const [xDomain, setXDomain] = React.useState(defaultXDomain ?? [-2, 2]);
 
   const yDomain = React.useMemo(() => {
     const halfExtent = ((xDomain[1] - xDomain[0]) * (height / width)) / 2;
@@ -174,11 +174,12 @@ export const VisProvider = ({ children, defaultZoom }) => {
           mcontroller.mouseUp(event.nativeEvent);
         }}
         onMouseMove={(event) => {
+          
           if (!checkTarget(event.target as HTMLElement)) {
             return;
           }
-
-          mcontroller.mouseMove(event.nativeEvent);
+          
+          mcontroller.mouseMove(ref.current, event.nativeEvent);
         }}
         onWheel={(event) => {
           mcontroller.mouseWheel(event.nativeEvent);
