@@ -22,13 +22,14 @@ export function HoverBehavior({
   const { scaledXDomain, scaledYDomain } = useVisContext();
   const [lastHover, setLastHover] = React.useState<number>(null);
   const data = useAppSelector((state) => state.data);
-
+  const filter = useAppSelector((state) => state.views.filter);
+  
   const tree = React.useMemo(() => {
     return positions
       ? quadtree<VectorLike & { index: number }>()
           .x((d) => d.x)
           .y((d) => d.y)
-          .addAll(positions.map((value, i) => ({ ...value, index: i })))
+          .addAll(positions.map((value, i) => ({ ...value, index: filter[i] })))
       : null;
   }, [positions]);
 

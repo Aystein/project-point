@@ -1,10 +1,11 @@
-import { createSlice, EntityId, nanoid } from '@reduxjs/toolkit';
+import { createSelector, createSlice, EntityId, nanoid } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { LabelContainer, SpatialModel } from './ModelSlice';
 import { VectorLike } from '../Interfaces';
 import { getBounds, normalizeVectors } from '../Util';
 import { Rectangle } from '../WebGL/Math/Rectangle';
 import { scaleLinear } from 'd3-scale';
+import { RootState } from './Store';
 
 export type Selection = {
   global: number[];
@@ -16,8 +17,11 @@ export interface ViewsState {
   workspace: SpatialModel;
 
   hover: number[];
+  localHover: number[];
+
   selection: number[];
   localSelection: number[];
+
   lines: number[];
   positions: VectorLike[];
   filter: number[];
@@ -27,9 +31,13 @@ export interface ViewsState {
 
 const initialState: ViewsState = {
   workspace: undefined,
+
   hover: undefined,
+  localHover: undefined,
+
   selection: undefined,
   localSelection: undefined,
+
   lines: undefined,
   positions: undefined,
   lineWidth: 1,
@@ -162,7 +170,21 @@ export const viewslice = createSlice({
       model.area.height = height;
     },
     setHover: (state, action: PayloadAction<number[]>) => {
-      state.hover = action.payload;
+      const globalHover = action.payload;
+
+      state.hover = globalHover;
+
+      const localHover = []
+
+      for (const globalIndex of globalHover ?? []) {
+        const i = state.filter ? state.filter.indexOf(globalIndex) : globalIndex;
+
+        if (i >= 0) {
+          localHover.push(i);
+        }
+      }
+
+      state.localHover = localHover;
     },
     setSelection: (state, action: PayloadAction<number[]>) => {
       const globalSelection = action.payload;

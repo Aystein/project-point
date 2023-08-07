@@ -87,6 +87,7 @@ export function LassoSelectionPlugin() {
   const ref = React.useRef(null);
 
   const selection = useAppSelector((state) => state.views.selection);
+  const localSelection = useAppSelector((state) => state.views.localSelection);
 
   useMouseEvent(
     MOUSE_DOWN,
@@ -105,6 +106,8 @@ export function LassoSelectionPlugin() {
   );
 
   const handleCondense = async (position: VectorLike) => {
+    if (!selection || selection.length === 0) return;
+
     const { Y } = await runCondenseLayout(
       selection.length,
       {
@@ -118,7 +121,7 @@ export function LassoSelectionPlugin() {
       undefined
     );
 
-    dispatch(updatePositionByFilter({ filter: selection, position: Y }));
+    dispatch(updatePositionByFilter({ filter: localSelection, position: Y }));
   };
 
   return (
@@ -149,11 +152,12 @@ export function LassoSelectionPlugin() {
           const bound = ref.current.getBoundingClientRect();
           const x = event.offsetX - bound.x;
           const y = event.offsetY - bound.y;
+          setPoints((old) => [...old, [x, y]]);
           if (
             points.length === 0 ||
-            distance(points[points.length - 1], [x, y]) > 5
+            distance(points[points.length - 1], [x, y]) > 2
           ) {
-            setPoints((old) => [...old, [x, y]]);
+            //setPoints((old) => [...old, [x, y]]);
           }
         }}
         drag={drag}

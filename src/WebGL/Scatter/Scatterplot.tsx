@@ -5,6 +5,9 @@ import { useVisContext } from '../VisualizationContext';
 import * as React from 'react';
 import { Scatter } from '../../Scatter/Scatter';
 import { Lines } from '../../Scatter/Lines';
+import { Engine } from '../../ts/engine/engine';
+import { Mesh } from '../../ts/engine/initial-conditions/models/mesh';
+import { Particles } from '../../ts/engine/initial-conditions/models/models';
 
 type ColumnTemp = {
   values: number[];
@@ -147,8 +150,8 @@ export function Scatterplot({
   }, [adapter, device]);
 
   useEffect(() => {
-    if (!device || !adapter) return () => {};
-    if (!width || !height) return () => {};
+    if (!device || !adapter) return () => { };
+    if (!width || !height) return () => { };
 
     let active = true;
 
@@ -161,7 +164,30 @@ export function Scatterplot({
       device
     );
 
+
+    /**const renderer = new Renderer(device);
+    
+    setInterval(async () => {
+      const encoder = device.createCommandEncoder();
+      engine.compute(encoder, 0.02, [0, 0, 0]);
+
+      renderer.render(encoder, engine.spheresBuffer.gpuBuffer, ref.current.getContext('webgpu'))
+
+      const commandBuffer = encoder.finish();
+
+      device.queue.submit([commandBuffer]);
+
+      
+    }, 500)
+
+    return;*/
+
     const N = n;
+    const engine = new Engine(device, N, {
+      particlesContainerMesh: Mesh.load(Particles.XX),
+      obstaclesMesh: null,
+      spheresRadius: 0.012,
+    })
 
     scatter.createBuffers(width, height).then(() => {
       scatter.setXY(
@@ -176,7 +202,25 @@ export function Scatterplot({
             .flat()
         )
       );
-      scatter.frame();
+
+      function mainLoop(): void {
+        if (scatter.disposed) {
+          return;
+        }
+        const encoder = device.createCommandEncoder();
+
+        for (let i = 0; i < 20; i++) {
+          engine.compute(encoder, 0.0005, [0, 0])
+        }
+
+        scatter.frame(encoder, engine.spheresBuffer);
+        const commandBuffer = encoder.finish();
+
+        device.queue.submit([commandBuffer]);
+        requestAnimationFrame(mainLoop);
+      }
+
+      requestAnimationFrame(mainLoop);
 
       if (active) {
         setRenderer(scatter);

@@ -18,7 +18,7 @@ import {
 } from '@mantine/core';
 import { IconHome2 } from '@tabler/icons';
 import { IconClock } from '@tabler/icons'
-import { IconMoon } from '@tabler/icons-react';
+import { IconFile, IconLasso, IconMoon } from '@tabler/icons-react';
 import { DataTab } from './MainTabs/DataTab';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faClock } from '@fortawesome/free-solid-svg-icons'
@@ -74,10 +74,9 @@ const useStyles = createStyles((theme) => ({
 }));
 
 const mainLinksMockdata = [
-  { icon: IconHome2, label: 'Home', index: 0 },
-  { icon: IconHome2, label: 'Cluster', index: 1 },
+  { icon: IconFile, label: 'Dataset', index: 0 },
+  { icon: IconLasso, label: 'Cluster', index: 1 },
   { icon: IconClock, label: 'History', index: 2 },
-  { icon: IconHome2, label: 'Encoding', index: 3 },
 ];
 
 
@@ -152,10 +151,6 @@ export function AntApp() {
 
               <Tabs.Panel value={mainLinksMockdata[2].label} style={{ display: active === mainLinksMockdata[2].label ? 'flex' : 'none' }}>
                 <HistoryTab />
-              </Tabs.Panel>
-
-              <Tabs.Panel value={mainLinksMockdata[3].label} style={{ display: active === mainLinksMockdata[3].label ? 'flex' : 'none' }}>
-                <EncodingTab />
               </Tabs.Panel>
             </Tabs>
           </Navbar.Section>

@@ -25,6 +25,7 @@ struct VertexInput {
     @location(4) shape: f32,
     @location(5) hover: f32,
     @location(6) selection: u32,
+    @location(7) center: vec3f,
 
     
     @builtin(instance_index) instance: u32,
@@ -44,7 +45,7 @@ fn vertexMain(input: VertexInput) -> VertexOutput  {
 
     let dim = vec2f(2, 2);
 
-    output.pos = vec4f(map(input.position.x, uniforms.xdomain.x, uniforms.xdomain.y, -1, 1) + input.vertexPosition.x * uniforms.sizeX, map(input.position.y, uniforms.ydomain.x, uniforms.ydomain.y, 1, -1) + input.vertexPosition.y * uniforms.sizeY, 0, 1);
+    output.pos = vec4f(map(input.center.x - 0.5, uniforms.xdomain.x, uniforms.xdomain.y, -1, 1) + input.vertexPosition.x * uniforms.sizeX, map(input.center.y - 0.5, uniforms.ydomain.x, uniforms.ydomain.y, 1, -1) + input.vertexPosition.y * uniforms.sizeY, 0, 1);
     
     if (input.selection > 0) {
         output.color = vec4(0.8, 0.0, 0.0, 1.0);

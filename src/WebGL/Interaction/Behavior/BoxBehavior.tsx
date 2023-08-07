@@ -10,6 +10,12 @@ import {
   IconArrowMoveRight,
   IconArrowMoveUp,
   IconArrowsMove,
+  IconCircle,
+  IconPaint,
+  IconPalette,
+  IconRosette,
+  IconShape,
+  IconTimeline,
 } from '@tabler/icons-react';
 import * as React from 'react';
 import {
@@ -667,10 +673,21 @@ function SingleBox({
           top: 0,
           transform: 'translateY(-100%)',
         }}
+        spacing="lg"
       >
-        <Button variant="subtle" style={{ pointerEvents: 'auto' }} size="xs" color="gray" onClick={() => handleColor()}>color</Button>
-        <Button variant="subtle" style={{ pointerEvents: 'auto' }} size="xs" color="gray" onClick={() => handleShape()}>shape</Button>
-        <Button variant="subtle" style={{ pointerEvents: 'auto' }} size="xs" color="gray" onClick={() => handleLine()}>line</Button>
+        <Group spacing="xs">
+          <ActionIcon style={{ pointerEvents: 'auto' }} onClick={() => handleColor()}>
+            <IconPaint />
+          </ActionIcon>
+
+          <ActionIcon style={{ pointerEvents: 'auto' }} onClick={() => handleShape()}>
+            <IconRosette />
+          </ActionIcon>
+
+          <ActionIcon style={{ pointerEvents: 'auto' }} onClick={() => handleLine()}>
+            <IconTimeline />
+          </ActionIcon>
+        </Group>
         <Menu shadow="md" width={200}>
 
           <Menu.Dropdown

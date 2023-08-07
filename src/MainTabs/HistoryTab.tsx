@@ -2,7 +2,7 @@ import { AspectRatio, Button, Card, CloseButton, Group, ScrollArea, Stack, Text,
 import { EntityId } from '@reduxjs/toolkit';
 import * as React from 'react';
 import { SpatialModel } from '../Store/ModelSlice';
-import { deleteHistory, swapView } from '../Store/ViewSlice';
+import { addView, deleteHistory, swapView } from '../Store/ViewSlice';
 import { useAppDispatch, useAppSelector } from '../Store/hooks';
 import { Scatterplot } from '../WebGL/Scatter/Scatterplot';
 import { VisProvider } from '../WebGL/VisualizationContext';
@@ -63,7 +63,7 @@ function HistoryView({ view, active, index }: { view: SpatialModel, active: bool
         </Group>
       </Card.Section>
 
-      <Card.Section withBorder onClick={() => handleClick(view.id)} style={{background: 'white' }}>
+      <Card.Section withBorder onClick={() => handleClick(view.id)} style={{ background: 'white' }}>
         <AspectRatio ratio={1 / 1}>
           <VisProvider defaultXDomain={[view.area.x, view.area.x + view.area.width]}>
             <Scatterplot
@@ -90,17 +90,29 @@ function HistoryView({ view, active, index }: { view: SpatialModel, active: bool
 export function HistoryTab() {
   const history = useAppSelector((state) => state.views.history);
   const activeHistory = useAppSelector((state) => state.views.activeHistory);
+  const dispatch = useAppDispatch()
+  const selection = useAppSelector((state) => state.views.selection);
+  const localSelection = useAppSelector((state) => state.views.localSelection)
+
+  const handleClick = () => {
+    if  (selection && selection.length > 0) {
+      dispatch(addView({
+        filter: selection,
+        localSelection
+      }))
+    }
+  }
 
   return (
     <>
-      <Button m={"md"} style={{ flexShrink: 0 }}>Create snapshot</Button>
+      <Button m={"md"} style={{ flexShrink: 0 }} onClick={handleClick}>Create snapshot</Button>
       <ScrollArea>
         <Stack
           align="stretch"
           p={"md"}
         >
           {history.map((view, i) => {
-            return <HistoryView view={view} active={activeHistory === i} index={i} />;
+            return <HistoryView key={view.id} view={view} active={activeHistory === i} index={i} />;
           })}
         </Stack>
       </ScrollArea >

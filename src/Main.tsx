@@ -14,10 +14,13 @@ import { SpatialModel } from './Store/ModelSlice';
 import { useHotkeys } from '@mantine/hooks';
 import { LassoSelectionPlugin } from './WebGL/Interaction/Behavior/LassoBehavior';
 import { addView, setHover } from './Store/ViewSlice';
+import { TestRun } from './Scatter/Test/Util';
+
+TestRun()
 
 function MainView({ data, view }: { data: DataState; view: SpatialModel }) {
   const dispatch = useDispatch();
-  const hover = useAppSelector((state) => state.views.hover);
+  const hover = useAppSelector((state) => state.views.localHover);
   const selection = useAppSelector((state) => state.views.localSelection);
   const globalSelection = useAppSelector((state) => state.views.selection);
   const line = useAppSelector((state) => state.views.lines);

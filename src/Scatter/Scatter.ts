@@ -7,6 +7,7 @@ import { YBuffer, createYBuffer } from './Test/YBuffer';
 import { defaultAlphaBlend } from './Test/Blending';
 import { YBufferGroup, createYBufferGroup } from './Test/YBufferGroup';
 import { POINT_RADIUS } from '../Layouts/Globals';
+import { Engine, SpheresBuffer } from '../ts/engine/engine';
 
 export interface ScatterConfig {
   background: GPUColor;
@@ -95,7 +96,7 @@ export class Scatter {
     protected context: GPUCanvasContext,
     protected config: ScatterConfig,
     protected device?: GPUDevice
-  ) {}
+  ) { }
 
   async requestDevice() {
     if (!navigator.gpu) {
@@ -286,6 +287,7 @@ export class Scatter {
         GPUBufferUsage.COPY_DST,
       stepMode: 'vertex',
     });
+
     device.queue.writeBuffer(
       vertexBuffer._buffer,
       /*bufferOffset=*/ 0,
@@ -369,13 +371,23 @@ export class Scatter {
       hover,
       selection
     );
-
+    console.log(this.bufGroup.layout);
     const cellPipeline = device.createRenderPipeline({
       layout: 'auto',
       vertex: {
         module: cellShaderModule,
         entryPoint: 'vertexMain',
-        buffers: this.bufGroup.layout,
+        buffers: [...this.bufGroup.layout, {
+          attributes: [
+              {
+                  shaderLocation: 7,
+                  offset: 0,
+                  format: 'float32x3',
+              },
+          ],
+          arrayStride: Engine.particleStructType.size,
+          stepMode: "instance",
+      }],
       },
       fragment: {
         module: cellShaderModule,
@@ -449,6 +461,7 @@ export class Scatter {
       stepMode: 'instance',
       usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
     });
+
     device.queue.writeBuffer(
       this.lineBuffer._buffer,
       0,
@@ -500,7 +513,7 @@ export class Scatter {
     this.disposed = true;
   }
 
-  frame() {
+  frame(encoder: GPUCommandEncoder, buffer: SpheresBuffer) {
     if (this.disposed) {
       return;
     }
@@ -512,76 +525,50 @@ export class Scatter {
     }
     this.requested = true;
 
-    requestAnimationFrame(() => {
-      this.requested = false;
+    this.requested = false;
 
-      const encoder = device.createCommandEncoder();
 
-      if (this.interpolateBetweenFrames) {
-        const computePass = encoder.beginComputePass();
 
-        computePass.setPipeline(this.computePipeline);
-        computePass.setBindGroup(0, this.computeBindgroup);
-        computePass.dispatchWorkgroups(Math.ceil(this.N / 256));
+    if (this.interpolateBetweenFrames) {
+      const computePass = encoder.beginComputePass();
 
-        computePass.end();
-      }
+      computePass.setPipeline(this.computePipeline);
+      computePass.setBindGroup(0, this.computeBindgroup);
+      computePass.dispatchWorkgroups(Math.ceil(this.N / 256));
 
-      /**const pass2 = encoder.beginRenderPass({
-        colorAttachments: [
-          {
-            view: context.getCurrentTexture().createView(),
-            loadOp: 'clear',
-            clearValue: this.config.background, // New line
-            storeOp: 'store',
-          },
-        ],
-      });
+      computePass.end();
+    }
 
-      pass2.setPipeline(this.renderPipeline);
-
-      this.bufferGroup.bind(pass2);
-      pass2.setBindGroup(0, this.lineBindgroup);
-
-      pass2.draw(6, this.lineBuffer._buffer.size / 8);
-
-      pass2.end();**/
-
-      const pass = encoder.beginRenderPass({
-        colorAttachments: [
-          {
-            view: context.getCurrentTexture().createView(), // this.sampleTexture.createView(),
-            // resolveTarget: context.getCurrentTexture().createView(),
-            clearValue: [0, 0, 0, 0],
-            loadOp: 'clear',
-            storeOp: 'store',
-          },
-        ],
-      });
-
-      pass.setPipeline(this.renderPipeline);
-
-      this.bufferGroup.bind(pass);
-      pass.setBindGroup(0, this.lineBindgroup);
-
-      pass.draw(6, this.lineBuffer._buffer.size / 8);
-
-      pass.setPipeline(cellPipeline);
-
-      this.bufGroup.bind(pass);
-
-      pass.setBindGroup(0, bindGroup);
-      pass.setBindGroup(1, this.bindGroup2);
-
-      pass.draw(6, this.N);
-
-      pass.end();
-
-      const commandBuffer = encoder.finish();
-
-      device.queue.submit([commandBuffer]);
-
-      this.frame();
+    const pass = encoder.beginRenderPass({
+      colorAttachments: [
+        {
+          view: context.getCurrentTexture().createView(), // this.sampleTexture.createView(),
+          // resolveTarget: context.getCurrentTexture().createView(),
+          clearValue: [0, 0, 0, 0],
+          loadOp: 'clear',
+          storeOp: 'store',
+        },
+      ],
     });
+
+    pass.setPipeline(this.renderPipeline);
+
+    this.bufferGroup.bind(pass);
+    pass.setBindGroup(0, this.lineBindgroup);
+
+    pass.draw(6, this.lineBuffer._buffer.size / 8);
+
+    pass.setPipeline(cellPipeline);
+
+    this.bufGroup.bind(pass);
+    pass.setVertexBuffer(6, buffer.gpuBuffer);
+
+    pass.setBindGroup(0, bindGroup);
+    pass.setBindGroup(1, this.bindGroup2);
+
+    pass.draw(6, this.N);
+
+    pass.end();
+
   }
 }

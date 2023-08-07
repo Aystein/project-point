@@ -14,9 +14,6 @@ export interface Cluster {
   // Display name, can be changed
   name: string;
 
-  // Label of the cluster, mostly taken from dataset
-  label: string;
-
   // Incides of the points
   indices: number[];
 }

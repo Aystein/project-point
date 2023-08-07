@@ -44,7 +44,7 @@ export function SimpleDragCover({
 
             const pos = translate(event);
 
-            if (!dragRef.current && distanceXY(pos, drag) > 2) {
+            if (!dragRef.current && distanceXY(pos, drag) > 4) {
               dragRef.current = true;
             }
 
