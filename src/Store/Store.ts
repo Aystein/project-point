@@ -11,12 +11,14 @@ import { datasetReducer } from './FilesSlice';
 import { DataType } from '../Interfaces';
 import isNumber from 'lodash/isNumber';
 import { clusterReducer } from './ClusterSlice';
+import { settingsReducer } from './SettingsSlice';
 
 const combined = combineReducers({
   data: dataReducer,
   views: viewReducer,
   datasets: datasetReducer,
   clusters: clusterReducer,
+  settings: settingsReducer
 });
 
 export type RootState = ReturnType<typeof combined>;

@@ -6,6 +6,7 @@ import { Scatter } from '../../Scatter/Scatter';
 import { Engine } from '../../ts/engine/engine';
 import { PrefixSum } from '../../ts/engine/indexing/prefix-sum';
 import { useVisContext } from '../VisualizationContext';
+import { useAppSelector } from '../../Store/hooks';
 
 type ColumnTemp = {
   values: number[];
@@ -39,24 +40,7 @@ function useDevice() {
   return value ?? [null, null];
 }
 
-function mainLoop(scatter, device, engine): void {
-  if (scatter.disposed) {
-    return;
-  }
-  
-  const encoder = device.createCommandEncoder();
 
-  for (let i = 0; i < 10; i++) {
-    engine.compute(encoder, 0.0015, [0, 0])
-  }
-
-  scatter.frame(encoder, engine.spheresBuffer);
-
-  const commandBuffer = encoder.finish();
-  device.queue.submit([commandBuffer]);
-
-  requestAnimationFrame(() => mainLoop(scatter, device, engine));
-}
 
 export function Scatterplot({
   n,
@@ -94,6 +78,11 @@ export function Scatterplot({
   const [device, adapter] = useDevice();
 
   const { width, height, scaledXDomain, scaledYDomain, zoom } = useVisContext();
+
+  const settings = useAppSelector((state) => state.settings);
+
+  const settingsRef = React.useRef(settings);
+  settingsRef.current = settings;
 
   useEffect(() => {
     if (myRenderer) {
@@ -208,6 +197,25 @@ export function Scatterplot({
 
       if (active) {
         setRenderer({ engine, scatter });
+
+        function mainLoop(scatter, device, engine): void {
+          if (scatter.disposed) {
+            return;
+          }
+          
+          const encoder = device.createCommandEncoder();
+        
+          for (let i = 0; i < settingsRef.current.substeps; i++) {
+            engine.compute(encoder, settingsRef.current.delta / 1000000, [0, 0])
+          }
+        
+          scatter.frame(encoder, engine.spheresBuffer);
+        
+          const commandBuffer = encoder.finish();
+          device.queue.submit([commandBuffer]);
+        
+          requestAnimationFrame(() => mainLoop(scatter, device, engine));
+        }
 
         requestAnimationFrame(() => mainLoop(scatter, device, engine));
       }

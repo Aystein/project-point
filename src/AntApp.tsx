@@ -12,8 +12,7 @@ import {
   createStyles,
   useMantineColorScheme
 } from '@mantine/core';
-import { IconClock } from '@tabler/icons';
-import { IconFile, IconLasso, IconMoon } from '@tabler/icons-react';
+import { IconFile, IconLasso, IconMoon, IconSettings, IconClock } from '@tabler/icons-react';
 import * as React from 'react';
 import { Main } from './Main';
 import { ClusterTab } from './MainTabs/ClusterTab';
@@ -21,6 +20,7 @@ import { DataTab } from './MainTabs/DataTab';
 import { HistoryTab } from './MainTabs/HistoryTab';
 import { initializeDatasets } from './Store/FilesSlice';
 import { useAppDispatch } from './Store/hooks';
+import { SettingsTab } from './MainTabs/SettingsTab';
 
 const useStyles = createStyles((theme) => ({
   wrapper: {
@@ -69,6 +69,7 @@ const mainLinksMockdata = [
   { icon: IconFile, label: 'Dataset', index: 0 },
   { icon: IconLasso, label: 'Cluster', index: 1 },
   { icon: IconClock, label: 'History', index: 2 },
+  { icon: IconSettings, label: 'Settings', index: 3 },
 ];
 
 
@@ -143,6 +144,10 @@ export function AntApp() {
 
               <Tabs.Panel value={mainLinksMockdata[2].label} style={{ display: active === mainLinksMockdata[2].label ? 'flex' : 'none' }}>
                 <HistoryTab />
+              </Tabs.Panel>
+
+              <Tabs.Panel value={mainLinksMockdata[3].label} style={{ display: active === mainLinksMockdata[3].label ? 'flex' : 'none' }}>
+                <SettingsTab />
               </Tabs.Panel>
             </Tabs>
           </Navbar.Section>
