@@ -1,10 +1,6 @@
 
 
 
-import { Engine } from '../../ts/engine/engine';
-import { Mesh } from '../../ts/engine/initial-conditions/models/mesh';
-import { Particles } from '../../ts/engine/initial-conditions/models/models';
-import wgsl from './prefix-sum/down-pass.wgsl?raw';
 
 let adapter: GPUAdapter | null = null;
 let device: GPUDevice | null = null;

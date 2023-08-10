@@ -192,14 +192,20 @@ export const viewslice = createSlice({
       state.selection = globalSelection;
 
       const localSelection = []
+      const filterLookup = {}
+      state.filter.forEach((globalIndex, i) => {
+        filterLookup[globalIndex] = i
+      })
 
       for (const globalIndex of globalSelection ?? []) {
-        const i = state.filter ? state.filter.indexOf(globalIndex) : globalIndex;
+        const i = state.filter ? filterLookup[globalIndex] : globalIndex;
 
         if (i >= 0) {
           localSelection.push(i);
         }
       }
+
+      console.log("finisto")
 
       state.localSelection = localSelection;
     },

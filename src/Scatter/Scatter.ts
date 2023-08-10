@@ -371,7 +371,7 @@ export class Scatter {
       hover,
       selection
     );
-    console.log(this.bufGroup.layout);
+
     const cellPipeline = device.createRenderPipeline({
       layout: 'auto',
       vertex: {
@@ -381,9 +381,12 @@ export class Scatter {
           attributes: [
               {
                   shaderLocation: 7,
-                  offset: 0,
-                  format: 'float32x3',
+                  ...Engine.particleStructType.asVertexAttribute("position")
               },
+              {
+                shaderLocation: 8,
+                ...Engine.particleStructType.asVertexAttribute("selected")
+              }
           ],
           arrayStride: Engine.particleStructType.size,
           stepMode: "instance",

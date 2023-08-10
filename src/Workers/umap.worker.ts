@@ -45,8 +45,6 @@ self.onmessage = ({
   });
   const embedding = umap.fit(X);
 
-  console.log(embedding);
-
   let Y: VectorLike[];
   let nodes: VectorLike[];
 
@@ -73,61 +71,12 @@ self.onmessage = ({
     message: 'Force layout ...',
   });
 
-  var simulation = d3
-    .forceSimulation(nodes)
-    .force('collision', d3.forceCollide().radius(radius))
-    .stop();
-
-  if (axis === 'x') {
-    simulation.force(
-      'x',
-      d3.forceX().x(function (d) {
-        return normalizeX(Y[d.index].x);
-      })
-    );
-    simulation.force(
-      'y',
-      d3.forceY().y((node, i) => {
-        return normalizeY(yLayout[i]);
-      })
-    );
-  }
-  if (axis === 'y') {
-    simulation.force(
-      'x',
-      d3.forceX().x((node, i) => {
-        return normalizeX(xLayout[i]);
-      })
-    );
-    simulation.force(
-      'y',
-      d3.forceY().y(function (d) {
-        return normalizeY(Y[d.index].y);
-      })
-    );
-  }
-  if (axis === 'xy') {
-    simulation.force(
-      'x',
-      d3.forceX().x(function (d) {
-        return normalizeX(Y[d.index].x);
-      })
-    );
-    simulation.force(
-      'y',
-      d3.forceY().y(function (d) {
-        return normalizeY(Y[d.index].y);
-      })
-    );
-  }
-
-  convergeLayout(simulation);
 
   self.postMessage({
     type: 'finish',
-    Y: simulation.nodes().map((node) => ({
-      x: worldX(normalizeX.invert(node.x)),
-      y: worldY(normalizeY.invert(node.y)),
+    Y: Y.map((node) => ({
+      x: worldX(node.x),
+      y: worldY(node.y),
     })),
     xLayout: Y.map((value) => value.x),
     yLayout: Y.map((value) => value.y),

@@ -98,8 +98,8 @@ const reducer = createReducer<RootState>(undefined, (builder) => {
     state.data.columns = columns;
 
     state.views.positions = rows.map((row) => ({
-      x: -1 + Math.random() * 2,
-      y: -1 + Math.random() * 2,
+      x: 10,
+      y: 10,
     }));
 
     state.views.filter = Array.from({ length: rows.length }).map((_, i) => {

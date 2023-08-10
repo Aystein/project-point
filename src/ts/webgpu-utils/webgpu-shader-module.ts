@@ -31,7 +31,7 @@ abstract class ShaderModule {
 
             code = aliasesAsString.join("\n") + "\n\n" + code;
         }
-
+        
         return device.createShaderModule({ code });
     }
 }

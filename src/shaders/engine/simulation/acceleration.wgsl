@@ -32,6 +32,11 @@ fn main(in: ComputeIn) {
 
     particle.acceleration = vec2<f32>(0);
 
+    let forceDirection = particle.force - particle.position;
+    let particleRadius = uniforms.particleRadius / max(1, length(forceDirection));
+
+    particle.acceleration += forceDirection * 3;
+
     let cellId = computeCellId(particle.position.xy);
     let minNeighbourCellId = vec2<u32>(max(cellId - 1, vec2<i32>(0)));
     let maxNeighbourCellId = vec2<u32>(min(cellId + 1, uniforms.gridSize - 1));
@@ -48,8 +53,8 @@ fn main(in: ComputeIn) {
                     let neighbour = particlesBuffer[neighbourIndex];
                     let fromVector = particle.position - neighbour.position;
                     let distance = length(fromVector);
-                    
-                    let penetration = 2.0 * uniforms.particleRadius - distance;
+
+                    let penetration = 2.0 * particleRadius - distance;
 
                     if (penetration > 0.0) {
                         particle.acceleration += (0.96 * neighbour.weight / (particle.weight + neighbour.weight)) * penetration * normalize(fromVector) / uniforms.dt;
@@ -62,13 +67,7 @@ fn main(in: ComputeIn) {
     // particle.acceleration += uniforms.gravity;
     // particle.acceleration += vec2f(0, 1);
 
-    // force X
-    // force Y
-    let forceXDirection = particle.forceX - particle.position;
-    particle.acceleration += normalize(forceXDirection) * 0.2;
 
-    let forceYDirection = particle.forceY - particle.position;
-    particle.acceleration += normalize(forceYDirection) * 0.2;
 
     // upper bound
     let upperBoundPenetration = particle.position - uniforms.upperBound;

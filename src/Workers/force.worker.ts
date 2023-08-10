@@ -57,13 +57,14 @@ self.onmessage = ({
     )
     .stop();
 
-  convergeLayout(simulation);
+  //convergeLayout(simulation);
 
+  console.log(simulation.nodes().map((node) =>  worldX(normalizeX.invert(node.x))))
   self.postMessage({
     type: 'finish',
     Y: simulation.nodes().map((node) => ({
-      x: worldX(normalizeX.invert(node.x)),
-      y: worldY(normalizeY.invert(node.y)),
+      x: worldX(node.x),
+      y: worldY(node.y),
     })),
     xLayout,
     yLayout,

@@ -4,7 +4,7 @@ import * as WebGPU from "../../webgpu-utils/webgpu-utils";
 import { ParticlesBufferData } from "../engine";
 
 type Data = {
-    particlesPositions: ReadonlyArray<glMatrix.ReadonlyVec2>;
+    particlesPositions: number[];
     particlesBufferData: ParticlesBufferData;
 };
 
@@ -14,16 +14,14 @@ type ResetResult = {
     bindgroup: GPUBindGroup;
 };
 
-class Initialization {
+export class SetSelection {
     private static readonly WORKGROUP_SIZE: number = 256;
     public static readonly PARTICLE_WEIGHT_WATER: number = 1;
     public static readonly PARTICLE_WEIGHT_THRESHOLD: number = 10;
     public static readonly PARTICLE_WEIGHT_OBSTACLE: number = 100000;
 
-    private static readonly initialParticleStructType: WebGPU.Types.StructType = new WebGPU.Types.StructType("InitialParticle", [
-        { name: "position", type: WebGPU.Types.vec2F32 },
-        { name: "weight", type: WebGPU.Types.f32 },
-        { name: "index", type: WebGPU.Types.u32 }
+    private static readonly setForceStructType: WebGPU.Types.StructType = new WebGPU.Types.StructType("ForceSelect", [
+        { name: "selected", type: WebGPU.Types.u32 },
     ]);
 
     private readonly device: GPUDevice;
@@ -31,7 +29,6 @@ class Initialization {
     private readonly pipeline: GPUComputePipeline;
 
     private workgroupsCount: number;
-    private positionsBuffer: WebGPU.Buffer;
     private bindgroup: GPUBindGroup;
 
     public constructor(device: GPUDevice, data: Data) {
@@ -45,19 +42,18 @@ class Initialization {
             layout: "auto",
             compute: {
                 module: WebGPU.ShaderModule.create(device, {
-                    code: ShaderSources.Engine.Simulation.Initialization,
-                    structs: [data.particlesBufferData.particlesStructType, this.uniforms, Initialization.initialParticleStructType],
+                    code: ShaderSources.Engine.Simulation.SetSelection,
+                    structs: [data.particlesBufferData.particlesStructType, this.uniforms, SetSelection.setForceStructType],
                 }),
                 entryPoint: "main",
                 constants: {
-                    workgroupSize: Initialization.WORKGROUP_SIZE,
+                    workgroupSize: SetSelection.WORKGROUP_SIZE,
                 },
             },
         });
 
         const resetResult = this.applyReset(data);
         this.workgroupsCount = resetResult.workgroupsCount;
-        this.positionsBuffer = resetResult.positionsBuffer;
         this.bindgroup = resetResult.bindgroup;
     }
 
@@ -69,39 +65,32 @@ class Initialization {
         computePass.end();
     }
 
-    public reset(data: Data): void {
-        this.positionsBuffer.free();
-
-        const resetResult = this.applyReset(data);
-        this.workgroupsCount = resetResult.workgroupsCount;
-        this.positionsBuffer = resetResult.positionsBuffer;
-        this.bindgroup = resetResult.bindgroup;
-    }
-
     private applyReset(data: Data): ResetResult {
         if (data.particlesBufferData.particlesCount !== (data.particlesPositions.length)) {
             throw new Error();
         }
 
-        const workgroupsCount = Math.ceil(data.particlesBufferData.particlesCount / Initialization.WORKGROUP_SIZE);
+        const workgroupsCount = Math.ceil(data.particlesBufferData.particlesCount / SetSelection.WORKGROUP_SIZE);
 
         this.uniforms.setValueFromName("particlesCount", data.particlesBufferData.particlesCount);
         this.uniforms.uploadToGPU();
 
         const positionsBuffer = new WebGPU.Buffer(this.device, {
-            size: Initialization.initialParticleStructType.size * (data.particlesPositions.length),
+            size: SetSelection.setForceStructType.size * (data.particlesPositions.length),
             usage: GPUBufferUsage.STORAGE,
         });
+
         const positionsData = positionsBuffer.getMappedRange();
 
-        data.particlesPositions.forEach((position: glMatrix.ReadonlyVec2, index: number) => {
-            const offset = index * Initialization.initialParticleStructType.size;
-            Initialization.initialParticleStructType.setValue(positionsData, offset, {
-                position,
-                weight: Initialization.PARTICLE_WEIGHT_WATER,
-                index
+
+        data.particlesPositions.forEach((position: number, index: number) => {
+            const offset = index * SetSelection.setForceStructType.size;
+            
+            SetSelection.setForceStructType.setValue(positionsData, offset, {
+                selected: position,
             });
         });
+
         positionsBuffer.unmap();
 
         const bindgroup = this.device.createBindGroup({
@@ -125,8 +114,3 @@ class Initialization {
         return { workgroupsCount, positionsBuffer, bindgroup };
     }
 }
-
-export {
-    Initialization,
-};
-

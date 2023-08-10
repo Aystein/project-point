@@ -11,6 +11,7 @@ import {
   forceNormalizationNew,
 } from '../Layouts/ForceUtil';
 import { LabelContainer } from '../Store/ModelSlice';
+import { EntryOptionPlugin } from 'webpack';
 
 interface Props {
   data: {
@@ -78,48 +79,12 @@ self.onmessage = ({
       y: yLayout[entry.relativeIndex],
     }));
     usedSpace += portion + padding;
-
-    function boxingForce() {
-      for (let node of nodes) {
-        const min = scaleX(centerX - portion / 3);
-        const max = scaleX(centerX + portion / 3);
-        if (node.x < min) {
-          node.x = min;
-        }
-        if (node.x > max) {
-          node.x = max;
-        }
-      }
-    }
-
-    var simulation = d3
-      .forceSimulation(nodes)
-      .force('collision', d3.forceCollide().radius(radius))
-      //.force('center', d3.forceCenter(scaleX(centerX), scaleY(centerY)))
-      .force(
-        'x',
-        d3.forceX().x(function (d) {
-          return scaleX(Y_group[d.index].x);
-        })
-      )
-      .force(
-        'y',
-        d3.forceY().y(function (d) {
-          return scaleY(Y_group[d.index].y);
-        })
-      )
-      .force('bound', boxingForce)
-      .stop();
-
-    convergeLayout(simulation);
-
-    const y = simulation
-      .nodes()
-      // @ts-ignore
-      .map((node) => ({ x: scaleX.invert(node.x), y: scaleY.invert(node.y) }));
+    const min = centerX - portion / 3;
+    const max = centerX + portion / 3;
+    const extent = portion / 3;
 
     group.forEach((item, i) => {
-      Y[item.relativeIndex] = y[i];
+      Y[item.relativeIndex] = { x: centerX + (-2 + Math.random()) * extent, y: yLayout[item.relativeIndex] };
     });
   }
 

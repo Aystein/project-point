@@ -1,4 +1,4 @@
-@group(0) @binding(0) var<storage,read> initialParticlesBuffer: array<InitialParticle>;
+@group(0) @binding(0) var<storage,read> initialPositions: array<ForcePosition>;
 @group(0) @binding(1) var<storage,read_write> particlesBuffer: array<Particle>;
 @group(0) @binding(2) var<uniform> uniforms: Uniforms;
 
@@ -15,16 +15,10 @@ fn main(in: ComputeIn) {
         return;
     }
 
-    var initialParticle = initialParticlesBuffer[particleId];
+    var particle = particlesBuffer[particleId];
+    var initialParticle = initialPositions[particle.index];
 
-    var particle: Particle;
-    particle.position = initialParticle.position;
-    particle.weight = initialParticle.weight;
-    particle.velocity = vec2<f32>(0);
-    particle.acceleration = vec2<f32>(0);
-    particle.force = vec2f(2.5, 2.5);
-    particle.index = initialParticle.index;
-    particle.selected = 0;
+    particle.force = initialParticle.force;
 
     particlesBuffer[particleId] = particle;
 }

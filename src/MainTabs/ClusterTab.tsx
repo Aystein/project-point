@@ -12,7 +12,6 @@ function ClusterItem({ cluster }: { cluster: Cluster }) {
   };
 
   const handleClick = () => {
-    console.log(cluster.indices);
     dispatch(setSelection(cluster.indices));
   };
 

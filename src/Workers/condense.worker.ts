@@ -1,9 +1,10 @@
 import * as d3 from 'd3-force';
 import { IRectangle } from '../WebGL/Math/Rectangle';
-import { convergeLayout, forceNormalization } from '../Layouts/ForceUtil';
+import { convergeLayout, forceNormalization, forceNormalizationNew } from '../Layouts/ForceUtil';
 import { VectorLike } from '../Interfaces';
 import { scaleLinear } from 'd3-scale';
 import { UpdateText } from './util';
+import { POINT_RADIUS } from '../Layouts/Globals';
 
 interface Props {
   data: {
@@ -34,7 +35,7 @@ self.onmessage = ({
     .domain([0, 1])
     .range([area.y, area.y + area.height]);
 
-  const [scaleX, scaleY, radius] = forceNormalization(area);
+  const [scaleX, scaleY, worldX, worldY, radius] = forceNormalizationNew(area);
 
   UpdateText(self, 'Force layout...');
 
@@ -62,14 +63,18 @@ self.onmessage = ({
   }
   simulation.stop();
 
-  convergeLayout(simulation);
+  // convergeLayout(simulation);
+
+  const A = n * Math.PI * (POINT_RADIUS * POINT_RADIUS);
+  const r = Math.sqrt(A / Math.PI) / 2;
+  // A = pi * r^2
 
   self.postMessage({
     type: 'finish',
     // @ts-ignore
     Y: simulation
       .nodes()
-      .map((node) => ({ x: scaleX.invert(node.x), y: scaleY.invert(node.y) })),
+      .map((node) => ({ x: worldX(0.5 + -(r / 2) + Math.random() * r), y: worldY(0.5 + -(r / 2) + Math.random() * r) })),
 
     xLayout: axis != 'y' ? simulation.nodes().map(() => 0.5) : xLayout,
     yLayout: axis != 'x' ? simulation.nodes().map(() => 0.5) : yLayout,

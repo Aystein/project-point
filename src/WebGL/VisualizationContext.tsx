@@ -50,11 +50,11 @@ export const VisProvider = ({ children, defaultZoom, defaultXDomain }: { default
 
   const [renderFunctions, setRenderFunctions] = React.useState([]);
 
-  const [xDomain, setXDomain] = React.useState(defaultXDomain ?? [-2, 2]);
+  const [xDomain, setXDomain] = React.useState(defaultXDomain ?? [5, 15]);
 
   const yDomain = React.useMemo(() => {
     const halfExtent = ((xDomain[1] - xDomain[0]) * (height / width)) / 2;
-    const centerY = 0;
+    const centerY = (xDomain[1] + xDomain[0]) / 2;
 
     return [centerY - halfExtent, centerY + halfExtent];
   }, [xDomain, width, height]);

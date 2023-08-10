@@ -21,8 +21,8 @@ class PrefixSum {
     private static readonly MAX_WORKGROUP_LEVEL = 8;
     private static readonly WORKGROUP_SIZE = 1 << (PrefixSum.MAX_WORKGROUP_LEVEL - 1);
 
-    private static reducePipeline: GPUComputePipeline;
-    private static downPassPipeline: GPUComputePipeline | null = null;
+    public static reducePipeline: GPUComputePipeline;
+    public static downPassPipeline: GPUComputePipeline | null = null;
 
     private readonly device: GPUDevice;
     private readonly uniforms: WebGPU.Uniforms;
@@ -37,7 +37,7 @@ class PrefixSum {
 
     public constructor(device: GPUDevice, data: Data) {
         this.device = device;
-
+        console.log("hi")
         this.uniforms = new WebGPU.Uniforms(device, [
             { name: "itemsCount", type: WebGPU.Types.u32 },
         ]);

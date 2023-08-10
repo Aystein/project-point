@@ -9,16 +9,11 @@ import ResetCells from "../shaders/engine/indexing/reset-cells.wgsl?raw";
 
 import Acceleration from "../shaders/engine/simulation/acceleration.wgsl?raw";
 import Initialization from "../shaders/engine/simulation/initialization.wgsl?raw";
+import SetPositions from "../shaders/engine/simulation/set_positions.wgsl?raw";
+import SetSelection from "../shaders/engine/simulation/set_selection.wgsl?raw";
 import Integration from "../shaders/engine/simulation/integration.wgsl?raw";
 import ObstaclesRotation from "../shaders/engine/simulation/obstacles-rotation.wgsl?raw";
 
-import Axes from "../shaders/rendering/axes.wgsl?raw";
-import Cube from "../shaders/rendering/cube.wgsl?raw";
-import GridCells from "../shaders/rendering/grid-cells.wgsl?raw";
-import Mesh from "../shaders/rendering/mesh.wgsl?raw";
-import Blur from "../shaders/rendering/spheres/blur.wgsl?raw";
-import Composition from "../shaders/rendering/spheres/composition.wgsl?raw";
-import Spheres from "../shaders/rendering/spheres/spheres.wgsl?raw";
 
 const engine = {
     Indexing: {
@@ -38,23 +33,12 @@ const engine = {
         Initialization,
         Integration,
         ObstaclesRotation,
-    },
-};
-
-const rendering = {
-    Axes,
-    Cube,
-    GridCells,
-    Mesh,
-    Spheres: {
-        Blur,
-        Composition,
-        Spheres,
+        SetPositions,
+        SetSelection,
     },
 };
 
 export {
     engine as Engine,
-    rendering as Rendering,
 };
 

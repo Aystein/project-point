@@ -1,23 +1,22 @@
 import * as React from 'react';
-import { useVisContext } from '../../VisualizationContext';
-import { SimpleDragCover } from './DragCover';
-import { useMouseEvent } from './useMouseDrag';
-import {
-  COMMAND_PRIORITY_CRITICAL,
-  MOUSE_DOWN,
-  MOUSE_DRAGGING,
-} from '../Commands';
+import { useDispatch } from 'react-redux';
+import { VectorLike } from '../../../Interfaces';
+import { runCondenseLayout } from '../../../Layouts/Layouts';
 import {
   setHover,
   setSelection,
   updatePositionByFilter,
 } from '../../../Store/ViewSlice';
-import { useDispatch } from 'react-redux';
 import { useAppSelector } from '../../../Store/hooks';
+import { Rectangle } from '../../Math/Rectangle';
+import { useVisContext } from '../../VisualizationContext';
+import {
+  COMMAND_PRIORITY_CRITICAL,
+  MOUSE_DOWN
+} from '../Commands';
+import { SimpleDragCover } from './DragCover';
+import { useMouseEvent } from './useMouseDrag';
 import { pointInPolygon } from '../../../Util';
-import { VectorLike } from '../../../Interfaces';
-import { runCondenseLayout } from '../../../Layouts/Layouts';
-import { addCluster } from '../../../Store/ClusterSlice';
 
 export function lassoPath(lasso) {
   return (lasso ?? []).reduce((svg, [x, y], i) => {
@@ -152,12 +151,12 @@ export function LassoSelectionPlugin() {
           const bound = ref.current.getBoundingClientRect();
           const x = event.offsetX - bound.x;
           const y = event.offsetY - bound.y;
-          setPoints((old) => [...old, [x, y]]);
+
           if (
             points.length === 0 ||
-            distance(points[points.length - 1], [x, y]) > 2
+            distance(points[points.length - 1], [x, y]) > 5
           ) {
-            //setPoints((old) => [...old, [x, y]]);
+            setPoints((old) => [...old, [x, y]]);
           }
         }}
         drag={drag}
@@ -166,10 +165,17 @@ export function LassoSelectionPlugin() {
             scaledXDomain.invert(point[0]),
             scaledYDomain.invert(point[1]),
           ]) as [number, number][];
+
+          const minX = Math.min(...worldPoints.map((point) => point[0]));
+          const minY = Math.min(...worldPoints.map((point) => point[1]));
+          const maxX = Math.max(...worldPoints.map((point) => point[0]))
+          const maxY = Math.max(...worldPoints.map((point) => point[1]))
+          let box = new Rectangle(minX, minY, minX + (maxX - minX), minY + (maxY - minY));
+
           let indices = new Array<number>();
 
           spatial.forEach((xy, i) => {
-            if (pointInPolygon(xy.x, xy.y, worldPoints)) {
+            if (box.within(xy) && pointInPolygon(xy.x, xy.y, worldPoints)) {
               indices.push(globalFilter[i]);
             }
           });

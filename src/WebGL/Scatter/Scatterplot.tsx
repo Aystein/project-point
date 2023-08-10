@@ -1,13 +1,11 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import { useEffect, useState } from 'react';
-import { SpatialModel } from '../../Store/ModelSlice';
-import { useVisContext } from '../VisualizationContext';
 import * as React from 'react';
-import { Scatter } from '../../Scatter/Scatter';
+import { useEffect, useState } from 'react';
 import { Lines } from '../../Scatter/Lines';
+import { Scatter } from '../../Scatter/Scatter';
 import { Engine } from '../../ts/engine/engine';
-import { Mesh } from '../../ts/engine/initial-conditions/models/mesh';
-import { Particles } from '../../ts/engine/initial-conditions/models/models';
+import { PrefixSum } from '../../ts/engine/indexing/prefix-sum';
+import { useVisContext } from '../VisualizationContext';
 
 type ColumnTemp = {
   values: number[];
@@ -26,7 +24,6 @@ function useDevice() {
       if (!navigator.gpu) {
         throw new Error('WebGPU not supported on this browser.');
       }
-
       const adapter = await navigator.gpu.requestAdapter();
 
       if (!adapter) {
@@ -40,6 +37,25 @@ function useDevice() {
   }, []);
 
   return value ?? [null, null];
+}
+
+function mainLoop(scatter, device, engine): void {
+  if (scatter.disposed) {
+    return;
+  }
+  
+  const encoder = device.createCommandEncoder();
+
+  for (let i = 0; i < 10; i++) {
+    engine.compute(encoder, 0.0015, [0, 0])
+  }
+
+  scatter.frame(encoder, engine.spheresBuffer);
+
+  const commandBuffer = encoder.finish();
+  device.queue.submit([commandBuffer]);
+
+  requestAnimationFrame(() => mainLoop(scatter, device, engine));
 }
 
 export function Scatterplot({
@@ -69,7 +85,7 @@ export function Scatterplot({
   line?: number[];
   interpolate?: boolean;
 }) {
-  const [myRenderer, setRenderer] = useState<Scatter>();
+  const [myRenderer, setRenderer] = useState<{ scatter: Scatter, engine: Engine }>();
   const [lines, setLines] = useState<Lines>();
 
   const [timestamp, setTimestamp] = React.useState(0);
@@ -81,34 +97,41 @@ export function Scatterplot({
 
   useEffect(() => {
     if (myRenderer) {
-      myRenderer.interpolateBetweenFrames = interpolate;
+      myRenderer.scatter.interpolateBetweenFrames = interpolate;
     }
   }, [interpolate, myRenderer]);
 
   useEffect(() => {
-    myRenderer?.setColor(new Float32Array(color));
+    myRenderer?.scatter.setColor(new Float32Array(color));
   }, [color, myRenderer]);
 
   useEffect(() => {
-    myRenderer?.setLine(line);
+    myRenderer?.scatter.setLine(line);
   }, [line, myRenderer]);
 
   useEffect(() => {
-    myRenderer?.setSelection(selection ?? []);
-  }, [selection, myRenderer]);
+    let arr = Array.from({ length: n }).map(() => 0);
+
+    (selection ?? []).forEach((value) => {
+      arr[value] = 1;
+    });
+
+    myRenderer?.engine.setSelection(arr);
+    // myRenderer?.scatter.setSelection(selection ?? []);
+  }, [selection, myRenderer, n]);
 
   useEffect(() => {
-    myRenderer?.setShape(new Float32Array(shape));
+    myRenderer?.scatter.setShape(new Float32Array(shape));
   }, [shape, myRenderer]);
 
   useEffect(() => {
-    myRenderer?.setHover(hover ?? []);
+    myRenderer?.scatter.setHover(hover ?? []);
   }, [hover, myRenderer]);
 
   useEffect(() => {
     if (!myRenderer) return;
 
-    myRenderer.updateBounds(scaledXDomain.domain(), scaledYDomain.domain());
+    myRenderer.scatter.updateBounds(scaledXDomain.domain(), scaledYDomain.domain());
   }, [
     scaledXDomain,
     scaledYDomain,
@@ -120,15 +143,8 @@ export function Scatterplot({
   ]);
 
   useEffect(() => {
-    if (myRenderer) {
-      const xy = new Float32Array(
-        Array.from({ length: n * 2 }).map(() => -2 + Math.random() * 4)
-      );
-      for (let i = 0; i < n; i++) {
-        xy[i * 2] = x[i];
-        xy[i * 2 + 1] = y[i];
-      }
-      myRenderer.setXY(xy);
+    if (myRenderer && x && x.length === myRenderer.engine.N) {
+      myRenderer.engine.setForces(x, y);
     }
   }, [x, y, myRenderer, n]);
 
@@ -150,6 +166,9 @@ export function Scatterplot({
   }, [adapter, device]);
 
   useEffect(() => {
+  }, [device])
+
+  useEffect(() => {
     if (!device || !adapter) return () => { };
     if (!width || !height) return () => { };
 
@@ -164,32 +183,15 @@ export function Scatterplot({
       device
     );
 
-
-    /**const renderer = new Renderer(device);
-    
-    setInterval(async () => {
-      const encoder = device.createCommandEncoder();
-      engine.compute(encoder, 0.02, [0, 0, 0]);
-
-      renderer.render(encoder, engine.spheresBuffer.gpuBuffer, ref.current.getContext('webgpu'))
-
-      const commandBuffer = encoder.finish();
-
-      device.queue.submit([commandBuffer]);
-
-      
-    }, 500)
-
-    return;*/
-
     const N = n;
-    const engine = new Engine(device, N, {
-      particlesContainerMesh: Mesh.load(Particles.XX),
-      obstaclesMesh: null,
-      spheresRadius: 0.012,
-    })
+
 
     scatter.createBuffers(width, height).then(() => {
+      const engine = new Engine(device, N, {
+        spheresRadius: 0.012,
+        particlesPositions: Array.from({length: N}).map((_, i) => ([x[i] + Math.random() - 0.5, y[i] + Math.random() - 0.5]))
+      })
+
       scatter.setXY(
         new Float32Array(
           Array.from({ length: N * 2 }).map(() => -2 + Math.random() * 4)
@@ -203,33 +205,19 @@ export function Scatterplot({
         )
       );
 
-      function mainLoop(): void {
-        if (scatter.disposed) {
-          return;
-        }
-        const encoder = device.createCommandEncoder();
-
-        for (let i = 0; i < 20; i++) {
-          engine.compute(encoder, 0.0005, [0, 0])
-        }
-
-        scatter.frame(encoder, engine.spheresBuffer);
-        const commandBuffer = encoder.finish();
-
-        device.queue.submit([commandBuffer]);
-        requestAnimationFrame(mainLoop);
-      }
-
-      requestAnimationFrame(mainLoop);
 
       if (active) {
-        setRenderer(scatter);
+        setRenderer({ engine, scatter });
+
+        requestAnimationFrame(() => mainLoop(scatter, device, engine));
       }
     });
 
     return () => {
       active = false;
       scatter.dispose();
+      PrefixSum.downPassPipeline = null;
+      PrefixSum.reducePipeline = null;
     };
   }, [setRenderer, ref, n, device, adapter, width, height]);
 

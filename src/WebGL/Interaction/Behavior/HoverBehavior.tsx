@@ -43,7 +43,7 @@ export function HoverBehavior({
       const hover = tree.find(
         scaledXDomain.invert(event.x),
         scaledYDomain.invert(event.y)
-      ).index;
+      )?.index;
 
       if (lastHover !== hover) {
         onHover(hover);
