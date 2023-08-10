@@ -1,34 +1,26 @@
-import * as React from 'react';
 import {
-  createStyles,
-  Navbar,
-  UnstyledButton,
-  Tooltip,
-  Tabs,
-  Text,
-  AppShell,
-  Header,
-  Footer,
-  Stack,
-  Kbd,
-  Button,
-  Group,
   ActionIcon,
-  useMantineColorScheme,
+  AppShell,
+  Group,
+  Header,
+  Kbd,
+  Navbar,
+  Stack,
+  Tabs,
+  Tooltip,
+  UnstyledButton,
+  createStyles,
+  useMantineColorScheme
 } from '@mantine/core';
-import { IconHome2 } from '@tabler/icons';
-import { IconClock } from '@tabler/icons'
+import { IconClock } from '@tabler/icons';
 import { IconFile, IconLasso, IconMoon } from '@tabler/icons-react';
-import { DataTab } from './MainTabs/DataTab';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faClock } from '@fortawesome/free-solid-svg-icons'
+import * as React from 'react';
 import { Main } from './Main';
-import { useAppDispatch } from './Store/hooks';
-import { initializeDatasets } from './Store/FilesSlice';
-import { atom, useAtom } from 'jotai';
 import { ClusterTab } from './MainTabs/ClusterTab';
+import { DataTab } from './MainTabs/DataTab';
 import { HistoryTab } from './MainTabs/HistoryTab';
-import { EncodingTab } from './MainTabs/EncodingTab';
+import { initializeDatasets } from './Store/FilesSlice';
+import { useAppDispatch } from './Store/hooks';
 
 const useStyles = createStyles((theme) => ({
   wrapper: {
