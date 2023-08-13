@@ -11,6 +11,7 @@ type Data = {
     gridSize: glMatrix.ReadonlyVec2,
     cellSize: number,
     weightThreshold: number,
+    indexBuffer: WebGPU.Buffer,
 };
 
 type ResetResult = {
@@ -29,8 +30,12 @@ class Acceleration {
     private bindgroup: GPUBindGroup;
     private particleRadius: number;
 
+    private indexBuffer: WebGPU.Buffer;
+
     public constructor(device: GPUDevice, data: Data) {
         this.device = device;
+
+        this.indexBuffer = data.indexBuffer;
 
         this.uniforms = new WebGPU.Uniforms(device, [
             { name: "gridSize", type: WebGPU.Types.vec2I32 },
@@ -110,6 +115,10 @@ class Acceleration {
                 {
                     binding: 2,
                     resource: this.uniforms.bindingResource,
+                },
+                {
+                    binding: 3,
+                    resource: this.indexBuffer.bindingResource,
                 },
             ]
         });

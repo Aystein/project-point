@@ -13,6 +13,7 @@ type Data = {
     readonly cellSize: number;
 
     readonly particlesBufferData: ParticlesBufferData
+    readonly indexBuffer: WebGPU.Buffer
 };
 
 type CellsBufferDescriptor = {
@@ -68,6 +69,7 @@ class Indexing {
     private readonly prefixSum: PrefixSum;
     private readonly finalizePrefixSum: FinalizePrefixSum;
     private readonly reorderParticles: ReorderParticles;
+    private readonly indexBuffer: WebGPU.Buffer;
 
     public constructor(device: GPUDevice, data: Data) {
         this.device = device;
@@ -83,6 +85,8 @@ class Indexing {
             firstInstance: 0,  // will be dynamically computed on GPU
         });
         this.cellsIndirectDrawBuffer.unmap();
+
+        this.indexBuffer = data.indexBuffer;
 
         const resetResult = this.applyReset(data);
         this.cellsCount = resetResult.cellsCount;
@@ -123,6 +127,7 @@ class Indexing {
             cellsBufferData: this.cellsBufferData,
             gridSize: data.gridSize,
             cellSize: data.cellSize,
+            indexBuffer: this.indexBuffer
         });
     }
 

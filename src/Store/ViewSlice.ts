@@ -175,9 +175,12 @@ export const viewslice = createSlice({
       state.hover = globalHover;
 
       const localHover = []
-
+      const filterLookup = {}
+      state.filter.forEach((globalIndex, i) => {
+        filterLookup[globalIndex] = i
+      })
       for (const globalIndex of globalHover ?? []) {
-        const i = state.filter ? state.filter.indexOf(globalIndex) : globalIndex;
+        const i = state.filter ? filterLookup[globalIndex] : globalIndex;
 
         if (i >= 0) {
           localHover.push(i);

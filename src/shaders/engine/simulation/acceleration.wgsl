@@ -1,6 +1,7 @@
 @group(0) @binding(0) var<storage,read_write> particlesBuffer: array<Particle>;
 @group(0) @binding(1) var<storage,read> cellsBuffer: array<Cell>;
 @group(0) @binding(2) var<uniform> uniforms: Uniforms;
+@group(0) @binding(3) var<storage,read> indexBuffer: array<u32>;
 
 override workgroupSize: i32;
 
@@ -25,7 +26,8 @@ fn main(in: ComputeIn) {
         return;
     }
 
-    var particle = particlesBuffer[particleId];
+    let particleIndex = indexBuffer[particleId];
+    var particle = particlesBuffer[particleIndex];
     if (particle.weight >= uniforms.weightThreshold) {
         return;
     }
@@ -50,7 +52,8 @@ fn main(in: ComputeIn) {
             let neighbourEndIndex = neighbourCell.offset + neighbourCell.particlesCount; // exclusive
             for (var neighbourIndex = neighbourStartIndex; neighbourIndex < neighbourEndIndex; neighbourIndex++) {
                 if (neighbourIndex != particleId) {
-                    let neighbour = particlesBuffer[neighbourIndex];
+                    let i = indexBuffer[neighbourIndex];
+                    let neighbour = particlesBuffer[i];
                     let fromVector = particle.position - neighbour.position;
                     let distance = length(fromVector);
 
@@ -79,5 +82,5 @@ fn main(in: ComputeIn) {
     let lowerBoundCheck = step(vec2<f32>(0), lowerBoundPenetration); // 1 if out of bounds, 0 if in bounds
     particle.acceleration += lowerBoundCheck * (2.0 * lowerBoundPenetration) / uniforms.dt;
 
-    particlesBuffer[particleId] = particle;
+    particlesBuffer[particleIndex] = particle;
 }

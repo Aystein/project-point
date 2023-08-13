@@ -9,11 +9,11 @@ type Data = {
     cellsBufferData: CellsBufferData,
     gridSize: glMatrix.ReadonlyVec2,
     cellSize: number,
+    indexBuffer: WebGPU.Buffer,
 };
 
 type ResetResult = {
     workgroupsCount: number;
-    tempParticlesBuffer: WebGPU.Buffer;
     bindgroup: GPUBindGroup;
 };
 
@@ -25,12 +25,14 @@ class ReorderParticles {
     private readonly pipeline: GPUComputePipeline;
 
     private workgroupsCount: number;
-    private sourceParticlesBuffer: WebGPU.Buffer;
-    private tempParticlesBuffer: WebGPU.Buffer;
     private bindgroup: GPUBindGroup;
+
+    private indexBuffer: WebGPU.Buffer;
 
     public constructor(device: GPUDevice, data: Data) {
         this.device = device;
+
+        this.indexBuffer = data.indexBuffer;
 
         this.uniforms = new WebGPU.Uniforms(device, [
             { name: "gridSize", type: WebGPU.Types.vec2I32 },
@@ -55,8 +57,6 @@ class ReorderParticles {
 
         const resetResult = this.applyReset(data);
         this.workgroupsCount = resetResult.workgroupsCount;
-        this.sourceParticlesBuffer = data.particlesBufferData.particlesBuffer;
-        this.tempParticlesBuffer = resetResult.tempParticlesBuffer;
         this.bindgroup = resetResult.bindgroup;
     }
 
@@ -66,16 +66,11 @@ class ReorderParticles {
         computePass.setBindGroup(0, this.bindgroup);
         computePass.dispatchWorkgroups(this.workgroupsCount);
         computePass.end();
-        commandEncoder.copyBufferToBuffer(this.tempParticlesBuffer.gpuBuffer, 0, this.sourceParticlesBuffer.gpuBuffer, 0, this.sourceParticlesBuffer.size);
     }
 
     public reset(data: Data): void {
-        this.tempParticlesBuffer.free();
-
         const resetResult = this.applyReset(data);
         this.workgroupsCount = resetResult.workgroupsCount;
-        this.sourceParticlesBuffer = data.particlesBufferData.particlesBuffer;
-        this.tempParticlesBuffer = resetResult.tempParticlesBuffer;
         this.bindgroup = resetResult.bindgroup;
     }
 
@@ -92,14 +87,6 @@ class ReorderParticles {
             throw new Error();
         }
 
-        const tempParticlesBuffer = new WebGPU.Buffer(this.device, {
-            size: data.particlesBufferData.particlesBuffer.size,
-            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
-        });
-        if (!tempParticlesBuffer.hasUsage(GPUBufferUsage.COPY_SRC)) {
-            throw new Error();
-        }
-
         const bindgroup = this.device.createBindGroup({
             layout: this.pipeline.getBindGroupLayout(0),
             entries: [
@@ -112,17 +99,17 @@ class ReorderParticles {
                     resource: data.cellsBufferData.cellsBuffer.bindingResource,
                 },
                 {
-                    binding: 2,
-                    resource: tempParticlesBuffer.bindingResource,
-                },
-                {
                     binding: 3,
                     resource: this.uniforms.bindingResource,
                 },
+                {
+                    binding: 5,
+                    resource: this.indexBuffer.bindingResource,
+                }
             ]
         });
 
-        return { workgroupsCount, tempParticlesBuffer, bindgroup };
+        return { workgroupsCount, bindgroup };
     }
 }
 

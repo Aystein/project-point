@@ -60,6 +60,8 @@ class Engine {
     private readonly indexing: Indexing;
     private needsIndexing: boolean = true;
 
+    public indexBuffer: WebGPU.Buffer;
+
     private needsSelected = false
     private selected: number[]
 
@@ -70,6 +72,8 @@ class Engine {
     public static board_size = 20;
     private particlesPositions: Data['particlesPositions']
     public id = Math.random();
+
+
 
     public constructor(device: GPUDevice, public N: number, data: Data) {
         this.device = device;
@@ -90,12 +94,14 @@ class Engine {
         this.initialization = new Initialization(this.device, {
             particlesPositions: this.particlesPositions,
             particlesBufferData,
+            indexBuffer: this.indexBuffer
         });
 
         this.indexing = new Indexing(this.device, {
             gridSize: this.gridSize,
             cellSize: this.cellSize,
             particlesBufferData,
+            indexBuffer: this.indexBuffer,
         });
 
         this.acceleration = new Acceleration(this.device, {
@@ -105,6 +111,7 @@ class Engine {
             particlesBufferData,
             particleRadius: this.spheresRadius,
             weightThreshold: Engine.getMaxWeight(),
+            indexBuffer: this.indexBuffer
         });
 
         this.integration = new Integration(this.device, {
@@ -198,12 +205,14 @@ class Engine {
         this.initialization.reset({
             particlesPositions: this.particlesPositions,
             particlesBufferData,
+            indexBuffer: this.indexBuffer
         });
 
         this.indexing.reset({
             gridSize: this.gridSize,
             cellSize: this.cellSize,
             particlesBufferData,
+            indexBuffer: this.indexBuffer
         });
 
         this.acceleration.reset({
@@ -213,6 +222,7 @@ class Engine {
             particlesBufferData,
             particleRadius: this.spheresRadius,
             weightThreshold: Engine.getMaxWeight(),
+            indexBuffer: this.indexBuffer
         });
         this.integration.reset({
             particlesBufferData,
@@ -232,6 +242,11 @@ class Engine {
 
         const cellSize = Math.max(0.01, 2.05 * data.spheresRadius);
         const gridSize: glMatrix.vec2 = [Math.ceil(Engine.board_size / cellSize), Math.ceil(Engine.board_size / cellSize)];
+
+        this.indexBuffer = new WebGPU.Buffer(this.device, {
+            size: 4 * this.N,
+            usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE
+        })
 
         return { particlesBuffer, cellSize, gridSize };
     }

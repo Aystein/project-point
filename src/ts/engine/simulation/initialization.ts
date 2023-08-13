@@ -6,6 +6,7 @@ import { ParticlesBufferData } from "../engine";
 type Data = {
     particlesPositions: ReadonlyArray<glMatrix.ReadonlyVec2>;
     particlesBufferData: ParticlesBufferData;
+    indexBuffer: WebGPU.Buffer;
 };
 
 type ResetResult = {
@@ -34,12 +35,16 @@ class Initialization {
     private positionsBuffer: WebGPU.Buffer;
     private bindgroup: GPUBindGroup;
 
+    private indexBuffer: WebGPU.Buffer;f
+
     public constructor(device: GPUDevice, data: Data) {
         this.device = device;
 
         this.uniforms = new WebGPU.Uniforms(device, [
             { name: "particlesCount", type: WebGPU.Types.u32 },
         ]);
+
+        this.indexBuffer = data.indexBuffer;
 
         this.pipeline = device.createComputePipeline({
             layout: "auto",
@@ -118,6 +123,10 @@ class Initialization {
                 {
                     binding: 2,
                     resource: this.uniforms.bindingResource,
+                },
+                {
+                    binding: 3,
+                    resource: this.indexBuffer.bindingResource,
                 },
             ]
         });

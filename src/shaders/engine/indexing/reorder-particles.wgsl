@@ -1,7 +1,7 @@
 @group(0) @binding(0) var<storage,read> inputParticlesBuffer: array<Particle>;
 @group(0) @binding(1) var<storage,read> cellsBuffer: array<Cell>;
-@group(0) @binding(2) var<storage,read_write> outputParticlesBuffer: array<Particle>;
 @group(0) @binding(3) var<uniform> uniforms: Uniforms;
+@group(0) @binding(5) var<storage,read_write> outIndexBuffer: array<u32>;
 
 override workgroupSize: i32;
 
@@ -30,8 +30,6 @@ fn main(in: ComputeIn) {
         let cellOffset = cellsBuffer[cellIndex].offset;
 
         let finalParticleIndex = cellOffset + particle.indexInCell;
-        
-        // indexBuffer[finalParticleIndex] = particle.index;
-        outputParticlesBuffer[finalParticleIndex] = particle;
+        outIndexBuffer[finalParticleIndex] = particleIndex;
     }
 }
