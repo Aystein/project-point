@@ -48,6 +48,7 @@ class Acceleration {
             { name: "particlesCount", type: WebGPU.Types.u32 },
             { name: "lowerBound", type: WebGPU.Types.vec2F32 },
             { name: "weightThreshold", type: WebGPU.Types.f32 },
+            { name: "radiusScaling", type: WebGPU.Types.f32 }
         ]);
 
         this.pipeline = device.createComputePipeline({
@@ -70,9 +71,9 @@ class Acceleration {
         this.particleRadius = data.particleRadius;
     }
 
-    public compute(commandEncoder: GPUCommandEncoder, dt: number, gravity: glMatrix.ReadonlyVec2): void {
-        this.uniforms.setValueFromName("gravity", gravity);
+    public compute(commandEncoder: GPUCommandEncoder, dt: number, radiusScaling: number): void {
         this.uniforms.setValueFromName("dt", dt);
+        this.uniforms.setValueFromName("radiusScaling", radiusScaling)
         this.uniforms.setValueFromName("lowerBound", [this.particleRadius, this.particleRadius]);
         this.uniforms.setValueFromName("upperBound", [Engine.board_size - this.particleRadius, Engine.board_size - this.particleRadius]);
         this.uniforms.uploadToGPU();

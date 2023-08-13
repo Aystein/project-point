@@ -123,7 +123,7 @@ class Engine {
 
     
 
-    public compute(commandEncoder: GPUCommandEncoder, dt: number, gravity: glMatrix.ReadonlyVec2): void {
+    public compute(commandEncoder: GPUCommandEncoder, dt: number, radiusScaling: number): void {
         if (this.needsInitialization) {
             this.initialization.compute(commandEncoder);
             this.needsInitialization = false;
@@ -163,7 +163,7 @@ class Engine {
        this.indexIfNeeded(commandEncoder);
 
         if (dt > 0) {
-            this.acceleration.compute(commandEncoder, dt, gravity);
+            this.acceleration.compute(commandEncoder, dt, radiusScaling);
             this.integration.compute(commandEncoder, dt);
 
             this.needsIndexing = true;

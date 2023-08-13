@@ -40,29 +40,9 @@ self.onmessage = ({
   const [normalizeX, normalizeY, worldX, worldY, radius] =
     forceNormalizationNew(area);
 
-  var simulation = d3
-    .forceSimulation(Y)
-    .force('collision', d3.forceCollide().radius(radius))
-    .force(
-      'x',
-      d3.forceX().x(function (d) {
-        return normalizeX(Y[d.index].x);
-      })
-    )
-    .force(
-      'y',
-      d3.forceY().y(function (d) {
-        return normalizeY(Y[d.index].y);
-      })
-    )
-    .stop();
-
-  //convergeLayout(simulation);
-
-  console.log(simulation.nodes().map((node) =>  worldX(normalizeX.invert(node.x))))
   self.postMessage({
     type: 'finish',
-    Y: simulation.nodes().map((node) => ({
+    Y: Y.map((node) => ({
       x: worldX(node.x),
       y: worldY(node.y),
     })),

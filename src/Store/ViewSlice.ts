@@ -66,7 +66,11 @@ export const viewslice = createSlice({
       state.workspace = { ...swap };
       state.activeHistory = state.history.indexOf(swap);
       state.workspace.children = children;
-      state.selection = []
+      state.selection = null;
+      state.localSelection = null;
+      state.hover = null;
+      state.localHover = null;
+      console.log(state.workspace.x.map((x, i) => ({ x, y: state.workspace.y[i] })))
       state.positions = state.workspace.x.map((x, i) => ({ x, y: state.workspace.y[i] }))
       state.filter = swap.filter;
     },

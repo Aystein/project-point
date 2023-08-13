@@ -238,7 +238,7 @@ export class Scatter {
     this.computePipeline = pipeline;
   }
 
-  async createBuffers(width: number, height: number) {
+  async createBuffers() {
     const canvasFormat = navigator.gpu.getPreferredCanvasFormat();
 
     const { context, device } = this;

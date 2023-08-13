@@ -282,7 +282,7 @@ function SingleBox({
 
     openContextModal({
       modal: 'colorby',
-      title: 'Color by',
+      title: 'Shape by',
       innerProps: {
         onFinish,
       },

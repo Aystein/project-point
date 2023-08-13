@@ -54,7 +54,7 @@ function MainView({ data, view }: { data: DataState; view: SpatialModel }) {
       
       
       <BoxBehavior parentModel={view} />
-      {/**<HoverBehavior positions={positions} onHover={handleHover} />*/}
+      <HoverBehavior positions={positions} onHover={handleHover} />
       <LassoSelectionPlugin />
       
       <Scatterplot

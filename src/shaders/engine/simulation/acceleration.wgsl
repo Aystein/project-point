@@ -35,7 +35,7 @@ fn main(in: ComputeIn) {
     particle.acceleration = vec2<f32>(0);
 
     let forceDirection = particle.force - particle.position;
-    let particleRadius = uniforms.particleRadius / max(1, length(forceDirection));
+    let particleRadius = (uniforms.particleRadius / max(1, length(forceDirection))) * uniforms.radiusScaling;
 
     particle.acceleration += forceDirection * 3;
 
@@ -66,11 +66,6 @@ fn main(in: ComputeIn) {
             }
         }
     }
-
-    // particle.acceleration += uniforms.gravity;
-    // particle.acceleration += vec2f(0, 1);
-
-
 
     // upper bound
     let upperBoundPenetration = particle.position - uniforms.upperBound;

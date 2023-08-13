@@ -70,7 +70,6 @@ export function Scatterplot({
   interpolate?: boolean;
 }) {
   const [myRenderer, setRenderer] = useState<{ scatter: Scatter, engine: Engine }>();
-  const [lines, setLines] = useState<Lines>();
 
   const [timestamp, setTimestamp] = React.useState(0);
   const ref = React.useRef<HTMLCanvasElement>();
@@ -159,7 +158,6 @@ export function Scatterplot({
 
   useEffect(() => {
     if (!device || !adapter) return () => { };
-    if (!width || !height) return () => { };
 
     let active = true;
 
@@ -175,13 +173,13 @@ export function Scatterplot({
     const N = n;
 
 
-    scatter.createBuffers(width, height).then(() => {
+    scatter.createBuffers().then(() => {
       const engine = new Engine(device, N, {
         spheresRadius: POINT_RADIUS,
         particlesPositions: Array.from({length: N}).map((_, i) => ([x[i], y[i]]))
       })
       const encoder = device.createCommandEncoder();
-      engine.compute(encoder, settingsRef.current.delta / 1000000, [0, 0])
+      engine.compute(encoder, settingsRef.current.delta / 1000000, 1)
       const commandBuffer = encoder.finish();
       device.queue.submit([commandBuffer]);
 
@@ -202,7 +200,7 @@ export function Scatterplot({
       if (active) {
         setRenderer({ engine, scatter });
 
-        function mainLoop(scatter, device, engine: Engine): void {
+        function mainLoop(scatter: Scatter, device, engine: Engine): void {
           if (scatter.disposed) {
             return;
           }
@@ -211,7 +209,7 @@ export function Scatterplot({
           const encoder = device.createCommandEncoder();
           if (interpolate) {
             for (let i = 0; i < settingsRef.current.substeps; i++) {
-              engine.compute(encoder, settingsRef.current.delta / 1000000, [0, 0])
+              engine.compute(encoder, settingsRef.current.delta / 1000000, settingsRef.current.radiusScaling)
             }
           }
         
@@ -231,7 +229,7 @@ export function Scatterplot({
       active = false;
       scatter.dispose();
     };
-  }, [setRenderer, ref, n, device, adapter, width, height]);
+  }, [setRenderer, ref, n, device, adapter]);
 
   return (
     <canvas
