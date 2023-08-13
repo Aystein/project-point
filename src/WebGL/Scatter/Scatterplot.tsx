@@ -3,10 +3,10 @@ import * as React from 'react';
 import { useEffect, useState } from 'react';
 import { Lines } from '../../Scatter/Lines';
 import { Scatter } from '../../Scatter/Scatter';
-import { Engine } from '../../ts/engine/engine';
-import { PrefixSum } from '../../ts/engine/indexing/prefix-sum';
-import { useVisContext } from '../VisualizationContext';
 import { useAppSelector } from '../../Store/hooks';
+import { Engine } from '../../ts/engine/engine';
+import { useVisContext } from '../VisualizationContext';
+import { POINT_RADIUS } from '../../Layouts/Globals';
 
 type ColumnTemp = {
   values: number[];
@@ -177,9 +177,13 @@ export function Scatterplot({
 
     scatter.createBuffers(width, height).then(() => {
       const engine = new Engine(device, N, {
-        spheresRadius: 0.012,
-        particlesPositions: Array.from({length: N}).map((_, i) => ([x[i] + Math.random() - 0.5, y[i] + Math.random() - 0.5]))
+        spheresRadius: POINT_RADIUS,
+        particlesPositions: Array.from({length: N}).map((_, i) => ([x[i], y[i]]))
       })
+      const encoder = device.createCommandEncoder();
+      engine.compute(encoder, settingsRef.current.delta / 1000000, [0, 0])
+      const commandBuffer = encoder.finish();
+      device.queue.submit([commandBuffer]);
 
       scatter.setXY(
         new Float32Array(
@@ -198,15 +202,17 @@ export function Scatterplot({
       if (active) {
         setRenderer({ engine, scatter });
 
-        function mainLoop(scatter, device, engine): void {
+        function mainLoop(scatter, device, engine: Engine): void {
           if (scatter.disposed) {
             return;
           }
           
+          
           const encoder = device.createCommandEncoder();
-        
-          for (let i = 0; i < settingsRef.current.substeps; i++) {
-            engine.compute(encoder, settingsRef.current.delta / 1000000, [0, 0])
+          if (interpolate) {
+            for (let i = 0; i < settingsRef.current.substeps; i++) {
+              engine.compute(encoder, settingsRef.current.delta / 1000000, [0, 0])
+            }
           }
         
           scatter.frame(encoder, engine.spheresBuffer);
@@ -224,8 +230,6 @@ export function Scatterplot({
     return () => {
       active = false;
       scatter.dispose();
-      PrefixSum.downPassPipeline = null;
-      PrefixSum.reducePipeline = null;
     };
   }, [setRenderer, ref, n, device, adapter, width, height]);
 

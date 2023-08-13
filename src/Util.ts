@@ -1,6 +1,7 @@
 import { EntityId } from '@reduxjs/toolkit';
 import { Boundaries, VectorLike } from './Interfaces';
 import { ScaleLinear, scaleLinear } from 'd3-scale';
+import { Rectangle } from './WebGL/Math/Rectangle';
 
 export function isEntityId(value): value is EntityId {
   return typeof value === 'string' || typeof value === 'number';
@@ -44,11 +45,44 @@ export function getBounds(spatial: VectorLike[]): Boundaries {
   };
 }
 
+export function spread(center: number, radius: number) {
+  return center - radius + Math.random() * 2 * radius;
+}
+
+export function scaleInto(source: VectorLike[]): [VectorLike[], number] {
+  const bounds = getBounds(source);
+  const center = 10;
+
+  if (bounds.extentX >= bounds.extentY) {
+    const translateX = center - bounds.centerX;
+    const xScale = scaleLinear().domain([bounds.minX, bounds.maxX]).range([bounds.minX + translateX, bounds.maxX + translateX])
+    const yScale = scaleLinear().domain([bounds.minY, bounds.maxY]).range([center - bounds.extentY / 2, center + bounds.extentY / 2])
+
+    return [source.map((value) => ({
+      x: xScale(value.x),
+      y: yScale(value.y)
+    })), bounds.extentX];
+  }
+
+  if (bounds.extentX < bounds.extentY) {
+    const translateY = center - bounds.centerY;
+    const xScale = scaleLinear().domain([bounds.minX, bounds.maxX]).range([center - bounds.extentX / 2, center + bounds.extentX / 2])
+    const yScale = scaleLinear().domain([bounds.minY, bounds.maxY]).range([bounds.minY + translateY, bounds.maxY + translateY])
+
+    return [source.map((value) => ({
+      x: xScale(value.x),
+      y: yScale(value.y)
+    })), bounds.extentY];
+  }
+}
+
 export function normalizeVectors(positions: VectorLike[]) {
   const bounds = getBounds(positions);
 
   let xScale: ScaleLinear<number, number>;
   let yScale: ScaleLinear<number, number>;
+
+
 
   if (bounds.extentX >= bounds.extentY) {
     const scale = bounds.extentY / bounds.extentX;

@@ -124,6 +124,7 @@ class Engine {
         }
 
         if (this.needsForceUpdate) {
+            const t0 = performance.now()
             new SetPositions(this.device, {
                 particlesPositions: Array.from({length: this.N}).map((_, i) => ([this.x[i], this.y[i]])),
                 particlesBufferData: {
@@ -132,6 +133,7 @@ class Engine {
                     particlesStructType: Engine.particleStructType,
                 },
             }).compute(commandEncoder);
+            const t1 = performance.now()
 
             this.needsForceUpdate = false;
         }

@@ -11,7 +11,6 @@ type ResetResult = {
     dispatchSize: number;
     localTotalsBuffer: WebGPU.Buffer;
 
-    reduceBindgroup: GPUBindGroup;
     downPassBindgroup: GPUBindGroup | null;
 
     childPrefixSum: PrefixSum | null;
@@ -21,8 +20,8 @@ class PrefixSum {
     private static readonly MAX_WORKGROUP_LEVEL = 8;
     private static readonly WORKGROUP_SIZE = 1 << (PrefixSum.MAX_WORKGROUP_LEVEL - 1);
 
-    public static reducePipeline: GPUComputePipeline;
-    public static downPassPipeline: GPUComputePipeline | null = null;
+    //public static reducePipeline: GPUComputePipeline;
+    //public static downPassPipeline: GPUComputePipeline | null = null;
 
     private readonly device: GPUDevice;
     private readonly uniforms: WebGPU.Uniforms;
@@ -35,15 +34,15 @@ class PrefixSum {
 
     private childPrefixSum: PrefixSum | null = null;
 
-    public constructor(device: GPUDevice, data: Data) {
+    public constructor(device: GPUDevice, data: Data, private reducePipeline?: GPUComputePipeline, private downPassPipeline?: GPUComputePipeline) {
         this.device = device;
-        console.log("hi")
+
         this.uniforms = new WebGPU.Uniforms(device, [
             { name: "itemsCount", type: WebGPU.Types.u32 },
         ]);
 
-        if (!PrefixSum.reducePipeline) {
-            PrefixSum.reducePipeline = device.createComputePipeline({
+        if (!this.reducePipeline) {
+            this.reducePipeline = device.createComputePipeline({
                 layout: "auto",
                 compute: {
                     module: WebGPU.ShaderModule.create(device, {
@@ -66,29 +65,28 @@ class PrefixSum {
         this.dispatchSize = resetResult.dispatchSize;
         this.localTotalsBuffer = resetResult.localTotalsBuffer;
 
-        this.reduceBindgroup = resetResult.reduceBindgroup;
         this.downPassBindgroup = resetResult.downPassBindgroup;
 
         this.childPrefixSum = resetResult.childPrefixSum;
     }
 
     public compute(commandEncoder: GPUCommandEncoder): void {
-        if (!PrefixSum.reducePipeline) {
+        if (!this.reducePipeline) {
             throw new Error();
         }
 
         const reducePass = commandEncoder.beginComputePass();
-        reducePass.setPipeline(PrefixSum.reducePipeline);
+        reducePass.setPipeline(this.reducePipeline);
         this.localSort(reducePass);
         reducePass.end();
 
         if (this.childPrefixSum) {
-            if (!PrefixSum.downPassPipeline) {
+            if (!this.downPassPipeline) {
                 throw new Error();
             }
 
             const downPass = commandEncoder.beginComputePass();
-            downPass.setPipeline(PrefixSum.downPassPipeline);
+            downPass.setPipeline(this.downPassPipeline);
             this.downPass(downPass);
             downPass.end();
         }
@@ -130,7 +128,6 @@ class PrefixSum {
         this.dispatchSize = resetResult.dispatchSize;
         this.localTotalsBuffer = resetResult.localTotalsBuffer;
 
-        this.reduceBindgroup = resetResult.reduceBindgroup;
         this.downPassBindgroup = resetResult.downPassBindgroup;
 
         this.childPrefixSum = resetResult.childPrefixSum;
@@ -151,8 +148,8 @@ class PrefixSum {
             usage: GPUBufferUsage.STORAGE,
         });
 
-        const reduceBindgroup = this.device.createBindGroup({
-            layout: PrefixSum.reducePipeline.getBindGroupLayout(0),
+        this.reduceBindgroup = this.device.createBindGroup({
+            layout: this.reducePipeline.getBindGroupLayout(0),
             entries: [
                 {
                     binding: 0,
@@ -171,8 +168,8 @@ class PrefixSum {
         let downPassBindgroup: GPUBindGroup | null = null;
 
         if (dispatchSize > 1) { // I will need another prefix sum on the totals
-            if (!PrefixSum.downPassPipeline) {
-                PrefixSum.downPassPipeline = this.device.createComputePipeline({
+            if (!this.downPassPipeline) {
+                this.downPassPipeline = this.device.createComputePipeline({
                     layout: "auto",
                     compute: {
                         module: WebGPU.ShaderModule.create(this.device, {
@@ -191,7 +188,7 @@ class PrefixSum {
             }
 
             downPassBindgroup = this.device.createBindGroup({
-                layout: PrefixSum.downPassPipeline.getBindGroupLayout(0),
+                layout: this.downPassPipeline.getBindGroupLayout(0),
                 entries: [
                     {
                         binding: 0,
@@ -210,10 +207,10 @@ class PrefixSum {
                 itemsBuffer: localTotalsBuffer,
                 itemsCount: dispatchSize,
                 type: data.type,
-            });
+            }, this.reducePipeline, this.downPassPipeline);
         }
 
-        return { dispatchSize, localTotalsBuffer, reduceBindgroup, downPassBindgroup, childPrefixSum };
+        return { dispatchSize, localTotalsBuffer, downPassBindgroup, childPrefixSum };
     }
 }
 

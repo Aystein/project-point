@@ -30,6 +30,8 @@ fn main(in: ComputeIn) {
         let cellOffset = cellsBuffer[cellIndex].offset;
 
         let finalParticleIndex = cellOffset + particle.indexInCell;
+        
+        // indexBuffer[finalParticleIndex] = particle.index;
         outputParticlesBuffer[finalParticleIndex] = particle;
     }
 }

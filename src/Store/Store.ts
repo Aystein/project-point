@@ -12,6 +12,8 @@ import { DataType } from '../Interfaces';
 import isNumber from 'lodash/isNumber';
 import { clusterReducer } from './ClusterSlice';
 import { settingsReducer } from './SettingsSlice';
+import { POINT_RADIUS } from '../Layouts/Globals';
+import { spread } from '../Util';
 
 const combined = combineReducers({
   data: dataReducer,
@@ -99,14 +101,26 @@ const reducer = createReducer<RootState>(undefined, (builder) => {
     state.data.rows = rows;
     state.data.columns = columns;
 
+    const A = Math.pow(POINT_RADIUS, 2) * rows.length;
+    const r = Math.sqrt(A);
+
     state.views.positions = rows.map((row) => ({
-      x: 10,
-      y: 10,
+      x: spread(10, r),
+      y: spread(10, r),
     }));
 
     state.views.filter = Array.from({ length: rows.length }).map((_, i) => {
       return i;
     })
+
+    state.views.history = [];
+    state.views.activeHistory = null;
+
+    state.views.selection = null;
+    state.views.localSelection = null;
+    state.views.localHover = null;
+    state.views.hover = null;
+
     state.views.workspace = {
       id: nanoid(),
       children: [],
@@ -116,8 +130,8 @@ const reducer = createReducer<RootState>(undefined, (builder) => {
       area: null,
       color: rows.map(() => [0.5, 0.5, 0.5, 1]).flat(),
       shape: rows.map(() => 0),
-      x: state.views.positions.map((value) => 0.5),
-      y: state.views.positions.map((value) => 0.5),
+      x: state.views.positions.map((value) => spread(0.5, 0.5)),
+      y: state.views.positions.map((value) => spread(0.5, 0.5)),
     };
   });
 

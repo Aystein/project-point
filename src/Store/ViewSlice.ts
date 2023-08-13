@@ -2,7 +2,7 @@ import { createSelector, createSlice, EntityId, nanoid } from '@reduxjs/toolkit'
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { LabelContainer, SpatialModel } from './ModelSlice';
 import { VectorLike } from '../Interfaces';
-import { getBounds, normalizeVectors } from '../Util';
+import { getBounds, normalizeVectors, scaleInto } from '../Util';
 import { Rectangle } from '../WebGL/Math/Rectangle';
 import { scaleLinear } from 'd3-scale';
 import { RootState } from './Store';
@@ -126,19 +126,19 @@ export const viewslice = createSlice({
       const { filter, localSelection } = action.payload;
 
       const positions = localSelection.map((index) => state.positions[index]);
-      const normalizedPositions = normalizeVectors(positions);
+      const [normalizedPositions, extent] = scaleInto(positions);
 
       const bounds = getBounds(normalizedPositions);
-
+      console.log(normalizedPositions);
       state.history.push({
         id: nanoid(),
         filter,
         children: [],
         area: {
-          x: bounds.minX,
-          y: bounds.minY,
-          width: bounds.extentX,
-          height: bounds.extentY
+          x: 10 - extent / 2,
+          y: 10 - extent / 2,
+          width: extent,
+          height: extent
         },
         x: normalizedPositions.map((value) => value.x),
         y: normalizedPositions.map((value) => value.y),
@@ -204,8 +204,6 @@ export const viewslice = createSlice({
           localSelection.push(i);
         }
       }
-
-      console.log("finisto")
 
       state.localSelection = localSelection;
     },

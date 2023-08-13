@@ -59,6 +59,8 @@ export function SimpleDragCover({
             event.stopPropagation();
             event.preventDefault();
 
+            const pos = translate(event);
+
             setDrag(null);
 
             if (!dragRef.current) {

@@ -6,7 +6,6 @@ import { addView, deleteHistory, swapView } from '../Store/ViewSlice';
 import { useAppDispatch, useAppSelector } from '../Store/hooks';
 import { Scatterplot } from '../WebGL/Scatter/Scatterplot';
 import { VisProvider } from '../WebGL/VisualizationContext';
-import { getBounds } from '../Util';
 
 function HistoryView({ view, active, index }: { view: SpatialModel, active: boolean; index: number }) {
   const selection = useAppSelector((state) => state.views.selection);

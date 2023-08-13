@@ -70,17 +70,8 @@ self.onmessage = ({
 
     labels.labels.push({ position: centerX, content: key });
 
-    const Y_group = group.map((entry) => ({
-      x: centerX,
-      y: yLayout[entry.relativeIndex],
-    }));
-    const nodes = group.map((entry) => ({
-      x: centerX,
-      y: yLayout[entry.relativeIndex],
-    }));
     usedSpace += portion + padding;
-    const min = centerX - portion / 3;
-    const max = centerX + portion / 3;
+
     const extent = portion / 3;
 
     group.forEach((item, i) => {
