@@ -6,10 +6,6 @@ struct Uniforms {
     sizeY: f32
 }
 
-struct Particle {
-    position: vec2<f32>
-}
-
 @group(0) @binding(0) var<storage, read> hover: array<Particle>;
 @group(0) @binding(1) var<uniform> uniforms: Uniforms;
 
@@ -80,5 +76,5 @@ fn vertexMain(input: VertexInput) -> VertexOutput  {
 
 @fragment
 fn fragmentMain() -> @location(0) vec4f {
-    return vec4f(0, 0, 0, 0.2);
+    return vec4f(0, 0, 0, 0.1);
 }

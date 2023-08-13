@@ -6,6 +6,13 @@ import { addView, deleteHistory, swapView } from '../Store/ViewSlice';
 import { useAppDispatch, useAppSelector } from '../Store/hooks';
 import { Scatterplot } from '../WebGL/Scatter/Scatterplot';
 import { VisProvider } from '../WebGL/VisualizationContext';
+import { Engine } from '../ts/engine/engine';
+
+let globalEngine: Engine = null;
+
+export function setGlobalEngine(value) {
+  globalEngine = value;
+}
 
 function HistoryView({ view, active, index }: { view: SpatialModel, active: boolean; index: number }) {
   const selection = useAppSelector((state) => state.views.selection);
@@ -35,8 +42,16 @@ function HistoryView({ view, active, index }: { view: SpatialModel, active: bool
       return null;
     }
 
-    const filter = new Set(view.filter);
-    return hover.filter((index) => filter.has(index));
+    const hoverSet = new Set(hover);
+    const localHover: Array<number> = [];
+
+    view.filter.forEach((value, i) => {
+      if (hoverSet.has(value)) {
+        localHover.push(i)
+      }
+    })
+
+    return localHover;
   }, [hover, view?.filter]);
 
   const handleClick = (id: EntityId) => {
@@ -93,11 +108,18 @@ export function HistoryTab() {
   const selection = useAppSelector((state) => state.views.selection);
   const localSelection = useAppSelector((state) => state.views.localSelection)
 
-  const handleClick = () => {
-    if  (selection && selection.length > 0) {
+  const handleClick = async () => {
+    if (selection && selection.length > 0) {
+      const data = await globalEngine.readXY();
+
+      const positions = localSelection.map((i) => {
+        return { x: data[(Engine.particleStructType.size / 4) * i], y: data[(Engine.particleStructType.size / 4) * i + 1] }
+      });
+
       dispatch(addView({
         filter: selection,
-        localSelection
+        localSelection,
+        positions
       }))
     }
   }

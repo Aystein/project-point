@@ -1,4 +1,4 @@
-import { createSelector, createSlice, EntityId, nanoid } from '@reduxjs/toolkit';
+import { createAsyncThunk, createSelector, createSlice, EntityId, nanoid } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { LabelContainer, SpatialModel } from './ModelSlice';
 import { VectorLike } from '../Interfaces';
@@ -126,10 +126,9 @@ export const viewslice = createSlice({
         1
       );
     },
-    addView: (state, action: PayloadAction<{ filter: number[], localSelection: number[] }>) => {
-      const { filter, localSelection } = action.payload;
+    addView: (state, action: PayloadAction<{ filter: number[], localSelection: number[], positions: VectorLike[] }>) => {
+      const { filter, localSelection, positions } = action.payload;
 
-      const positions = localSelection.map((index) => state.positions[index]);
       const [normalizedPositions, extent] = scaleInto(positions);
 
       const bounds = getBounds(normalizedPositions);
@@ -270,6 +269,12 @@ export const viewslice = createSlice({
     },
   },
 });
+
+export const loadDataset = createAsyncThunk(
+  'views/readxy',
+  async (engine, { dispatch }) => {
+  }
+);
 
 // Action creators are generated for each case reducer function
 export const {

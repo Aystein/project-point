@@ -6,6 +6,7 @@ import { Initialization } from "./simulation/initialization";
 import { Integration } from "./simulation/integration";
 import { SetPositions } from "./simulation/SetPositions";
 import { SetSelection } from "./simulation/SetSelection";
+import { WebGPUBuffer } from "../webgpu-utils/webgpu-buffer";
 
 type Data = {
     spheresRadius: number;
@@ -73,6 +74,8 @@ class Engine {
     private particlesPositions: Data['particlesPositions']
     public id = Math.random();
 
+    private mapXYBuffer: WebGPUBuffer;
+    private needsMapXY = false;
 
 
     public constructor(device: GPUDevice, public N: number, data: Data) {
@@ -121,7 +124,27 @@ class Engine {
         });
     }
 
-    
+    public async readXY() {
+        this.needsMapXY = true;
+
+        this.mapXYBuffer = new WebGPU.Buffer(this.device, {
+            size: Engine.particleStructType.size * this.N,
+            usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
+        });
+
+        const commandEncoder = this.device.createCommandEncoder();
+        commandEncoder.copyBufferToBuffer(this.particlesBuffer.gpuBuffer, 0, this.mapXYBuffer.gpuBuffer, 0, this.mapXYBuffer.size);
+        this.device.queue.submit([commandEncoder.finish()]);
+
+        await this.device.queue.onSubmittedWorkDone();
+
+        await this.mapXYBuffer.gpuBuffer.mapAsync(GPUMapMode.READ, 0, this.mapXYBuffer.gpuBuffer.size);
+        
+        const range = new Float32Array(this.mapXYBuffer.gpuBuffer.getMappedRange(0, this.mapXYBuffer.gpuBuffer.size).slice(0));
+        this.mapXYBuffer.gpuBuffer.unmap();
+
+        return range; 
+    }
 
     public compute(commandEncoder: GPUCommandEncoder, dt: number, radiusScaling: number): void {
         if (this.needsInitialization) {
@@ -143,9 +166,7 @@ class Engine {
             const t1 = performance.now()
 
             this.needsForceUpdate = false;
-        }
-
-        
+        }        
 
         if (this.needsSelected) {
             new SetSelection(this.device, {
@@ -160,7 +181,7 @@ class Engine {
             this.needsSelected = false;
         }
 
-       this.indexIfNeeded(commandEncoder);
+        this.indexIfNeeded(commandEncoder);
 
         if (dt > 0) {
             this.acceleration.compute(commandEncoder, dt, radiusScaling);
@@ -237,7 +258,7 @@ class Engine {
     private applyReset(data: Data): ResetResult {
         const particlesBuffer = new WebGPU.Buffer(this.device, {
             size: Engine.particleStructType.size * this.N,
-            usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
+            usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
         });
 
         const cellSize = Math.max(0.01, 2.05 * data.spheresRadius);
@@ -245,8 +266,13 @@ class Engine {
 
         this.indexBuffer = new WebGPU.Buffer(this.device, {
             size: 4 * this.N,
-            usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE
+            usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE
         })
+
+        this.mapXYBuffer = new WebGPU.Buffer(this.device, {
+            size: Engine.particleStructType.size * this.N,
+            usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
+        });
 
         return { particlesBuffer, cellSize, gridSize };
     }

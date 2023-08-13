@@ -7,6 +7,7 @@ import { useAppSelector } from '../../Store/hooks';
 import { Engine } from '../../ts/engine/engine';
 import { useVisContext } from '../VisualizationContext';
 import { POINT_RADIUS } from '../../Layouts/Globals';
+import { globalEngine, setGlobalEngine } from '../../MainTabs/HistoryTab';
 
 type ColumnTemp = {
   values: number[];
@@ -161,23 +162,25 @@ export function Scatterplot({
 
     let active = true;
 
+    const engine = new Engine(device, n, {
+      spheresRadius: POINT_RADIUS,
+      particlesPositions: Array.from({length: n}).map((_, i) => ([x[i], y[i]]))
+    })
+
     const scatter = new Scatter(
       n,
       ref.current.getContext('webgpu'),
       {
         background: [1, 1, 1, 1],
       },
-      device
+      device,
+      engine.spheresBuffer.gpuBuffer,
     );
 
     const N = n;
 
-
     scatter.createBuffers().then(() => {
-      const engine = new Engine(device, N, {
-        spheresRadius: POINT_RADIUS,
-        particlesPositions: Array.from({length: N}).map((_, i) => ([x[i], y[i]]))
-      })
+
       const encoder = device.createCommandEncoder();
       engine.compute(encoder, settingsRef.current.delta / 1000000, 1)
       const commandBuffer = encoder.finish();
@@ -205,20 +208,23 @@ export function Scatterplot({
             return;
           }
           
-          
           const encoder = device.createCommandEncoder();
-          if (interpolate) {
+          if (interpolate || true) {
             for (let i = 0; i < settingsRef.current.substeps; i++) {
               engine.compute(encoder, settingsRef.current.delta / 1000000, settingsRef.current.radiusScaling)
             }
           }
         
-          scatter.frame(encoder, engine.spheresBuffer);
+          scatter.frame(encoder);
         
           const commandBuffer = encoder.finish();
           device.queue.submit([commandBuffer]);
         
           requestAnimationFrame(() => mainLoop(scatter, device, engine));
+        }
+
+        if (interpolate) {
+          setGlobalEngine(engine);
         }
 
         requestAnimationFrame(() => mainLoop(scatter, device, engine));

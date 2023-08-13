@@ -83,10 +83,6 @@ class ReorderParticles {
 
         const workgroupsCount = Math.ceil(data.particlesBufferData.particlesCount / ReorderParticles.WORKGROUP_SIZE);
 
-        if (!data.particlesBufferData.particlesBuffer.hasUsage(GPUBufferUsage.COPY_DST)) {
-            throw new Error();
-        }
-
         const bindgroup = this.device.createBindGroup({
             layout: this.pipeline.getBindGroupLayout(0),
             entries: [

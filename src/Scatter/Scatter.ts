@@ -1,6 +1,5 @@
 import wgsl from './Scatter.render.wgsl?raw';
 import linewgsl from './Line.render.wgsl?raw';
-import computewgsl from './Scatter.compute.wgsl?raw';
 import image from '../Assets/square_white.png';
 import { createQuadBuffer } from './Util';
 import { YBuffer, createYBuffer } from './Test/YBuffer';
@@ -8,6 +7,7 @@ import { defaultAlphaBlend } from './Test/Blending';
 import { YBufferGroup, createYBufferGroup } from './Test/YBufferGroup';
 import { POINT_RADIUS } from '../Layouts/Globals';
 import { Engine, SpheresBuffer } from '../ts/engine/engine';
+import { ShaderModule } from '../ts/webgpu-utils/webgpu-shader-module';
 
 export interface ScatterConfig {
   background: GPUColor;
@@ -57,10 +57,6 @@ export class Scatter {
 
   texture: GPUTexture;
 
-  computePipeline: GPUComputePipeline;
-
-  computeBindgroup: GPUBindGroup;
-
   bufGroup: YBufferGroup;
 
   bufferGroup: YBufferGroup;
@@ -95,7 +91,8 @@ export class Scatter {
     public N: number,
     protected context: GPUCanvasContext,
     protected config: ScatterConfig,
-    protected device?: GPUDevice
+    protected device: GPUDevice,
+    protected spheresBuffer: GPUBuffer
   ) { }
 
   async requestDevice() {
@@ -205,37 +202,6 @@ export class Scatter {
     );
 
     this.bufferGroup = createYBufferGroup(this.lineBuffer);
-  }
-
-  createComputePipeline() {
-    const { device } = this;
-
-    const pipeline = device.createComputePipeline({
-      layout: 'auto',
-      compute: {
-        module: device.createShaderModule({
-          code: computewgsl,
-        }),
-        entryPoint: 'computeMain',
-      },
-    });
-
-    const computeBindgroup = device.createBindGroup({
-      layout: pipeline.getBindGroupLayout(0),
-      entries: [
-        {
-          binding: 0,
-          resource: { buffer: this.buffers.particle._buffer },
-        },
-        {
-          binding: 1,
-          resource: { buffer: this.buffers.targetPosition },
-        },
-      ],
-    });
-
-    this.computeBindgroup = computeBindgroup;
-    this.computePipeline = pipeline;
   }
 
   async createBuffers() {
@@ -445,7 +411,6 @@ export class Scatter {
     this.bindGroup = bindGroup;
     this.bindGroup2 = bindGroup2;
 
-    this.createComputePipeline();
     this.createLinePipeline();
   }
 
@@ -473,9 +438,10 @@ export class Scatter {
 
     this.bufferGroup = createYBufferGroup(this.lineBuffer);
 
-    const cellShaderModule = device.createShaderModule({
+    const cellShaderModule = ShaderModule.create(device, {
       code: linewgsl,
-    });
+      structs: [Engine.particleStructType],
+    })
 
     this.renderPipeline = device.createRenderPipeline({
       layout: 'auto',
@@ -494,6 +460,7 @@ export class Scatter {
           },
         ],
       },
+      
       // multisample: { count: 4 },
     });
 
@@ -502,7 +469,7 @@ export class Scatter {
       entries: [
         {
           binding: 0,
-          resource: { buffer: this.buffers.particle._buffer },
+          resource: { buffer: this.spheresBuffer },
         },
         {
           binding: 1,
@@ -516,7 +483,7 @@ export class Scatter {
     this.disposed = true;
   }
 
-  frame(encoder: GPUCommandEncoder, buffer: SpheresBuffer) {
+  frame(encoder: GPUCommandEncoder) {
     if (this.disposed) {
       return;
     }
@@ -529,18 +496,6 @@ export class Scatter {
     this.requested = true;
 
     this.requested = false;
-
-
-
-    if (this.interpolateBetweenFrames) {
-      const computePass = encoder.beginComputePass();
-
-      computePass.setPipeline(this.computePipeline);
-      computePass.setBindGroup(0, this.computeBindgroup);
-      computePass.dispatchWorkgroups(Math.ceil(this.N / 256));
-
-      computePass.end();
-    }
 
     const pass = encoder.beginRenderPass({
       colorAttachments: [
@@ -564,7 +519,7 @@ export class Scatter {
     pass.setPipeline(cellPipeline);
 
     this.bufGroup.bind(pass);
-    pass.setVertexBuffer(6, buffer.gpuBuffer);
+    pass.setVertexBuffer(6, this.spheresBuffer);
 
     pass.setBindGroup(0, bindGroup);
     pass.setBindGroup(1, this.bindGroup2);
@@ -572,6 +527,5 @@ export class Scatter {
     pass.draw(6, this.N);
 
     pass.end();
-
   }
 }
