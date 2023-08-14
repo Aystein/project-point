@@ -25,9 +25,13 @@ type VertexAttribute = {
 
 class StructType implements Type {
     public readonly typeName: string;
+
     public readonly align: number;
+
     public readonly size: number;
+
     private readonly name: string;
+
     private readonly attributes: ReadonlyArray<Attribute>;
 
     public constructor(structName: string, attributesDefinitions: AttributeDefinition[]) {

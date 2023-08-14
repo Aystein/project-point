@@ -7,10 +7,13 @@ type Constructor<T> = {
 
 class ArrayType<T extends Type> implements Type {
     public readonly typeName: string;
+
     public readonly align: number;
+
     public readonly size: number;
 
     private readonly elements: ReadonlyArray<Type>;
+
     private readonly stride: number;
 
     public constructor(subTypeConstructor: Constructor<T>, n: number) {

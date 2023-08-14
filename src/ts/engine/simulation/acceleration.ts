@@ -23,11 +23,15 @@ class Acceleration {
     private static readonly WORKGROUP_SIZE: number = 128;
 
     private readonly device: GPUDevice;
+
     private readonly uniforms: WebGPU.Uniforms;
+
     private readonly pipeline: GPUComputePipeline;
 
     private workgroupsCount: number;
+
     private bindgroup: GPUBindGroup;
+
     private particleRadius: number;
 
     private indexBuffer: WebGPU.Buffer;

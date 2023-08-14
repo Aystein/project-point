@@ -1,12 +1,12 @@
 import * as glMatrix from "gl-matrix";
+import { Hover } from "../../shaders/engine/utility/Hover";
+import { WebGPUBuffer } from "../webgpu-utils/webgpu-buffer";
 import * as WebGPU from "../webgpu-utils/webgpu-utils";
 import { CellsBufferData, CellsBufferDescriptor, GridData, Indexing, NonEmptyCellsBuffers } from "./indexing/indexing";
+import { SetPositions } from "./simulation/SetPositions";
 import { Acceleration } from "./simulation/acceleration";
 import { Initialization } from "./simulation/initialization";
 import { Integration } from "./simulation/integration";
-import { SetPositions } from "./simulation/SetPositions";
-import { SetSelection } from "./simulation/SetSelection";
-import { WebGPUBuffer } from "../webgpu-utils/webgpu-buffer";
 
 type Data = {
     spheresRadius: number;
@@ -49,34 +49,42 @@ class Engine {
     public particlesBuffer: WebGPU.Buffer;
 
     private spheresRadius: number;
+
     private cellSize: number;
+
     private gridSize: glMatrix.ReadonlyVec2;
 
     private readonly initialization: Initialization;
+
     private needsInitialization: boolean = true;
 
     private readonly acceleration: Acceleration;
+
     private readonly integration: Integration;
 
     private readonly indexing: Indexing;
+
     private needsIndexing: boolean = true;
 
     public indexBuffer: WebGPU.Buffer;
 
-    private needsSelected = false
-    private selected: number[]
-
     private needsForceUpdate: boolean = false;
+
     private x: number[]
+
     private y: number[]
 
     public static board_size = 20;
+
     private particlesPositions: Data['particlesPositions']
+
     public id = Math.random();
 
     private mapXYBuffer: WebGPUBuffer;
+
     private needsMapXY = false;
 
+    public hover: Hover;
 
     public constructor(device: GPUDevice, public N: number, data: Data) {
         this.device = device;
@@ -93,6 +101,8 @@ class Engine {
             particlesCount: this.N,
             particlesStructType: Engine.particleStructType,
         };
+
+        this.hover = new Hover(this.device, particlesBufferData);
 
         this.initialization = new Initialization(this.device, {
             particlesPositions: this.particlesPositions,
@@ -156,7 +166,7 @@ class Engine {
         if (this.needsForceUpdate) {
             const t0 = performance.now()
             new SetPositions(this.device, {
-                particlesPositions: Array.from({length: this.N}).map((_, i) => ([this.x[i], this.y[i]])),
+                particlesPositions: Array.from({ length: this.N }).map((_, i) => ([this.x[i], this.y[i]])),
                 particlesBufferData: {
                     particlesBuffer: this.particlesBuffer,
                     particlesCount: this.N,
@@ -166,19 +176,6 @@ class Engine {
             const t1 = performance.now()
 
             this.needsForceUpdate = false;
-        }        
-
-        if (this.needsSelected) {
-            new SetSelection(this.device, {
-                particlesPositions: this.selected,
-                particlesBufferData: {
-                    particlesBuffer: this.particlesBuffer,
-                    particlesCount: this.N,
-                    particlesStructType: Engine.particleStructType,
-                }
-            }).compute(commandEncoder);
-
-            this.needsSelected = false;
         }
 
         this.indexIfNeeded(commandEncoder);
@@ -191,11 +188,10 @@ class Engine {
 
            this.indexIfNeeded(commandEncoder);
         }
-    }
 
-    public setSelection(selected: number[]) {
-        this.needsSelected = true;
-        this.selected = selected;
+       this.hover.compute(commandEncoder, [Math.random(), Math.random()]);
+
+
     }
 
     public setForces(x: number[], y: number[]) {
@@ -284,12 +280,15 @@ class Engine {
     public static get cellBufferDescriptor(): CellsBufferDescriptor {
         return Indexing.cellsBufferDescriptor;
     }
+
     public get cellsBufferData(): CellsBufferData {
         return this.indexing.cellsBufferData;
     }
+
     public get nonEmptyCellsBuffers(): NonEmptyCellsBuffers {
         return this.indexing.nonEmptyCellsBuffers;
     }
+
     public get gridData(): GridData {
         return this.indexing.gridData;
     }
@@ -310,14 +309,12 @@ class Engine {
     }
 }
 
+export {
+    Engine
+};
 export type {
-    ParticlesBufferData,
     CellsBufferData,
     CellsBufferDescriptor,
     GridData,
-    NonEmptyCellsBuffers,
-    SpheresBuffer,
-};
-export {
-    Engine,
+    NonEmptyCellsBuffers, ParticlesBufferData, SpheresBuffer
 };

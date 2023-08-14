@@ -14,6 +14,10 @@ export function setGlobalEngine(value) {
   globalEngine = value;
 }
 
+export function getGlobalEngine() {
+  return globalEngine;
+}
+
 function HistoryView({ view, active, index }: { view: SpatialModel, active: boolean; index: number }) {
   const selection = useAppSelector((state) => state.views.selection);
   const hover = useAppSelector((state) => state.views.hover);

@@ -30,12 +30,6 @@ function MainView({ data, view }: { data: DataState; view: SpatialModel }) {
     dispatch(setHover([index]));
   };
 
-  const addViewF = () => {
-    dispatch(addView({ filter: globalSelection ?? view.filter, localSelection: selection }));
-  };
-
-  useHotkeys([['ctrl+S', addViewF]]);
-
   const [x, y] = React.useMemo(() => {
     if (!view) {
       return [null, null];

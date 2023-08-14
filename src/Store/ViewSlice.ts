@@ -24,7 +24,10 @@ export interface ViewsState {
 
   lines: number[];
   positions: VectorLike[];
+
   filter: number[];
+  filterLookup: Record<number, number>
+
   lineWidth: number;
   activeHistory: number;
 }
@@ -41,7 +44,10 @@ const initialState: ViewsState = {
   lines: undefined,
   positions: undefined,
   lineWidth: 1,
+
   filter: [],
+  filterLookup: {},
+
   history: [],
   activeHistory: -1
 };
@@ -70,9 +76,15 @@ export const viewslice = createSlice({
       state.localSelection = null;
       state.hover = null;
       state.localHover = null;
-      console.log(state.workspace.x.map((x, i) => ({ x, y: state.workspace.y[i] })))
+      
       state.positions = state.workspace.x.map((x, i) => ({ x, y: state.workspace.y[i] }))
+
       state.filter = swap.filter;
+
+      state.filterLookup = {}
+      state.filter.forEach((globalIndex, i) => {
+        state.filterLookup[globalIndex] = i
+      })
     },
     deleteHistory: (state, action: PayloadAction<{ historyIndex: number }>) => {
       const { historyIndex } = action.payload;
@@ -131,8 +143,6 @@ export const viewslice = createSlice({
 
       const [normalizedPositions, extent] = scaleInto(positions);
 
-      const bounds = getBounds(normalizedPositions);
-      console.log(normalizedPositions);
       state.history.push({
         id: nanoid(),
         filter,
@@ -178,12 +188,9 @@ export const viewslice = createSlice({
       state.hover = globalHover;
 
       const localHover = []
-      const filterLookup = {}
-      state.filter.forEach((globalIndex, i) => {
-        filterLookup[globalIndex] = i
-      })
+
       for (const globalIndex of globalHover ?? []) {
-        const i = state.filter ? filterLookup[globalIndex] : globalIndex;
+        const i = state.filter ? state.filterLookup[globalIndex] : globalIndex;
 
         if (i >= 0) {
           localHover.push(i);
@@ -198,13 +205,9 @@ export const viewslice = createSlice({
       state.selection = globalSelection;
 
       const localSelection = []
-      const filterLookup = {}
-      state.filter.forEach((globalIndex, i) => {
-        filterLookup[globalIndex] = i
-      })
 
       for (const globalIndex of globalSelection ?? []) {
-        const i = state.filter ? filterLookup[globalIndex] : globalIndex;
+        const i = state.filter ? state.filterLookup[globalIndex] : globalIndex;
 
         if (i >= 0) {
           localSelection.push(i);

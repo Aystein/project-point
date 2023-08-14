@@ -18,18 +18,22 @@ type ResetResult = {
 
 class PrefixSum {
     private static readonly MAX_WORKGROUP_LEVEL = 8;
+
     private static readonly WORKGROUP_SIZE = 1 << (PrefixSum.MAX_WORKGROUP_LEVEL - 1);
 
     //public static reducePipeline: GPUComputePipeline;
     //public static downPassPipeline: GPUComputePipeline | null = null;
 
     private readonly device: GPUDevice;
+
     private readonly uniforms: WebGPU.Uniforms;
 
     private dispatchSize: number;
+
     private localTotalsBuffer: WebGPU.Buffer;
 
     private reduceBindgroup: GPUBindGroup;
+
     private downPassBindgroup: GPUBindGroup | null = null;
 
     private childPrefixSum: PrefixSum | null = null;

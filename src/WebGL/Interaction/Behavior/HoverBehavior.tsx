@@ -8,9 +8,12 @@ import {
 } from '../../Interaction/Commands';
 import { useVisContext } from '../../VisualizationContext';
 import { Affix, Button, Card, Table, Transition, rem } from '@mantine/core';
-import { useAppSelector } from '../../../Store/hooks';
+import { useAppDispatch, useAppSelector } from '../../../Store/hooks';
 import { Row } from '../../../Store/DataSlice.';
 import keys from 'lodash/keys';
+import { useDebouncedState } from '@mantine/hooks';
+import { getGlobalEngine } from '../../../MainTabs/HistoryTab';
+import { setHover } from '../../../Store/ViewSlice';
 
 export function HoverBehavior({
   positions,
@@ -20,9 +23,10 @@ export function HoverBehavior({
   onHover: (index: number) => void;
 }) {
   const { scaledXDomain, scaledYDomain } = useVisContext();
-  const [lastHover, setLastHover] = React.useState<number>(null);
+  const [lastHover, setLastHover] = useDebouncedState<number>(null, null);
   const data = useAppSelector((state) => state.data);
   const filter = useAppSelector((state) => state.views.filter);
+  const dispatch = useAppDispatch();
   
   const tree = React.useMemo(() => {
     return positions
@@ -40,15 +44,22 @@ export function HoverBehavior({
         return false;
       }
 
-      const hover = tree.find(
+      getGlobalEngine()?.hover.setMousePosition([scaledXDomain.invert(event.x), scaledYDomain.invert(event.y)]);
+      getGlobalEngine()?.hover.read().then((x) => {
+        if (!x) return;
+        dispatch(setHover([x[1]]));
+        setLastHover(x[1]);
+      });
+
+      /*const hover = tree.find(
         scaledXDomain.invert(event.x),
         scaledYDomain.invert(event.y)
       )?.index;
 
       if (lastHover !== hover) {
-        onHover(hover);
+        dispatch(setHover([hover]));
         setLastHover(hover);
-      }
+      }*/
 
       return true;
     },

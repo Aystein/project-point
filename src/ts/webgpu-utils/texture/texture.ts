@@ -10,7 +10,9 @@ class Texture {
     private static readonly objectType: string = "GPUTexture";
 
     private width: number = 1;
+
     private height: number = 1;
+
     private texture: GPUTexture | null = null;
 
     public constructor(

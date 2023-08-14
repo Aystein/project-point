@@ -6,9 +6,13 @@ class UniformsBuffer {
     public static tryToOptimize: boolean = false;
 
     private readonly device: GPUDevice;
+
     private readonly structType: StructType;
+
     private readonly data: ArrayBuffer;
+
     private readonly gpuBuffer: WebGPUBuffer;
+
     private needsToUpload: boolean = true;
 
     public constructor(device: GPUDevice, attributesDefinitions: AttributeDefinition[]) {

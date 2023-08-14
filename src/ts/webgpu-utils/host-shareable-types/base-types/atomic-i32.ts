@@ -2,8 +2,11 @@ import { type Type } from "../base-type";
 
 class AtomicI32 implements Type {
     public readonly typeName: string = "atomic<i32>";
+
     public readonly gpuVertexFormat: GPUVertexFormat = "sint32";
+
     public readonly align: number = 4;
+
     public readonly size: number = 4;
 
     public setValue(arrayBuffer: ArrayBuffer, offset: number, value: unknown): void {

@@ -47,7 +47,7 @@ fn vertexMain(input: VertexInput) -> VertexOutput  {
 
     output.pos = vec4f(map(input.center.x, uniforms.xdomain.x, uniforms.xdomain.y, -1, 1) + input.vertexPosition.x * uniforms.sizeX, map(input.center.y, uniforms.ydomain.x, uniforms.ydomain.y, 1, -1) + input.vertexPosition.y * uniforms.sizeY, 0, 1);
     
-    if (input.selected > 0) {
+    if (input.selection > 0) {
         output.color = vec4(0.8, 0.0, 0.0, 1.0);
     } else {
         output.color = input.color;

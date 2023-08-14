@@ -3,7 +3,9 @@ import { isArrayLike } from "../helpers";
 
 class Mat2x2 implements Type {
     public readonly typeName: string = "mat2x2<f32>";
+
     public readonly align: number = 8;
+
     public readonly size: number = 16;
 
     public setValue(arrayBuffer: ArrayBuffer, offset: number, value: unknown): void {

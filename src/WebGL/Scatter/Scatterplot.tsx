@@ -7,7 +7,7 @@ import { useAppSelector } from '../../Store/hooks';
 import { Engine } from '../../ts/engine/engine';
 import { useVisContext } from '../VisualizationContext';
 import { POINT_RADIUS } from '../../Layouts/Globals';
-import { globalEngine, setGlobalEngine } from '../../MainTabs/HistoryTab';
+import { setGlobalEngine } from '../../MainTabs/HistoryTab';
 
 type ColumnTemp = {
   values: number[];
@@ -105,8 +105,7 @@ export function Scatterplot({
       arr[value] = 1;
     });
 
-    myRenderer?.engine.setSelection(arr);
-    // myRenderer?.scatter.setSelection(selection ?? []);
+    myRenderer?.scatter.setSelection(selection ?? []);
   }, [selection, myRenderer, n]);
 
   useEffect(() => {
@@ -164,7 +163,7 @@ export function Scatterplot({
 
     const engine = new Engine(device, n, {
       spheresRadius: POINT_RADIUS,
-      particlesPositions: Array.from({length: n}).map((_, i) => ([x[i], y[i]]))
+      particlesPositions: Array.from({ length: n }).map((_, i) => ([x[i], y[i]]))
     })
 
     const scatter = new Scatter(

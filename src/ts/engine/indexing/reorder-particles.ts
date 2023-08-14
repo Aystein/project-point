@@ -21,10 +21,13 @@ class ReorderParticles {
     private static readonly WORKGROUP_SIZE: number = 256;
 
     private readonly device: GPUDevice;
+
     private readonly uniforms: WebGPU.Uniforms;
+
     private readonly pipeline: GPUComputePipeline;
 
     private workgroupsCount: number;
+
     private bindgroup: GPUBindGroup;
 
     private indexBuffer: WebGPU.Buffer;

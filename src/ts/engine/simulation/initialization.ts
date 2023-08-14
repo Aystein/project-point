@@ -17,8 +17,11 @@ type ResetResult = {
 
 class Initialization {
     private static readonly WORKGROUP_SIZE: number = 256;
+
     public static readonly PARTICLE_WEIGHT_WATER: number = 1;
+
     public static readonly PARTICLE_WEIGHT_THRESHOLD: number = 10;
+
     public static readonly PARTICLE_WEIGHT_OBSTACLE: number = 100000;
 
     private static readonly initialParticleStructType: WebGPU.Types.StructType = new WebGPU.Types.StructType("InitialParticle", [
@@ -28,14 +31,20 @@ class Initialization {
     ]);
 
     private readonly device: GPUDevice;
+
     private readonly uniforms: WebGPU.Uniforms;
+
     private readonly pipeline: GPUComputePipeline;
 
     private workgroupsCount: number;
+
     private positionsBuffer: WebGPU.Buffer;
+
     private bindgroup: GPUBindGroup;
 
-    private indexBuffer: WebGPU.Buffer;f
+    private indexBuffer: WebGPU.Buffer;
+
+f
 
     public constructor(device: GPUDevice, data: Data) {
         this.device = device;

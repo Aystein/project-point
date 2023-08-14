@@ -49,14 +49,18 @@ class Indexing {
         { name: "particlesCount", type: WebGPU.Types.u32 },
         { name: "offset", type: WebGPU.Types.u32 },
     ]);
+
     public static readonly cellsBufferDescriptor: CellsBufferDescriptor = {
         particlesCountAttribute: Indexing.cellStructType.asVertexAttribute("particlesCount"),
         bufferArrayStride: Indexing.cellStructType.size,
     };
     
     private cellsBuffer: WebGPU.Buffer;
+
     private nonEmptyCellsIndicesBuffer: WebGPU.Buffer;
+
     public gridData: GridData;
+
     private cellsCount: number;
 
     private readonly device: GPUDevice;
@@ -64,11 +68,17 @@ class Indexing {
     private readonly cellsIndirectDrawBuffer: WebGPU.Buffer;
 
     private readonly resetCells: ResetCells;
+
     private readonly countParticlesPerCell: CountParticlesPerCell;
+
     private readonly preparePrefixSum: PreparePrefixSum;
+
     private readonly prefixSum: PrefixSum;
+
     private readonly finalizePrefixSum: FinalizePrefixSum;
+
     private readonly reorderParticles: ReorderParticles;
+
     private readonly indexBuffer: WebGPU.Buffer;
 
     public constructor(device: GPUDevice, data: Data) {
@@ -185,6 +195,7 @@ class Indexing {
             cellsBufferData: this.cellsBufferData,
             gridSize: data.gridSize,
             cellSize: data.cellSize,
+            indexBuffer: this.indexBuffer
         });
     }
 

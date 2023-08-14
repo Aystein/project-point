@@ -112,6 +112,10 @@ const reducer = createReducer<RootState>(undefined, (builder) => {
     state.views.filter = Array.from({ length: rows.length }).map((_, i) => {
       return i;
     })
+    state.views.filterLookup = {}
+    state.views.filter.forEach((globalIndex, i) => {
+      state.views.filterLookup[globalIndex] = i
+    })
 
     state.views.history = [];
     state.views.activeHistory = null;
