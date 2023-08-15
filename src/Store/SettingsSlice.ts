@@ -4,8 +4,8 @@ import {
 } from '@reduxjs/toolkit';
 
 const initialState = {
-    delta: 1500,
-    substeps: 10,
+    delta: 1700,
+    substeps: 15,
     radiusScaling: 1,
 };
 

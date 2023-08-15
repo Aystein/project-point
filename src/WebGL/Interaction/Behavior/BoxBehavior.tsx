@@ -11,6 +11,7 @@ import {
   IconArrowMoveUp,
   IconArrowsMove,
   IconCircle,
+  IconCircleLetterA,
   IconPaint,
   IconPalette,
   IconRosette,
@@ -295,7 +296,8 @@ function SingleBox({
 
   const handleLine = () => {
     const onFinish = (feature: string) => {
-      const grouped = groupBy(data, (value) => value[feature]);
+      const filteredRows = parentModel.filter.map((i) => data[i]);
+      const grouped = groupBy(filteredRows, (value) => value[feature]);
       const lines = new Array<number>();
 
       Object.keys(grouped).forEach((group) => {
@@ -680,6 +682,47 @@ function SingleBox({
         spacing="lg"
       >
         <Group spacing="xs">
+          <Menu>
+            <Menu.Target>
+              <ActionIcon style={{ pointerEvents: 'auto' }}>
+                <IconCircleLetterA />
+              </ActionIcon>
+            </Menu.Target>
+            <Menu.Dropdown
+              style={{ pointerEvents: 'initial' }}
+              onMouseDown={(event) => {
+                event.stopPropagation();
+              }}
+            >
+              <Menu.Item
+                onClick={() => {
+                  openContextModal({
+                    modal: 'demonstration',
+                    title: 't-SNE embedding',
+                    size: '70%',
+                    innerProps: {
+                      id: parentModel.id,
+                      axis: 'xy',
+                      onFinish: ({ Y, x, y }) => {
+                        dispatch(
+                          updateTrueEmbedding({ y, x, id: parentModel.id })
+                        );
+                        dispatch(
+                          updatePositionByFilter({
+                            position: Y,
+                            filter: parentModel.filter,
+                          })
+                        );
+                      },
+                    },
+                  });
+                }}
+              >
+                UMAP
+              </Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
+
           <ActionIcon style={{ pointerEvents: 'auto' }} onClick={() => handleColor()}>
             <IconPaint />
           </ActionIcon>
@@ -692,45 +735,7 @@ function SingleBox({
             <IconTimeline />
           </ActionIcon>
         </Group>
-        <Menu shadow="md" width={200}>
 
-          <Menu.Dropdown
-            style={{ pointerEvents: 'initial' }}
-            onMouseDown={(event) => {
-              event.stopPropagation();
-            }}
-          >
-            <Menu.Item onClick={handleColor}>Color</Menu.Item>
-            <Menu.Item onClick={handleShape}>Shape</Menu.Item>
-            <Menu.Item onClick={handleLine}>Line</Menu.Item>
-            <Menu.Item
-              onClick={() => {
-                openContextModal({
-                  modal: 'demonstration',
-                  title: 't-SNE embedding',
-                  size: '70%',
-                  innerProps: {
-                    id: parentModel.id,
-                    axis: 'xy',
-                    onFinish: ({ Y, x, y }) => {
-                      dispatch(
-                        updateTrueEmbedding({ y, x, id: parentModel.id })
-                      );
-                      dispatch(
-                        updatePositionByFilter({
-                          position: Y,
-                          filter: parentModel.filter,
-                        })
-                      );
-                    },
-                  },
-                });
-              }}
-            >
-              UMAP
-            </Menu.Item>
-          </Menu.Dropdown>
-        </Menu>
 
         <ActionIcon
           style={{ pointerEvents: 'auto', opacity: 1 }}

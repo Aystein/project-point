@@ -48,13 +48,15 @@ self.onmessage = ({
   let stepSize = 1 / (keys(groups).length + 1);
   let centerX = stepSize;
   
+  const maxGroupLength = Math.max(...keys(groups).map((key) => groups[key].length))
+
   for (const key of keys(groups)) {
     const group = groups[key];
 
     labels.labels.push({ position: centerX, content: key });
 
     group.forEach((item, i) => {
-      Y[item.relativeIndex] = { x: axis === 'y' ? i / group.length : centerX, y: axis === 'y' ? centerX : i / group.length };
+      Y[item.relativeIndex] = { x: axis === 'y' ? i / maxGroupLength : centerX, y: axis === 'y' ? centerX : i / maxGroupLength };
     });
 
     centerX += stepSize;

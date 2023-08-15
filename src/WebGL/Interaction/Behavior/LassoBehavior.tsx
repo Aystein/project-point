@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useDispatch } from 'react-redux';
 import { VectorLike } from '../../../Interfaces';
-import { runCondenseLayout } from '../../../Layouts/Layouts';
+import { fillOperation, runCondenseLayout } from '../../../Layouts/Layouts';
 import {
   setHover,
   setSelection,
@@ -86,7 +86,10 @@ export function LassoSelectionPlugin() {
   const handleCondense = async (position: VectorLike) => {
     if (!selection || selection.length === 0) return;
 
-    const { Y } = await runCondenseLayout(
+    const cx = scaledXDomain.invert(position.x);
+    const cy = scaledYDomain.invert(position.y);
+
+    /*const { Y } = await runCondenseLayout(
       selection.length,
       {
         x: scaledXDomain.invert(position.x) - 2,
@@ -97,7 +100,9 @@ export function LassoSelectionPlugin() {
       'xy',
       undefined,
       undefined
-    );
+    );*/
+
+    const { Y } = await fillOperation({ N: selection.length, area: { x: cx - 10, y: cy - 10, width: 20, height: 20 } })
 
     dispatch(updatePositionByFilter({ filter: localSelection, position: Y }));
   };

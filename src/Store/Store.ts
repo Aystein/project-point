@@ -125,6 +125,8 @@ const reducer = createReducer<RootState>(undefined, (builder) => {
     state.views.localHover = null;
     state.views.hover = null;
 
+    state.views.lines = null;
+
     state.views.workspace = {
       id: nanoid(),
       children: [],
