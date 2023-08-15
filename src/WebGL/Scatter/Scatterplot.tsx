@@ -84,6 +84,12 @@ export function Scatterplot({
   const settingsRef = React.useRef(settings);
   settingsRef.current = settings;
 
+  const tick = () => {
+    if (myRenderer && !interpolate) {
+      myRenderer.scatter.requestFrame(settingsRef.current);
+    }
+  }
+
   useEffect(() => {
     if (myRenderer) {
       myRenderer.scatter.interpolateBetweenFrames = interpolate;
@@ -106,6 +112,8 @@ export function Scatterplot({
     });
 
     myRenderer?.scatter.setSelection(selection ?? []);
+
+    tick();
   }, [selection, myRenderer, n]);
 
   useEffect(() => {
@@ -154,17 +162,9 @@ export function Scatterplot({
   }, [adapter, device]);
 
   useEffect(() => {
-  }, [device])
-
-  useEffect(() => {
     if (!device || !adapter) return () => { };
 
     let active = true;
-
-    const engine = new Engine(device, n, {
-      spheresRadius: POINT_RADIUS,
-      particlesPositions: Array.from({ length: n }).map((_, i) => ([x[i], y[i]]))
-    })
 
     const scatter = new Scatter(
       n,
@@ -173,62 +173,20 @@ export function Scatterplot({
         background: [1, 1, 1, 1],
       },
       device,
-      engine.spheresBuffer.gpuBuffer,
+      x,
+      y,
     );
 
-    const N = n;
+    const engine = scatter.engine;
 
-    scatter.createBuffers().then(() => {
+    scatter.createBuffers();
 
-      const encoder = device.createCommandEncoder();
-      engine.compute(encoder, settingsRef.current.delta / 1000000, 1)
-      const commandBuffer = encoder.finish();
-      device.queue.submit([commandBuffer]);
+    setRenderer({ engine, scatter });
 
-      scatter.setXY(
-        new Float32Array(
-          Array.from({ length: N * 2 }).map(() => -2 + Math.random() * 4)
-        )
-      );
-      scatter.setColor(
-        new Float32Array(
-          Array.from({ length: N })
-            .map(() => [0.5, 0.5, 0.5, 1])
-            .flat()
-        )
-      );
-
-
-      if (active) {
-        setRenderer({ engine, scatter });
-
-        function mainLoop(scatter: Scatter, device, engine: Engine): void {
-          if (scatter.disposed) {
-            return;
-          }
-          
-          const encoder = device.createCommandEncoder();
-          if (interpolate || true) {
-            for (let i = 0; i < settingsRef.current.substeps; i++) {
-              engine.compute(encoder, settingsRef.current.delta / 1000000, settingsRef.current.radiusScaling)
-            }
-          }
-        
-          scatter.frame(encoder);
-        
-          const commandBuffer = encoder.finish();
-          device.queue.submit([commandBuffer]);
-        
-          requestAnimationFrame(() => mainLoop(scatter, device, engine));
-        }
-
-        if (interpolate) {
-          setGlobalEngine(engine);
-        }
-
-        requestAnimationFrame(() => mainLoop(scatter, device, engine));
-      }
-    });
+    if (interpolate) {
+      setGlobalEngine(engine);
+      scatter.startLoop(settingsRef);
+    }
 
     return () => {
       active = false;

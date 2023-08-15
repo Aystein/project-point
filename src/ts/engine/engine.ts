@@ -132,6 +132,11 @@ class Engine {
             particleRadius: this.spheresRadius,
             weightThreshold: Engine.getMaxWeight(),
         });
+
+        const encoder = device.createCommandEncoder();
+        this.compute(encoder, 0.0005, 1)
+        const commandBuffer = encoder.finish();
+        device.queue.submit([commandBuffer]);
     }
 
     public async readXY() {

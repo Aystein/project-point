@@ -126,3 +126,37 @@ export function runForceLayout({
     })
   );
 }
+
+
+export function fillOperation({
+  N,
+  area,
+}: {
+  N: number;
+  area: IRectangle;
+}) {
+
+  const worker = new Worker(new URL('../Workers/layout.worker.ts', import.meta.url), {
+    type: 'module',
+  })
+
+  const promise = new Promise<{
+    Y: VectorLike[];
+  }>((resolve) => {
+    worker.onmessage = ({
+      data: { Y },
+    }: {
+      data: {
+        Y: VectorLike[];
+      };
+    }) => {
+      resolve({ Y });
+    };
+  });
+
+  worker.postMessage({
+    N, area, type: 'fill_rect'
+  });
+
+  return promise;
+}

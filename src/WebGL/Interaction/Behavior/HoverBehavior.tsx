@@ -51,16 +51,6 @@ export function HoverBehavior({
         setLastHover(x[1]);
       });
 
-      /*const hover = tree.find(
-        scaledXDomain.invert(event.x),
-        scaledYDomain.invert(event.y)
-      )?.index;
-
-      if (lastHover !== hover) {
-        dispatch(setHover([hover]));
-        setLastHover(hover);
-      }*/
-
       return true;
     },
     COMMAND_PRIORITY_NORMAL,

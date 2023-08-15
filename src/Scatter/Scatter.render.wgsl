@@ -5,11 +5,10 @@ struct Uniforms {
     sizeY: f32
 }
 
-@group(0) @binding(0) var<uniform> uniforms: Uniforms;
+@group(0) @binding(0) var ourSampler: sampler;
+@group(0) @binding(1) var ourTexture: texture_2d<f32>;
+@group(0) @binding(2) var<uniform> uniforms: Uniforms;
 
-
-@group(1) @binding(0) var ourSampler: sampler;
-@group(1) @binding(1) var ourTexture: texture_2d<f32>;
 
 fn map(x: f32, in_min: f32, in_max: f32, out_min: f32, out_max: f32) -> f32
 {

@@ -8,6 +8,7 @@ import { YBufferGroup, createYBufferGroup } from './Test/YBufferGroup';
 import { POINT_RADIUS } from '../Layouts/Globals';
 import { Engine, SpheresBuffer } from '../ts/engine/engine';
 import { ShaderModule } from '../ts/webgpu-utils/webgpu-shader-module';
+import { SettingsType } from '../Store/SettingsSlice';
 
 export interface ScatterConfig {
   background: GPUColor;
@@ -49,25 +50,21 @@ async function webGPUTextureFromImageUrl(gpuDevice, url) {
 }
 
 export class Scatter {
-  cellPipeline: GPURenderPipeline;
+  pointRenderPipeline: GPURenderPipeline;
 
-  bindGroup: GPUBindGroup;
+  pointBindGroup: GPUBindGroup;
 
-  bindGroup2: GPUBindGroup;
+  lineBindGroup: GPUBindGroup;
 
   texture: GPUTexture;
 
-  bufGroup: YBufferGroup;
+  pointBufferGroup: YBufferGroup;
 
-  bufferGroup: YBufferGroup;
+  lineBufferGroup: YBufferGroup;
 
-  renderPipeline: GPURenderPipeline;
+  lineRenderPipeline: GPURenderPipeline;
 
   lineBuffer: YBuffer;
-
-  sampleTexture;
-
-  lineBindgroup;
 
   buffers: {
     color: YBuffer;
@@ -81,31 +78,28 @@ export class Scatter {
     selection: YBuffer;
   };
 
+  engine: Engine;
+
   requested = false;
 
   disposed = false;
 
   interpolateBetweenFrames = true;
 
+  fullyLoaded = false;
+
   constructor(
     public N: number,
     protected context: GPUCanvasContext,
     protected config: ScatterConfig,
     protected device: GPUDevice,
-    protected spheresBuffer: GPUBuffer
-  ) { }
-
-  async requestDevice() {
-    if (!navigator.gpu) {
-      throw new Error('WebGPU not supported on this browser.');
-    }
-
-    const adapter = await navigator.gpu.requestAdapter();
-    if (!adapter) {
-      throw new Error('No appropriate GPUAdapter found.');
-    }
-
-    this.device = await adapter.requestDevice();
+    x: number[],
+    y: number[],
+  ) {
+    this.engine = new Engine(device, N, {
+      spheresRadius: POINT_RADIUS,
+      particlesPositions: Array.from({ length: N }).map((_, i) => ([x[i], y[i]]))
+    })
   }
 
   setXY(data: Float32Array) {
@@ -201,10 +195,34 @@ export class Scatter {
       new Uint32Array(line ?? [])
     );
 
-    this.bufferGroup = createYBufferGroup(this.lineBuffer);
+    this.lineBufferGroup = createYBufferGroup(this.lineBuffer);
   }
 
-  async createBuffers() {
+  async loadTexturesAsync() {
+    this.texture = await webGPUTextureFromImageUrl(this.device, image);
+
+    this.pointBindGroup = this.device.createBindGroup({
+      layout: this.pointRenderPipeline.getBindGroupLayout(0),
+      entries: [
+        {
+          binding: 0,
+          resource: this.device.createSampler(),
+        },
+        {
+          binding: 1,
+          resource: this.texture.createView(),
+        },
+        {
+          binding: 2,
+          resource: { buffer: this.buffers.uniform },
+        },
+      ],
+    });
+
+    this.fullyLoaded = true;
+  }
+
+  createBuffers() {
     const canvasFormat = navigator.gpu.getPreferredCanvasFormat();
 
     const { context, device } = this;
@@ -216,18 +234,7 @@ export class Scatter {
       alphaMode: 'premultiplied',
     });
 
-    // console.log(new URL(image));
-    this.texture = await webGPUTextureFromImageUrl(device, image);
-
-    this.sampleTexture = device.createTexture({
-      size: [
-        context.getCurrentTexture().width,
-        context.getCurrentTexture().height,
-      ],
-      sampleCount: 4,
-      format: navigator.gpu.getPreferredCanvasFormat(),
-      usage: GPUTextureUsage.RENDER_ATTACHMENT,
-    });
+    this.loadTexturesAsync();
 
     // Create buffer
     const uniformArray = new Float32Array([0, 2, 0, 2, 0.01, 0.01]);
@@ -324,12 +331,14 @@ export class Scatter {
       stepMode: 'instance',
     });
 
+    device.queue.writeBuffer(colorBuffer._buffer, 0, new Float32Array(Array.from({ length: this.N }).map(() => ([0.5, 0.5, 0.5, 1])).flat()))
+
     // Create render pipeline
     const cellShaderModule = device.createShaderModule({
       code: wgsl,
     });
 
-    this.bufGroup = createYBufferGroup(
+    this.pointBufferGroup = createYBufferGroup(
       vertexBuffer,
       particleBuffer,
       colorBuffer,
@@ -338,25 +347,25 @@ export class Scatter {
       selection
     );
 
-    const cellPipeline = device.createRenderPipeline({
+    this.pointRenderPipeline = device.createRenderPipeline({
       layout: 'auto',
       vertex: {
         module: cellShaderModule,
         entryPoint: 'vertexMain',
-        buffers: [...this.bufGroup.layout, {
+        buffers: [...this.pointBufferGroup.layout, {
           attributes: [
-              {
-                  shaderLocation: 7,
-                  ...Engine.particleStructType.asVertexAttribute("position")
-              },
-              {
-                shaderLocation: 8,
-                ...Engine.particleStructType.asVertexAttribute("selected")
-              }
+            {
+              shaderLocation: 7,
+              ...Engine.particleStructType.asVertexAttribute("position")
+            },
+            {
+              shaderLocation: 8,
+              ...Engine.particleStructType.asVertexAttribute("selected")
+            }
           ],
           arrayStride: Engine.particleStructType.size,
           stepMode: "instance",
-      }],
+        }],
       },
       fragment: {
         module: cellShaderModule,
@@ -371,30 +380,7 @@ export class Scatter {
       // multisample: { count: 4 },
     });
 
-    // Create bind group
-    const bindGroup = device.createBindGroup({
-      layout: cellPipeline.getBindGroupLayout(0),
-      entries: [
-        {
-          binding: 0,
-          resource: { buffer: uniformBuffer },
-        },
-      ],
-    });
 
-    const bindGroup2 = device.createBindGroup({
-      layout: cellPipeline.getBindGroupLayout(1),
-      entries: [
-        {
-          binding: 0,
-          resource: device.createSampler(),
-        },
-        {
-          binding: 1,
-          resource: this.texture.createView(),
-        },
-      ],
-    });
 
     this.buffers = {
       color: colorBuffer,
@@ -406,10 +392,6 @@ export class Scatter {
       hover,
       selection,
     };
-
-    this.cellPipeline = cellPipeline;
-    this.bindGroup = bindGroup;
-    this.bindGroup2 = bindGroup2;
 
     this.createLinePipeline();
   }
@@ -436,19 +418,19 @@ export class Scatter {
       new Uint32Array(Array.from({ length: 1000 }).map((_, i) => i))
     );
 
-    this.bufferGroup = createYBufferGroup(this.lineBuffer);
+    this.lineBufferGroup = createYBufferGroup(this.lineBuffer);
 
     const cellShaderModule = ShaderModule.create(device, {
       code: linewgsl,
       structs: [Engine.particleStructType],
     })
 
-    this.renderPipeline = device.createRenderPipeline({
+    this.lineRenderPipeline = device.createRenderPipeline({
       layout: 'auto',
       vertex: {
         module: cellShaderModule,
         entryPoint: 'vertexMain',
-        buffers: this.bufferGroup.layout,
+        buffers: this.lineBufferGroup.layout,
       },
       fragment: {
         module: cellShaderModule,
@@ -460,16 +442,16 @@ export class Scatter {
           },
         ],
       },
-      
+
       // multisample: { count: 4 },
     });
 
-    this.lineBindgroup = device.createBindGroup({
-      layout: this.renderPipeline.getBindGroupLayout(0),
+    this.lineBindGroup = device.createBindGroup({
+      layout: this.lineRenderPipeline.getBindGroupLayout(0),
       entries: [
         {
           binding: 0,
-          resource: { buffer: this.spheresBuffer },
+          resource: { buffer: this.engine.particlesBuffer.gpuBuffer },
         },
         {
           binding: 1,
@@ -483,24 +465,26 @@ export class Scatter {
     this.disposed = true;
   }
 
-  frame(encoder: GPUCommandEncoder) {
-    if (this.disposed) {
-      return;
-    }
-
-    const { device, context, cellPipeline, bindGroup } = this;
-
-    if (this.requested) {
-      return;
-    }
-    this.requested = true;
-
+  frame(settings: SettingsType) {
     this.requested = false;
+
+    if (!this.fullyLoaded || this.context.getCurrentTexture().width === 0 || this.context.getCurrentTexture().height === 0) {
+      this.requestFrame(settings);
+      return;
+    }
+
+    const encoder = this.device.createCommandEncoder();
+
+    const { context, pointRenderPipeline: cellPipeline } = this;
+
+    for (let i = 0; i < settings.substeps; i++) {
+      this.engine.compute(encoder, settings.delta / 1000000, settings.radiusScaling)
+    }
 
     const pass = encoder.beginRenderPass({
       colorAttachments: [
         {
-          view: context.getCurrentTexture().createView(), // this.sampleTexture.createView(),
+          view: context.getCurrentTexture().createView(),
           // resolveTarget: context.getCurrentTexture().createView(),
           clearValue: [0, 0, 0, 0],
           loadOp: 'clear',
@@ -509,23 +493,57 @@ export class Scatter {
       ],
     });
 
-    pass.setPipeline(this.renderPipeline);
+    if (this.lineBuffer._buffer.size !== 0) {
+      pass.setPipeline(this.lineRenderPipeline);
 
-    this.bufferGroup.bind(pass);
-    pass.setBindGroup(0, this.lineBindgroup);
+      this.lineBufferGroup.bind(pass);
+      pass.setBindGroup(0, this.lineBindGroup);
 
-    pass.draw(6, this.lineBuffer._buffer.size / 8);
+      pass.draw(6, this.lineBuffer._buffer.size / 8);
+    }
+
 
     pass.setPipeline(cellPipeline);
 
-    this.bufGroup.bind(pass);
-    pass.setVertexBuffer(6, this.spheresBuffer);
+    this.pointBufferGroup.bind(pass);
+    pass.setVertexBuffer(6, this.engine.particlesBuffer.gpuBuffer);
 
-    pass.setBindGroup(0, bindGroup);
-    pass.setBindGroup(1, this.bindGroup2);
+    pass.setBindGroup(0, this.pointBindGroup);
 
     pass.draw(6, this.N);
 
     pass.end();
+
+    this.device.queue.submit([encoder.finish()])
+  }
+
+  requestFrame(settings) {
+    if (this.requested) return;
+
+    this.requested = true;
+
+    requestAnimationFrame(() => {
+      if (this.disposed) {
+        return;
+      }
+
+      this.frame(settings);
+    })
+  }
+
+  startLoop(settingsRef) {
+    this.requested = true;
+
+    const tick = () => {
+      if (this.disposed) {
+        return;
+      }
+
+      this.frame(settingsRef.current);
+
+      requestAnimationFrame(tick);
+    };
+
+    requestAnimationFrame(tick);
   }
 }

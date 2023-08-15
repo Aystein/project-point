@@ -6,6 +6,7 @@ import { getBounds, normalizeVectors, scaleInto } from '../Util';
 import { Rectangle } from '../WebGL/Math/Rectangle';
 import { scaleLinear } from 'd3-scale';
 import { RootState } from './Store';
+import isEqual from 'lodash/isEqual';
 
 export type Selection = {
   global: number[];
@@ -76,7 +77,7 @@ export const viewslice = createSlice({
       state.localSelection = null;
       state.hover = null;
       state.localHover = null;
-      
+
       state.positions = state.workspace.x.map((x, i) => ({ x, y: state.workspace.y[i] }))
 
       state.filter = swap.filter;
@@ -184,6 +185,10 @@ export const viewslice = createSlice({
     },
     setHover: (state, action: PayloadAction<number[]>) => {
       const globalHover = action.payload;
+
+      if (isEqual(state.hover, globalHover)) {
+        return;
+      }
 
       state.hover = globalHover;
 

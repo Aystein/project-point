@@ -35,6 +35,7 @@ import groupBy from 'lodash/groupBy';
 import { useDispatch } from 'react-redux';
 import { DataType, VectorLike } from '../../../Interfaces';
 import {
+  fillOperation,
   runCondenseLayout,
   runForceLayout,
   runGroupLayout,
@@ -102,7 +103,7 @@ export function BoxBehavior({ parentModel }: { parentModel: SpatialModel }) {
         <SimpleDragCover
           boxRef={ref}
           drag={{ x: rect.x, y: rect.y }}
-          setDrag={async (value) => {
+          setDrag={async () => {
             if (rect) {
               setRect(null);
 
@@ -131,13 +132,16 @@ export function BoxBehavior({ parentModel }: { parentModel: SpatialModel }) {
                 })
               );
 
-              const { Y } = await runForceLayout({
+              /*const { Y } = await runForceLayout({
                 N: filter.length,
                 area: worldRect,
                 axis: 'xy',
                 xLayout: filter.map((index) => x[index]),
                 yLayout: filter.map((index) => y[index]),
-              });
+              });*/
+
+              const { Y } = await fillOperation({ N: filter.length, area: worldRect });
+              //console.log(T);
 
               dispatch(updatePositionByFilter({ position: Y, filter }));
 

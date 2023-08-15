@@ -55,7 +55,7 @@ function HistoryView({ view, active, index }: { view: SpatialModel, active: bool
       }
     })
 
-    return localHover;
+    return localHover.length === 0 ? undefined : localHover;
   }, [hover, view?.filter]);
 
   const handleClick = (id: EntityId) => {

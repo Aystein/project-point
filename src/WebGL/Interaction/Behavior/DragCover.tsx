@@ -61,7 +61,9 @@ export function SimpleDragCover({
 
             const pos = translate(event);
 
-            setDrag(null);
+            if (dragRef.current) {
+              setDrag(null);
+            }
 
             if (!dragRef.current) {
               if (onClick) {
