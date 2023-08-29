@@ -66,7 +66,8 @@
     "vite": "^4.3.9",
     "webpack": "^5.75.0",
     "webpack-dev-server": "^4.13.0",
-    "wepack-cli": "^0.0.1-security"
+    "wepack-cli": "^0.0.1-security",
+    "@rspack/cli": "^0.3.0"
   },
   "dependencies": {
     "@emotion/react": "^11.10.5",

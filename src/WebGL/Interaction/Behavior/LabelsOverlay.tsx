@@ -17,7 +17,7 @@ export function LabelTick({
         transform: `translate(${axis === 'y' ? 'calc(-100% - 8px)' : '-50%'}, ${axis === 'x' ? 'calc(100% + 8px)' : '50%'})`,
         transformOrigin: 'right',
         pointerEvents: 'none',
-        [axis === 'x' ? 'left' : 'bottom']: `${Math.round(value * 100)}%`,
+        [axis === 'x' ? 'left' : 'bottom']: `${(value * 100).toFixed(2)}%`,
         [axis === 'x' ? 'bottom' : 'left']: 0,
         fontSize: 14,
         lineHeight: 1,
@@ -43,6 +43,7 @@ export function ScaleLabels({
       {ticks.map((tick) => {
         return (
           <LabelTick
+            key={tick}
             value={scale(tick)}
             content={tick.toString()}
             axis={axis}
@@ -63,6 +64,7 @@ export function LabelsOverlay({ labels }: { labels: LabelContainer[] }) {
           return container.labels.map((label) => {
             return (
               <LabelTick
+                key={label.position}
                 content={label.content}
                 value={label.position}
                 axis={container.type}

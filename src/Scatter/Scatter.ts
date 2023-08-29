@@ -66,6 +66,10 @@ export class Scatter {
 
   lineBuffer: YBuffer;
 
+  multisample = 4;
+
+  multisampleTexture;
+
   buffers: {
     color: YBuffer;
     vertex: YBuffer;
@@ -222,7 +226,7 @@ export class Scatter {
     this.fullyLoaded = true;
   }
 
-  createBuffers() {
+  createBuffers(canvas) {
     const canvasFormat = navigator.gpu.getPreferredCanvasFormat();
 
     const { context, device } = this;
@@ -232,6 +236,13 @@ export class Scatter {
       format: canvasFormat,
       // alphaMode: 'opaque',
       alphaMode: 'premultiplied',
+    });
+
+    this.multisampleTexture = device.createTexture({
+      size: [canvas.width, canvas.height],
+      sampleCount: this.multisample,
+      format: canvasFormat,
+      usage: GPUTextureUsage.RENDER_ATTACHMENT,
     });
 
     this.loadTexturesAsync();
@@ -377,7 +388,7 @@ export class Scatter {
           },
         ],
       },
-      // multisample: { count: 4 },
+      multisample: { count: this.multisample },
     });
 
 
@@ -442,8 +453,7 @@ export class Scatter {
           },
         ],
       },
-
-      // multisample: { count: 4 },
+      multisample: { count: this.multisample },
     });
 
     this.lineBindGroup = device.createBindGroup({
@@ -481,14 +491,16 @@ export class Scatter {
       this.engine.compute(encoder, settings.delta / 1000000, settings.radiusScaling)
     }
 
-    const pass = encoder.beginRenderPass({
+    const view = this.multisampleTexture.createView();
+
+    let pass = encoder.beginRenderPass({
       colorAttachments: [
         {
-          view: context.getCurrentTexture().createView(),
-          // resolveTarget: context.getCurrentTexture().createView(),
+          view: this.multisample === 1 ? context.getCurrentTexture().createView() : view,
+          resolveTarget: this.multisample === 1 ? undefined : context.getCurrentTexture().createView(),
           clearValue: [0, 0, 0, 0],
           loadOp: 'clear',
-          storeOp: 'store',
+          storeOp: this.multisample === 1 ? 'store' : 'store',
         },
       ],
     });
@@ -502,6 +514,19 @@ export class Scatter {
       pass.draw(6, this.lineBuffer._buffer.size / 8);
     }
 
+    pass.end();
+
+    pass = encoder.beginRenderPass({
+      colorAttachments: [
+        {
+          view: this.multisample === 1 ? context.getCurrentTexture().createView() : view,
+          resolveTarget: this.multisample === 1 ? undefined : context.getCurrentTexture().createView(),
+          clearValue: [0, 0, 0, 0],
+          loadOp: 'load',
+          storeOp: 'store',
+        },
+      ],
+    })
 
     pass.setPipeline(cellPipeline);
 

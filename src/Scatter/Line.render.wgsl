@@ -48,8 +48,6 @@ fn vertexMain(input: VertexInput) -> VertexOutput  {
     var direction = start - end;
     var norm = normalize(vec2f(direction.y, direction.x)) * 0.002;
 
-
-
     if (input.vert == 0) {
         output.pos = vec4f(map2f(start) - norm, 0.0, 1.0);
     }
@@ -68,8 +66,6 @@ fn vertexMain(input: VertexInput) -> VertexOutput  {
     if (input.vert == 5) {
         output.pos = vec4f(map2f(start) + norm, 0.0, 1.0);
     }
-
-    
 
     return output;
 }

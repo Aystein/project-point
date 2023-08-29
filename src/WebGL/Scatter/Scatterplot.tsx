@@ -179,7 +179,7 @@ export function Scatterplot({
 
     const engine = scatter.engine;
 
-    scatter.createBuffers();
+    scatter.createBuffers(ref.current);
 
     setRenderer({ engine, scatter });
 
