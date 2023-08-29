@@ -1,15 +1,12 @@
 /* eslint-disable no-restricted-globals */
 import { UMAP } from 'umap-js';
-import * as d3 from 'd3-force';
 import { scaleLinear } from 'd3-scale';
-import { getBounds, getMinMax, normalizeVectors01 } from '../Util';
+import { getMinMax, normalizeVectors01 } from '../Util';
 import { VectorLike } from '../Interfaces';
 import {
-  convergeLayout,
-  forceNormalization,
-  forceNormalizationNew,
+  scaleToWorld,
 } from '../Layouts/ForceUtil';
-import { POINT_RADIUS } from '../Layouts/Globals';
+import { LabelContainer } from '../Store/ModelSlice';
 
 interface UMAPWorkerProps {
   data: {
@@ -18,14 +15,13 @@ interface UMAPWorkerProps {
     N;
     area;
     type;
-    xLayout?: number[];
-    yLayout?: number[];
+    Y_in: VectorLike[];
     axis: 'x' | 'y' | 'xy';
   };
 }
 
 self.onmessage = ({
-  data: { X, D, N, area, type, xLayout, yLayout, axis },
+  data: { X, D, N, area, type, Y_in, axis },
 }: UMAPWorkerProps) => {
   if (type !== 'init') {
     return;
@@ -46,39 +42,59 @@ self.onmessage = ({
   const embedding = umap.fit(X);
 
   let Y: VectorLike[];
-  let nodes: VectorLike[];
+  const labels: LabelContainer[] = [];
 
   if (axis === 'x') {
     const data = embedding.map((arr) => arr[0]);
     const scale = scaleLinear().domain(getMinMax(data)).range([0, 1]);
-    Y = data.map((arr, i) => ({ x: scale(arr), y: yLayout[i] }));
+    Y = data.map((arr, i) => ({ x: scale(arr), y: Y_in[i].y }));
+
+    labels.push({
+      discriminator: 'positionedlabels',
+      type: 'x',
+      labels: [{ position: 0.5, content: 'umap-x' }],
+    })
   } else if (axis === 'y') {
     const data = embedding.map((arr) => arr[0]);
     const scale = scaleLinear().domain(getMinMax(data)).range([0, 1]);
-    Y = data.map((arr, i) => ({ y: scale(arr), x: xLayout[i] }));
+    Y = data.map((arr, i) => ({ y: scale(arr), x: Y_in[i].x }));
+
+    labels.push({
+      discriminator: 'positionedlabels',
+      type: 'y',
+      labels: [{ position: 0.5, content: 'umap-y' }],
+    })
   } else if (axis === 'xy') {
     Y = embedding.map((arr) => ({ x: arr[0], y: arr[1] }));
     Y = normalizeVectors01(Y);
+
+    labels.push({
+      discriminator: 'positionedlabels',
+      type: 'x',
+      labels: [{ position: 0.5, content: 'umap-x' }],
+    })
+    labels.push({
+      discriminator: 'positionedlabels',
+      type: 'y',
+      labels: [{ position: 0.5, content: 'umap-y' }],
+    })
   }
 
-  nodes = structuredClone(Y);
-
-  const [normalizeX, normalizeY, worldX, worldY, radius] =
-    forceNormalizationNew(area);
+  const [worldX, worldY] = scaleToWorld(area);
 
   self.postMessage({
     type: 'message',
     message: 'Force layout ...',
   });
 
+  console.log(Y);
 
   self.postMessage({
     type: 'finish',
     Y: Y.map((node) => ({
-      x: worldX(node.x),
-      y: worldY(node.y),
+      x: axis !== 'y' ? worldX(node.x) : node.x,
+      y: axis !== 'x' ? worldY(node.y) : node.y,
     })),
-    xLayout: Y.map((value) => value.x),
-    yLayout: Y.map((value) => value.y),
+    labels,
   });
 };

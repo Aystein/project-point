@@ -1,30 +1,23 @@
 import {
   ActionIcon,
   Box,
-  Button,
   Group,
   Menu,
   rem
 } from '@mantine/core';
 import {
-  IconArrowMoveRight,
-  IconArrowMoveUp,
   IconArrowsMove,
-  IconCircle,
   IconCircleLetterA,
   IconPaint,
-  IconPalette,
   IconRosette,
-  IconShape,
-  IconTimeline,
+  IconTimeline
 } from '@tabler/icons-react';
 import * as React from 'react';
 import {
   COMMAND_PRIORITY_NORMAL,
-  MOUSE_DOWN,
-  MOUSE_DRAG_START,
+  MOUSE_DOWN
 } from '../../Interaction/Commands';
-import { IRectangle, Rectangle } from '../../Math/Rectangle';
+import { Rectangle } from '../../Math/Rectangle';
 import { useVisContext } from '../../VisualizationContext';
 
 import { openContextModal } from '@mantine/modals';
@@ -45,7 +38,6 @@ import {
 import { LabelContainer, SpatialModel } from '../../../Store/ModelSlice';
 import {
   addSubEmbedding,
-  changeSize,
   removeEmbedding,
   setColor,
   setLines,
@@ -53,11 +45,13 @@ import {
   translateArea,
   updateLabels,
   updatePositionByFilter,
-  updateTrueEmbedding,
+  updateTrueEmbedding
 } from '../../../Store/ViewSlice';
 import { useAppSelector } from '../../../Store/hooks';
 import { getMinMax } from '../../../Util';
 import { SimpleDragCover } from './DragCover';
+import { DragCoverHorizontal } from './DragCoverHorizontal';
+import { DragCoverVertical } from './DragCoverVertical';
 import { LabelsOverlay } from './LabelsOverlay';
 import { useMouseEvent } from './useMouseDrag';
 
@@ -133,14 +127,6 @@ export function BoxBehavior({ parentModel }: { parentModel: SpatialModel }) {
                 })
               );
 
-              /*const { Y } = await runForceLayout({
-                N: filter.length,
-                area: worldRect,
-                axis: 'xy',
-                xLayout: filter.map((index) => x[index]),
-                yLayout: filter.map((index) => y[index]),
-              });*/
-
               const { Y } = await fillOperation({ N: filter.length, area: worldRect });
               //console.log(T);
 
@@ -179,7 +165,7 @@ export function BoxBehavior({ parentModel }: { parentModel: SpatialModel }) {
 
       {parentModel?.children.map((model) => {
         return (
-          <SingleBox key={model.id} area={model.area} parentModel={model} />
+          <SingleBox key={model.id} parentModel={model} />
         );
       })}
     </div>
@@ -187,10 +173,8 @@ export function BoxBehavior({ parentModel }: { parentModel: SpatialModel }) {
 }
 
 function SingleBox({
-  area,
   parentModel,
 }: {
-  area: IRectangle;
   parentModel: SpatialModel;
 }) {
   const { scaledXDomain, scaledYDomain, world } = useVisContext();
@@ -198,6 +182,8 @@ function SingleBox({
   const data = useAppSelector((state) => state.data.rows);
   const xLayout = useAppSelector((state) => state.views.workspace.x);
   const yLayout = useAppSelector((state) => state.views.workspace.y);
+  const positions = useAppSelector((state) => state.views.positions);
+  const area = parentModel.area;
 
   const [drag, setDrag] = React.useState<{
     direction: 'x' | 'y' | 'xy';
@@ -205,22 +191,17 @@ function SingleBox({
   }>();
 
   const handleCondense = async (axis: 'x' | 'y' | 'xy') => {
-    const { Y, x, y } = await runCondenseLayout(
+    const { Y, labels } = await runCondenseLayout(
       parentModel.filter.length,
       area,
       axis,
-      parentModel.filter.map((index) => xLayout[index]),
-      parentModel.filter.map((index) => yLayout[index])
+      parentModel.filter.map((i) => positions[i])
     );
 
     dispatch(updateLabels({
-      id: parentModel.id, labels: {
-        discriminator: 'positionedlabels',
-        type: axis !== 'xy' ? axis : 'absolute',
-        labels: [],
-      }
+      id: parentModel.id, labels
     }));
-    dispatch(updateTrueEmbedding({ id: parentModel.id, x, y }));
+    // dispatch(updateTrueEmbedding({ id: parentModel.id, x, y }));
     dispatch(
       updatePositionByFilter({ position: Y, filter: parentModel.filter })
     );
@@ -238,9 +219,10 @@ function SingleBox({
           ? scaleOrdinal(schemeCategory10).domain(filteredRows)
           : scaleLinear<string>().domain(extent).range(['red', 'green']);
 
-      const mappedColors = filteredRows.map((row) =>
-        color(colorScale(row)).formatHex()
-      );
+      const mappedColors = filteredRows.map((row) => {
+        // console.log(colorScale(row));
+        return color(colorScale(row)).formatHex()
+      });
 
       dispatch(
         setColor({
@@ -322,7 +304,6 @@ function SingleBox({
   };
 
   const handleSpaghettiBy = async (axis: 'x' | 'y') => {
-
     const onFinish = async (feature: string) => {
       const X = parentModel.filter.map((i) => data[i]);
 
@@ -331,10 +312,10 @@ function SingleBox({
         area,
         feature,
         axis,
+        parentModel.filter.map((i) => positions[i]),
       );
 
       dispatch(updateLabels({ id: parentModel.id, labels }));
-      dispatch(updateTrueEmbedding({ id: parentModel.id, x, y }));
       dispatch(
         updatePositionByFilter({ position: Y, filter: parentModel.filter })
       );
@@ -350,7 +331,6 @@ function SingleBox({
   };
 
   const handleGroupBy = async (axis: 'x' | 'y') => {
-
     const onFinish = async (feature: string) => {
       const X = parentModel.filter.map((i) => data[i]);
 
@@ -391,20 +371,6 @@ function SingleBox({
 
       const mapped = X.map((value) => scale(value));
 
-      const { Y, x, y } = await runForceLayout({
-        N: parentModel.filter.length,
-        area,
-        axis,
-        xLayout:
-          axis === 'x'
-            ? mapped
-            : parentModel.filter.map((index) => xLayout[index]),
-        yLayout:
-          axis === 'y'
-            ? mapped
-            : parentModel.filter.map((index) => yLayout[index]),
-      });
-
       const labels: LabelContainer = {
         discriminator: 'scalelabels',
         type: axis,
@@ -414,8 +380,15 @@ function SingleBox({
         },
       };
 
-      dispatch(updateLabels({ id: parentModel.id, labels }));
-      dispatch(updateTrueEmbedding({ id: parentModel.id, x, y }));
+      const { Y } = await runForceLayout({
+        N: parentModel.filter.length,
+        area,
+        axis,
+        Y_in: parentModel.filter.map((i) => positions[i]),
+        X: mapped
+      });
+
+      dispatch(updateLabels({ id: parentModel.id, labels: [labels] }));
       dispatch(
         updatePositionByFilter({ position: Y, filter: parentModel.filter })
       );
@@ -490,10 +463,8 @@ function SingleBox({
                 innerProps: {
                   id: parentModel.id,
                   axis: 'y',
-                  onFinish: ({ Y, x, y }) => {
-                    dispatch(
-                      updateTrueEmbedding({ y, x, id: parentModel.id })
-                    );
+                  onFinish: ({ Y, labels }) => {
+                    dispatch(updateLabels({ id: parentModel.id, labels }));
                     dispatch(
                       updatePositionByFilter({
                         position: Y,
@@ -557,10 +528,8 @@ function SingleBox({
                 innerProps: {
                   id: parentModel.id,
                   axis: 'x',
-                  onFinish: ({ Y, x, y }) => {
-                    dispatch(
-                      updateTrueEmbedding({ y, x, id: parentModel.id })
-                    );
+                  onFinish: ({ Y, labels }) => {
+                    dispatch(updateLabels({ id: parentModel.id, labels }));
                     dispatch(
                       updatePositionByFilter({
                         position: Y,
@@ -603,74 +572,8 @@ function SingleBox({
         icon={<IconArrowsMove />}
       />
 
-      <SimpleDragCover
-        setDrag={async (position) => {
-          setDrag(position ? { position, direction: 'x' } : null);
-
-          if (!position) {
-            const { Y } = await runForceLayout({
-              N: parentModel.filter.length,
-              area: parentModel.area,
-              axis: 'xy',
-              xLayout: parentModel.filter.map((index) => xLayout[index]),
-              yLayout: parentModel.filter.map((index) => yLayout[index]),
-            });
-
-            dispatch(
-              updatePositionByFilter({
-                position: Y,
-                filter: parentModel.filter,
-              })
-            );
-          }
-        }}
-        drag={drag?.direction === 'x' ? drag.position : null}
-        onMove={(movement) => {
-          dispatch(
-            changeSize({
-              id: parentModel.id,
-              width:
-                parentModel.area.width +
-                (scaledXDomain.invert(movement.x) - scaledXDomain.invert(0)),
-              height: parentModel.area.height,
-            })
-          );
-        }}
-        style={{
-          pointerEvents: 'initial',
-          transform: 'translate(50%, 50%)',
-          position: 'absolute',
-          bottom: 0,
-          right: 0,
-        }}
-        icon={<IconArrowMoveRight />}
-      />
-
-      <SimpleDragCover
-        onMove={(movement) => {
-          dispatch(
-            changeSize({
-              id: parentModel.id,
-              height:
-                parentModel.area.height +
-                (scaledYDomain.invert(movement.y) - scaledYDomain.invert(0)),
-              width: parentModel.area.width,
-            })
-          );
-        }}
-        style={{
-          pointerEvents: 'initial',
-          transform: 'translate(-50%, -50%)',
-          position: 'absolute',
-          left: 0,
-          top: 0,
-        }}
-        icon={<IconArrowMoveUp />}
-        setDrag={(position) => {
-          setDrag(position ? { position, direction: 'y' } : null);
-        }}
-        drag={drag?.direction === 'y' ? drag.position : null}
-      />
+      <DragCoverHorizontal parentModel={parentModel} />
+      <DragCoverVertical parentModel={parentModel} />
 
       <Group
         style={{
@@ -703,10 +606,8 @@ function SingleBox({
                     innerProps: {
                       id: parentModel.id,
                       axis: 'xy',
-                      onFinish: ({ Y, x, y }) => {
-                        dispatch(
-                          updateTrueEmbedding({ y, x, id: parentModel.id })
-                        );
+                      onFinish: ({ Y, labels }) => {
+                        dispatch(updateLabels({ id: parentModel.id, labels }));
                         dispatch(
                           updatePositionByFilter({
                             position: Y,

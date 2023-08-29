@@ -3,6 +3,23 @@ import { IRectangle } from '../WebGL/Math/Rectangle';
 import { Simulation, SimulationLinkDatum } from 'd3-force';
 import { POINT_RADIUS } from './Globals';
 
+export function scaleToWorld(
+  area: IRectangle
+): [
+  ScaleLinear<number, number>,
+  ScaleLinear<number, number>,
+] {
+  const worldX = scaleLinear()
+    .domain([0, 1])
+    .range([area.x, area.x + area.width]);
+
+  const worldY = scaleLinear()
+    .domain([0, 1])
+    .range([area.y, area.y + area.height]);
+
+  return [worldX, worldY];
+}
+
 export function forceNormalizationNew(
   area: IRectangle
 ): [

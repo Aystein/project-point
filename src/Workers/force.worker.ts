@@ -1,6 +1,6 @@
 import { VectorLike } from '../Interfaces';
 import * as d3 from 'd3-force';
-import { convergeLayout, forceNormalizationNew } from '../Layouts/ForceUtil';
+import { convergeLayout, forceNormalizationNew, scaleToWorld } from '../Layouts/ForceUtil';
 
 /* eslint-disable no-restricted-globals */
 interface UMAPWorkerProps {
@@ -8,45 +8,26 @@ interface UMAPWorkerProps {
     area;
     type;
     N;
-    xLayout: number[];
-    yLayout: number[];
+    axis: 'x' | 'y';
+    Y_in: VectorLike[];
+    X: number[];
   };
 }
 
 self.onmessage = ({
-  data: { area, xLayout, yLayout, type, N },
+  data: { area, X, Y_in, type, N, axis },
 }: UMAPWorkerProps) => {
   if (type !== 'init') {
     return;
   }
 
-  self.postMessage({
-    type: 'message',
-    message: 'Calculating embedding ...',
-  });
-
-  // Compute initial data
-  let Y = new Array<VectorLike>(N);
-
-  for (let i = 0; i < N; i++) {
-    Y[i] = { x: xLayout[i], y: yLayout[i] };
-  }
-
-  self.postMessage({
-    type: 'message',
-    message: 'Force layout ...',
-  });
-
-  const [normalizeX, normalizeY, worldX, worldY, radius] =
-    forceNormalizationNew(area);
+  const [worldX, worldY] = scaleToWorld(area);
 
   self.postMessage({
     type: 'finish',
-    Y: Y.map((node) => ({
-      x: worldX(node.x),
-      y: worldY(node.y),
+    Y: Y_in.map((node, i) => ({
+      x: axis === 'x' ? worldX(X[i]) : node.x,
+      y: axis === 'y' ? worldY(X[i]) : node.y,
     })),
-    xLayout,
-    yLayout,
   });
 };

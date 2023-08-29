@@ -13,14 +13,14 @@ fn main(in: ComputeIn) {
 
     if (particleId < uniforms.particlesCount) {
         var particle = particlesBuffer[particleId];
+        let worldDistance = distance(particle.position, uniforms.mousePosition);
     
-        dist = u32(distance(particle.position, uniforms.mousePosition) * 10000);
+        if (worldDistance < 1) {
+            dist = u32(worldDistance * 10000000);
 
-        atomicMin(&hoverBuffer[0], dist);
+            atomicMin(&hoverBuffer[0], dist);
+        }
     }
-
-
-    //workgroupBarrier();
 
     if (particleId < uniforms.particlesCount) {
         let loadDist = atomicLoad(&hoverBuffer[0]);
@@ -28,6 +28,4 @@ fn main(in: ComputeIn) {
             atomicStore(&hoverBuffer[1], particleId);
         }
     }
-
-   // workgroupBarrier();
 }

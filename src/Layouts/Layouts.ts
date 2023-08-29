@@ -2,6 +2,7 @@ import { showNotification, updateNotification } from '@mantine/notifications';
 import { IRectangle } from '../WebGL/Math/Rectangle';
 import { VectorLike } from '../Interfaces';
 import { LabelContainer } from '../Store/ModelSlice';
+import { Vector } from 'umap-js/dist/umap';
 
 export function runLayout<T>(params: T, worker: Worker) {
   worker.postMessage({
@@ -22,7 +23,7 @@ export function runLayout<T>(params: T, worker: Worker) {
     Y: VectorLike[];
     x: number[];
     y: number[];
-    labels: LabelContainer;
+    labels: LabelContainer[];
   }>((resolve) => {
     worker.onmessage = ({
       data: { type, Y, xLayout, yLayout, labels },
@@ -32,7 +33,7 @@ export function runLayout<T>(params: T, worker: Worker) {
         type: string;
         xLayout: number[];
         yLayout: number[];
-        labels: LabelContainer;
+        labels: LabelContainer[];
       };
     }) => {
       switch (type) {
@@ -56,11 +57,10 @@ export function runCondenseLayout(
   n: number,
   area: IRectangle,
   axis,
-  xLayout,
-  yLayout
+  X,
 ) {
   return runLayout(
-    { n, area, axis, xLayout, yLayout },
+    { n, area, axis, X },
     new Worker(new URL('../Workers/condense.worker.ts', import.meta.url), {
       type: 'module',
     })
@@ -88,18 +88,19 @@ export function runSpaghettiLayout(
   area: IRectangle,
   feature: string,
   axis: 'x' | 'y',
+  Y_in,
 ) {
   return runLayout(
-    { X, area, feature, axis },
+    { X, area, feature, axis, Y_in },
     new Worker(new URL('../Workers/spaghetti.worker.ts', import.meta.url), {
       type: 'module',
     })
   );
 }
 
-export function runUMAPLayout({ X, N, D, area, axis, xLayout, yLayout }) {
+export function runUMAPLayout({ X, N, D, area, axis, Y_in }) {
   return runLayout(
-    { X, N, D, area, axis, xLayout, yLayout },
+    { X, N, D, area, axis, Y_in },
     new Worker(new URL('../Workers/umap.worker.ts', import.meta.url), {
       type: 'module',
     })
@@ -109,18 +110,18 @@ export function runUMAPLayout({ X, N, D, area, axis, xLayout, yLayout }) {
 export function runForceLayout({
   N,
   area,
-  xLayout,
-  yLayout,
+  Y_in,
   axis,
+  X,
 }: {
   N: number;
   area: IRectangle;
-  xLayout: number[];
-  yLayout: number[];
+  Y_in: VectorLike[];
   axis: 'x' | 'y' | 'xy';
+  X: number[];
 }) {
   return runLayout(
-    { N, area, xLayout, yLayout, axis },
+    { N, area, Y_in, axis, X },
     new Worker(new URL('../Workers/force.worker.ts', import.meta.url), {
       type: 'module',
     })

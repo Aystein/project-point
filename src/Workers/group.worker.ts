@@ -85,6 +85,6 @@ self.onmessage = ({
     Y: Y.map((value) => ({ x: worldX(value.x), y: worldY(value.y) })),
     xLayout: Y.map((value) => value.x),
     yLayout: Y.map((value) => value.y),
-    labels,
+    labels: [labels],
   });
 };

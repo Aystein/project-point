@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useDispatch } from 'react-redux';
 import { VectorLike } from '../../../Interfaces';
-import { fillOperation, runCondenseLayout } from '../../../Layouts/Layouts';
+import { fillOperation } from '../../../Layouts/Layouts';
 import {
   setHover,
   setSelection,
@@ -88,19 +88,6 @@ export function LassoSelectionPlugin() {
 
     const cx = scaledXDomain.invert(position.x);
     const cy = scaledYDomain.invert(position.y);
-
-    /*const { Y } = await runCondenseLayout(
-      selection.length,
-      {
-        x: scaledXDomain.invert(position.x) - 2,
-        y: scaledYDomain.invert(position.y) - 2,
-        width: 4,
-        height: 4,
-      },
-      'xy',
-      undefined,
-      undefined
-    );*/
 
     const { Y } = await fillOperation({ N: selection.length, area: { x: cx - 10, y: cy - 10, width: 20, height: 20 } })
 

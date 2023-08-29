@@ -15,6 +15,7 @@ interface Props {
     feature: string;
     type: string;
     axis: 'x' | 'y';
+    Y_in: VectorLike[];
   };
 }
 
@@ -66,8 +67,6 @@ self.onmessage = ({
     type: 'finish',
     // @ts-ignore
     Y: Y.map((value) => ({ x: worldX(value.x), y: worldY(value.y) })),
-    xLayout: Y.map((value) => value.x),
-    yLayout: Y.map((value) => value.y),
-    labels,
+    labels: [labels],
   });
 };

@@ -12,6 +12,7 @@ import { VectorLike } from '../Interfaces';
 import { runUMAPLayout } from '../Layouts/Layouts';
 import { Selectors } from '../Store/Selectors';
 import { useAppSelector } from '../Store/hooks';
+import { LabelContainer } from '../Store/ModelSlice';
 
 export function TSNEModal({
   context,
@@ -20,12 +21,10 @@ export function TSNEModal({
 }: ContextModalProps<{
   onFinish: ({
     Y,
-    x,
-    y,
+    labels,
   }: {
     Y: VectorLike[];
-    x: number[];
-    y: number[];
+    labels: LabelContainer[];
   }) => void;
   id: EntityId;
   axis: 'x' | 'y' | 'xy';
@@ -34,8 +33,7 @@ export function TSNEModal({
   const model = useAppSelector((state) =>
     state.views.workspace.children?.find((e) => e.id === innerProps.id)
   );
-  const xl = useAppSelector((state) => state.views.workspace.x);
-  const yl = useAppSelector((state) => state.views.workspace.y);
+  const positions = useAppSelector((state) => state.views.positions);
 
   const form = useForm({
     initialValues: {
@@ -71,16 +69,15 @@ export function TSNEModal({
 
     const { X, N, D } = encode(data, model.filter, result);
 
-    const { Y, x, y } = await runUMAPLayout({
+    const { Y, labels } = await runUMAPLayout({
       X,
       N,
       D,
       area: model.area,
       axis: innerProps.axis,
-      xLayout: model.filter.map((i) => xl[i]),
-      yLayout: model.filter.map((i) => yl[i]),
+      Y_in: model.filter.map((i) => positions[i]),
     });
-    innerProps.onFinish({ Y, x, y });
+    innerProps.onFinish({ Y, labels });
   };
 
   return (

@@ -70,7 +70,7 @@ export class Hover {
 
     public compute(commandEncoder: GPUCommandEncoder, mousePosition: number[]): void {
         this.uniforms.setValueFromName("mousePosition", mousePosition)
-        this.device.queue.writeBuffer(this.hoverBuffer.gpuBuffer, 0, new Uint32Array([Number.MAX_SAFE_INTEGER, 0]))
+        this.device.queue.writeBuffer(this.hoverBuffer.gpuBuffer, 0, new Uint32Array([Number.MAX_SAFE_INTEGER, -1]))
 
         const computePass = commandEncoder.beginComputePass();
         computePass.setPipeline(this.pipeline);

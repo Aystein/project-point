@@ -23,45 +23,39 @@ export function HoverBehavior({
   onHover: (index: number) => void;
 }) {
   const { scaledXDomain, scaledYDomain } = useVisContext();
-  const [lastHover, setLastHover] = useDebouncedState<number>(null, null);
   const data = useAppSelector((state) => state.data);
-  const filter = useAppSelector((state) => state.views.filter);
   const dispatch = useAppDispatch();
-  
-  const tree = React.useMemo(() => {
-    return positions
-      ? quadtree<VectorLike & { index: number }>()
-          .x((d) => d.x)
-          .y((d) => d.y)
-          .addAll(positions.map((value, i) => ({ ...value, index: filter[i] })))
-      : null;
-  }, [positions]);
+  const hover = useAppSelector((state) => state.views.hover);
 
   useMouseEvent(
     MOUSE_HOVER,
     (event) => {
-      if (!tree) {
-        return false;
-      }
-
       getGlobalEngine()?.hover.setMousePosition([scaledXDomain.invert(event.x), scaledYDomain.invert(event.y)]);
       getGlobalEngine()?.hover.read().then((x) => {
-        if (!x) return;
-        dispatch(setHover([x[1]]));
-        setLastHover(x[1]);
+        if (!x) {
+          return;
+        }
+        
+        if (x[1] === Number.MAX_SAFE_INTEGER) {
+          dispatch(setHover(undefined));
+        } else {
+          dispatch(setHover([x[1]]));
+        }
+
+        
       });
 
       return true;
     },
     COMMAND_PRIORITY_NORMAL,
-    [tree, scaledXDomain, scaledYDomain, onHover, lastHover, setLastHover]
+    [scaledXDomain, scaledYDomain, onHover]
   );
 
   return (
     <Affix position={{ bottom: rem(20), right: rem(20) }}>
       <Card shadow="lg">
         <Card.Section>
-          <HoverComponent row={data.rows[lastHover]} />
+          <HoverComponent row={hover?.length === 1 ? data.rows[hover[0]] : null} />
         </Card.Section>
       </Card>
     </Affix>

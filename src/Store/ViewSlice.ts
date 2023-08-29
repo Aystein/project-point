@@ -1,12 +1,10 @@
-import { createAsyncThunk, createSelector, createSlice, EntityId, nanoid } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
-import { LabelContainer, SpatialModel } from './ModelSlice';
-import { VectorLike } from '../Interfaces';
-import { getBounds, normalizeVectors, scaleInto } from '../Util';
-import { Rectangle } from '../WebGL/Math/Rectangle';
-import { scaleLinear } from 'd3-scale';
-import { RootState } from './Store';
+import { createAsyncThunk, createSlice, EntityId, nanoid } from '@reduxjs/toolkit';
 import isEqual from 'lodash/isEqual';
+import { VectorLike } from '../Interfaces';
+import { scaleInto } from '../Util';
+import { Rectangle } from '../WebGL/Math/Rectangle';
+import { LabelContainer, SpatialModel } from './ModelSlice';
 
 export type Selection = {
   global: number[];
@@ -97,16 +95,16 @@ export const viewslice = createSlice({
     },
     updateLabels: (
       state,
-      action: PayloadAction<{ id: EntityId; labels: LabelContainer }>
+      action: PayloadAction<{ id: EntityId; labels: LabelContainer[] }>
     ) => {
       const { id, labels } = action.payload;
       const model = state.workspace.children.find((value) => value.id === id);
 
-      if (labels) {
+      (labels ?? []).forEach((labelContainer) => {
         model.labels =
-          model.labels?.filter((value) => value.type !== labels.type) ?? [];
-        model.labels.push(labels);
-      }
+          model.labels?.filter((value) => value.type !== labelContainer.type) ?? [];
+        model.labels.push(labelContainer);
+      })
     },
     updateTrueEmbedding: (
       state,
