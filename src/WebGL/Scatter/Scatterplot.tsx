@@ -1,13 +1,11 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import * as React from 'react';
 import { useEffect, useState } from 'react';
-import { Lines } from '../../Scatter/Lines';
+import { setGlobalEngine } from '../../MainTabs/HistoryTab';
 import { Scatter } from '../../Scatter/Scatter';
 import { useAppSelector } from '../../Store/hooks';
 import { Engine } from '../../ts/engine/engine';
 import { useVisContext } from '../VisualizationContext';
-import { POINT_RADIUS } from '../../Layouts/Globals';
-import { setGlobalEngine } from '../../MainTabs/HistoryTab';
 
 type ColumnTemp = {
   values: number[];

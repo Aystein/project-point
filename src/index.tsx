@@ -1,14 +1,16 @@
+import { ColorScheme, ColorSchemeProvider, MantineProvider } from '@mantine/core';
+import { ModalsProvider } from '@mantine/modals';
 import { Notifications } from '@mantine/notifications';
+import { Provider as JotaiProvider } from 'jotai';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { Provider } from 'react-redux';
-import { Provider as JotaiProvider } from 'jotai';
 import { AntApp } from './AntApp';
-import { store } from './Store/Store';
-import { ModalsProvider } from '@mantine/modals';
-import { ColorScheme, ColorSchemeProvider, MantineProvider } from '@mantine/core';
-import { TSNEModal } from './Modals/tSNEModal';
 import { ColorByModal } from './Modals/ColorByModal';
+import { TSNEModal } from './Modals/tSNEModal';
+import { store } from './Store/Store';
+
+
 
 const modals = {
   demonstration: TSNEModal,
