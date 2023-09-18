@@ -110,7 +110,6 @@ export function TSNEModal({
               {...form.getInputProps('perplexity')}
             />
           </Stack>
-          <Stack>test</Stack>
         </Group>
 
         <Button mt="1.5rem" type="submit">

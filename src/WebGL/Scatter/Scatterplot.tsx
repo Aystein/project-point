@@ -6,6 +6,7 @@ import { Scatter } from '../../Scatter/Scatter';
 import { useAppSelector } from '../../Store/hooks';
 import { Engine } from '../../ts/engine/engine';
 import { useVisContext } from '../VisualizationContext';
+import { Card } from '@mantine/core';
 
 type ColumnTemp = {
   values: number[];
@@ -168,7 +169,7 @@ export function Scatterplot({
       n,
       ref.current.getContext('webgpu'),
       {
-        background: [1, 1, 1, 1],
+        background: [0.8, 0.8, 0.8, 1],
       },
       device,
       x,

@@ -5,10 +5,10 @@ import { Selectors } from './Store/Selectors';
 import { PanBehavior } from './WebGL/Interaction/Behavior/PanBehavior';
 import { ZoomBehavior } from './WebGL/Interaction/Behavior/ZoomBehavior';
 import { Scatterplot } from './WebGL/Scatter/Scatterplot';
-import { VisProvider } from './WebGL/VisualizationContext';
+import { VisProvider, useVisContext } from './WebGL/VisualizationContext';
 import { BoxBehavior } from './WebGL/Interaction/Behavior/BoxBehavior';
 import { useAppSelector } from './Store/hooks';
-import { useMantineTheme } from '@mantine/core';
+import { Card, useMantineTheme } from '@mantine/core';
 import { HoverBehavior } from './WebGL/Interaction/Behavior/HoverBehavior';
 import { SpatialModel } from './Store/ModelSlice';
 import { useHotkeys } from '@mantine/hooks';
@@ -26,6 +26,8 @@ function MainView({ data, view }: { data: DataState; view: SpatialModel }) {
   const line = useAppSelector((state) => state.views.lines);
   const positions = useAppSelector((state) => state.views.positions);
 
+  const { scaledXDomain, scaledYDomain } = useVisContext();
+
   const handleHover = (index: number) => {
     dispatch(setHover([index]));
   };
@@ -42,15 +44,16 @@ function MainView({ data, view }: { data: DataState; view: SpatialModel }) {
   }, [positions]);
 
   return (
-    <VisProvider defaultZoom={{ s: 1, tx: 0, ty: 0 }}>
+    <>
       <ZoomBehavior />
       <PanBehavior />
-      
-      
+
+      <Card style={{ position: 'absolute', left: scaledXDomain(0), top: scaledYDomain(0), width: scaledXDomain(20) - scaledXDomain(0), height: scaledYDomain(20) - scaledYDomain(0) }} withBorder shadow="xs"></Card>
+
       <BoxBehavior parentModel={view} />
       <HoverBehavior positions={positions} onHover={handleHover} />
       <LassoSelectionPlugin />
-      
+
       <Scatterplot
         n={positions.length ?? null}
         x={x}
@@ -62,8 +65,8 @@ function MainView({ data, view }: { data: DataState; view: SpatialModel }) {
         selection={selection}
         interpolate={true}
       />
-      
-    </VisProvider>
+
+    </>
   );
 }
 
@@ -72,6 +75,10 @@ export function Main() {
   const view = useAppSelector((state) => state.views.workspace);
 
   return (
-    <>{view ? <MainView key={view.id} data={data} view={view} /> : null}</>
+    <>
+      <VisProvider defaultZoom={{ s: 1, tx: 0, ty: 0 }}>
+        {view ? <MainView key={view.id} data={data} view={view} /> : null}
+      </VisProvider>
+    </>
   );
 }

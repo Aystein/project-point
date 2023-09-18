@@ -56,30 +56,6 @@ self.onmessage = ({
 
   const Y = new Array<VectorLike>(N);
 
-  const [scaleX, scaleY, worldX, worldY, radius] = forceNormalizationNew(area);
-
-  const padding = 1 / (keys(groups).length + 10);
-  let usedSpace = padding;
-
-  let leftSpace = 1 - padding * (keys(groups).length + 1);
-
-/**   for (const key of keys(groups)) {
-    const group = groups[key];
-
-    const portion = leftSpace * (group.length / N);
-    const centerX = usedSpace + portion / 2;
-
-    labels.labels.push({ position: centerX, content: key });
-
-    usedSpace += portion + padding;
-
-    const extent = portion / 3;
-
-    group.forEach((item, i) => {
-      Y[item.relativeIndex] = { x: centerX + (-2 + Math.random()) * extent, y: yLayout[item.relativeIndex] };
-    });
-  }
-**/
   const data: { id, parent? }[] = [{ id: 'root' }];
 
   for (const key of keys(groups)) {

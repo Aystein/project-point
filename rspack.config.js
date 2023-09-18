@@ -6,6 +6,13 @@ module.exports = {
   },
   builtins: {
     html: [{ template: './index_rspack.html' }],
+    copy: {
+      patterns: [
+        {
+          from: './public/favicon.jpg',
+        },
+      ],
+    }
   },
   output: {
     filename: 'main.js',

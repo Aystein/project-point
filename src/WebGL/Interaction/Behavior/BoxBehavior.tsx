@@ -56,14 +56,11 @@ import { LabelsOverlay } from './LabelsOverlay';
 import { useMouseEvent } from './useMouseDrag';
 
 export function BoxBehavior({ parentModel }: { parentModel: SpatialModel }) {
-  const { vis, scaledXDomain, scaledYDomain } = useVisContext();
+  const { scaledXDomain, scaledYDomain } = useVisContext();
 
   const ref = React.useRef<HTMLDivElement>(null);
   const [rect, setRect] = React.useState<Rectangle>();
   const dispatch = useDispatch();
-
-  const x = useAppSelector((state) => state.views.workspace.x);
-  const y = useAppSelector((state) => state.views.workspace.y);
 
   const positions = useAppSelector((state) => state.views.positions);
 
@@ -71,7 +68,7 @@ export function BoxBehavior({ parentModel }: { parentModel: SpatialModel }) {
   useMouseEvent(
     MOUSE_DOWN,
     (event) => {
-      if (event.button === 2) {
+      if (event.button === 2 || (event.button === 0 && (event.altKey || event.ctrlKey || event.shiftKey))) {
         setRect(new Rectangle(event.offsetX, event.offsetY, 0, 0));
         return true;
       }
@@ -304,13 +301,14 @@ function SingleBox({
   };
 
   const handleSpaghettiBy = async (axis: 'x' | 'y') => {
-    const onFinish = async (feature: string) => {
+    const onFinish = async (groups: string[], secondary: string) => {
       const X = parentModel.filter.map((i) => data[i]);
 
       const { Y, x, y, labels } = await runSpaghettiLayout(
         X,
         area,
-        feature,
+        groups,
+        secondary,
         axis,
         parentModel.filter.map((i) => positions[i]),
       );
@@ -322,8 +320,8 @@ function SingleBox({
     };
 
     openContextModal({
-      modal: 'colorby',
-      title: 'Group by',
+      modal: 'spaghetti',
+      title: 'Spaghetti',
       innerProps: {
         onFinish,
       },
@@ -331,13 +329,13 @@ function SingleBox({
   };
 
   const handleGroupBy = async (axis: 'x' | 'y') => {
-    const onFinish = async (feature: string) => {
+    const onFinish = async (groups) => {
       const X = parentModel.filter.map((i) => data[i]);
-
+      console.log(groups);
       const { Y, x, y, labels } = await runGroupLayout(
         X,
         area,
-        feature,
+        groups,
         axis,
         parentModel.filter.map((index) => xLayout[index]),
         parentModel.filter.map((index) => yLayout[index])
@@ -352,7 +350,7 @@ function SingleBox({
 
     openContextModal({
       modal: 'colorby',
-      title: 'Group by',
+      title: 'Spaghetti',
       innerProps: {
         onFinish,
       },

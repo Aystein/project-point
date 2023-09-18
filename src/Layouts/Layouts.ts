@@ -86,12 +86,13 @@ export function runGroupLayout(
 export function runSpaghettiLayout(
   X,
   area: IRectangle,
-  feature: string,
+  features: string[],
+  secondary: string,
   axis: 'x' | 'y',
   Y_in,
 ) {
   return runLayout(
-    { X, area, feature, axis, Y_in },
+    { X, area, features, secondary, axis, Y_in },
     new Worker(new URL('../Workers/spaghetti.worker.ts', import.meta.url), {
       type: 'module',
     })

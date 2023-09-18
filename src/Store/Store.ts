@@ -14,6 +14,7 @@ import { clusterReducer } from './ClusterSlice';
 import { settingsReducer } from './SettingsSlice';
 import { POINT_RADIUS } from '../Layouts/Globals';
 import { spread } from '../Util';
+import { Engine } from '../ts/engine/engine';
 
 const combined = combineReducers({
   data: dataReducer,
@@ -105,8 +106,8 @@ const reducer = createReducer<RootState>(undefined, (builder) => {
     const r = Math.sqrt(A);
 
     state.views.positions = rows.map((row) => ({
-      x: spread(10, r),
-      y: spread(10, r),
+      x: spread(Engine.board_size / 2, r),
+      y: spread(Engine.board_size / 2, r),
     }));
 
     state.views.filter = Array.from({ length: rows.length }).map((_, i) => {

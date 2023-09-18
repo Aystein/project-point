@@ -66,9 +66,11 @@ export class Scatter {
 
   lineBuffer: YBuffer;
 
-  multisample = 4;
+  multisample = 1;
 
   multisampleTexture;
+
+  multisampleView;
 
   buffers: {
     color: YBuffer;
@@ -244,6 +246,8 @@ export class Scatter {
       format: canvasFormat,
       usage: GPUTextureUsage.RENDER_ATTACHMENT,
     });
+
+    this.multisampleView = this.multisampleTexture.createView();
 
     this.loadTexturesAsync();
 
@@ -491,12 +495,10 @@ export class Scatter {
       this.engine.compute(encoder, settings.delta / 1000000, settings.radiusScaling)
     }
 
-    const view = this.multisampleTexture.createView();
-
     let pass = encoder.beginRenderPass({
       colorAttachments: [
         {
-          view: this.multisample === 1 ? context.getCurrentTexture().createView() : view,
+          view: this.multisample === 1 ? context.getCurrentTexture().createView() : this.multisampleView,
           resolveTarget: this.multisample === 1 ? undefined : context.getCurrentTexture().createView(),
           clearValue: [0, 0, 0, 0],
           loadOp: 'clear',
@@ -519,7 +521,7 @@ export class Scatter {
     pass = encoder.beginRenderPass({
       colorAttachments: [
         {
-          view: this.multisample === 1 ? context.getCurrentTexture().createView() : view,
+          view: this.multisample === 1 ? context.getCurrentTexture().createView() : this.multisampleView,
           resolveTarget: this.multisample === 1 ? undefined : context.getCurrentTexture().createView(),
           clearValue: [0, 0, 0, 0],
           loadOp: 'load',

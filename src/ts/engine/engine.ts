@@ -195,8 +195,6 @@ class Engine {
         }
 
        this.hover.compute(commandEncoder, [Math.random(), Math.random()]);
-
-
     }
 
     public setForces(x: number[], y: number[]) {
@@ -262,7 +260,9 @@ class Engine {
             usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
         });
 
-        const cellSize = Math.max(0.01, 2.05 * data.spheresRadius);
+        //const cellSize = Math.max(0.01, 2.05 * data.spheresRadius);
+        const cellSize = Math.max(2.15 * data.spheresRadius, 2.05 * data.spheresRadius);
+
         const gridSize: glMatrix.vec2 = [Math.ceil(Engine.board_size / cellSize), Math.ceil(Engine.board_size / cellSize)];
 
         this.indexBuffer = new WebGPU.Buffer(this.device, {

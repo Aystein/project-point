@@ -9,12 +9,14 @@ import { AntApp } from './AntApp';
 import { ColorByModal } from './Modals/ColorByModal';
 import { TSNEModal } from './Modals/tSNEModal';
 import { store } from './Store/Store';
+import { SpaghettiModal } from './Modals/SpaghettiModal';
 
 
 
 const modals = {
   demonstration: TSNEModal,
   colorby: ColorByModal,
+  spaghetti: SpaghettiModal
 };
 
 declare module '@mantine/modals' {
@@ -48,6 +50,7 @@ function RootApplication() {
               lineHeight: theme.lineHeight,
               padding: 0,
               margin: 0,
+              overflow: 'hidden'
             },
           }),
         }}

@@ -70,7 +70,7 @@ export function LassoSelectionPlugin() {
   useMouseEvent(
     MOUSE_DOWN,
     (event) => {
-      if (event.button === 0) {
+      if (event.button === 0 && !(event.altKey || event.ctrlKey || event.shiftKey)) {
         setDrag({ x: event.offsetX, y: event.offsetY });
         dispatch(setHover([]));
 

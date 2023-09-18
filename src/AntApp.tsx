@@ -42,6 +42,8 @@ const useStyles = createStyles((theme) => ({
     display: 'flex',
     flexDirection: 'column',
     flex: 1,
+    backgroundColor:
+      theme.colorScheme === 'dark' ? theme.colors.dark[7] : theme.colors.dark[7],
   },
 
   mainLink: {
@@ -160,7 +162,7 @@ export function AntApp() {
           backgroundColor:
             theme.colorScheme === 'dark'
               ? theme.colors.dark[8]
-              : theme.colors.white,
+              : theme.colors.gray[1],
         },
       })}
     >

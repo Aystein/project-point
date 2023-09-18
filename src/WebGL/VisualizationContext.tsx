@@ -18,6 +18,7 @@ import { Visualization } from './Visualization';
 import { scaleLinear, ScaleLinear } from 'd3-scale';
 import { ZoomTransform } from './Math/ZoomTransform';
 import { useMantineTheme } from '@mantine/core';
+import { Engine } from '../ts/engine/engine';
 
 export const VisContext = createContext<{
   vis: Visualization;
@@ -50,7 +51,7 @@ export const VisProvider = ({ children, defaultZoom, defaultXDomain }: { default
 
   const [renderFunctions, setRenderFunctions] = React.useState([]);
 
-  const [xDomain, setXDomain] = React.useState(defaultXDomain ?? [5, 15]);
+  const [xDomain, setXDomain] = React.useState(defaultXDomain ?? [Engine.board_size / 2 - 5, Engine.board_size / 2 + 5]);
 
   const yDomain = React.useMemo(() => {
     const halfExtent = ((xDomain[1] - xDomain[0]) * (height / width)) / 2;
