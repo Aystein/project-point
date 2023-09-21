@@ -37,6 +37,7 @@ import {
 } from '../../../Layouts/Layouts';
 import { LabelContainer, SpatialModel } from '../../../Store/ModelSlice';
 import {
+  activateModel,
   addSubEmbedding,
   removeEmbedding,
   setColor,
@@ -54,6 +55,8 @@ import { DragCoverHorizontal } from './DragCoverHorizontal';
 import { DragCoverVertical } from './DragCoverVertical';
 import { LabelsOverlay } from './LabelsOverlay';
 import { useMouseEvent } from './useMouseDrag';
+import classes from './BoxBehavior.module.css';
+
 
 export function BoxBehavior({ parentModel }: { parentModel: SpatialModel }) {
   const { scaledXDomain, scaledYDomain } = useVisContext();
@@ -418,24 +421,10 @@ function SingleBox({
 
           <Box
             px={7}
-            sx={(theme) => ({
-              position: 'absolute',
-              width: 16,
-              top: rem(24),
-              left: -8,
-              height: `calc(100% - ${rem(48)})`,
-              '&:hover': {
-                '> div': { background: '#1c7ed6' },
-              },
-              pointerEvents: 'initial'
-            })}
+            className={classes.axisL}
             data-interaction
           >
-            <Box data-interaction sx={(theme) => ({
-              height: '100%',
-              background:
-                theme.colorScheme !== 'dark' ? theme.colors.dark[2] : theme.white,
-            })}></Box>
+            <Box data-interaction className={classes.innerBoxL}></Box>
           </Box>
         </Menu.Target>
 
@@ -483,24 +472,10 @@ function SingleBox({
         <Menu.Target>
           <Box
             py={7}
-            sx={(theme) => ({
-              position: 'absolute',
-              left: rem(24),
-              height: 16,
-              width: `calc(100% - ${rem(48)})`,
-              bottom: -8,
-              '&:hover': {
-                '> div': { background: '#1c7ed6' },
-              },
-              pointerEvents: 'initial'
-            })}
+            className={classes.axisR}
             data-interaction
           >
-            <Box data-interaction sx={(theme) => ({
-              height: '100%',
-              background:
-                theme.colorScheme !== 'dark' ? theme.colors.dark[2] : theme.white,
-            })}></Box>
+            <Box data-interaction className={classes.innerBoxR}></Box>
           </Box>
 
         </Menu.Target>
@@ -556,6 +531,7 @@ function SingleBox({
           );
         }}
         setDrag={(position) => {
+          dispatch(activateModel({ id: parentModel.id }))
           setDrag(position ? { position, direction: 'xy' } : null);
         }}
         drag={drag?.direction === 'xy' ? drag.position : null}
@@ -580,12 +556,12 @@ function SingleBox({
           top: 0,
           transform: 'translateY(-100%)',
         }}
-        spacing="lg"
+        gap="lg"
       >
-        <Group spacing="xs">
+        <Group gap="xs">
           <Menu>
             <Menu.Target>
-              <ActionIcon style={{ pointerEvents: 'auto' }}>
+              <ActionIcon style={{ pointerEvents: 'auto' }} variant="subtle">
                 <IconCircleLetterA />
               </ActionIcon>
             </Menu.Target>
@@ -622,21 +598,22 @@ function SingleBox({
             </Menu.Dropdown>
           </Menu>
 
-          <ActionIcon style={{ pointerEvents: 'auto' }} onClick={() => handleColor()}>
+          <ActionIcon style={{ pointerEvents: 'auto' }} onClick={() => handleColor()} variant="subtle">
             <IconPaint />
           </ActionIcon>
 
-          <ActionIcon style={{ pointerEvents: 'auto' }} onClick={() => handleShape()}>
+          <ActionIcon style={{ pointerEvents: 'auto' }} onClick={() => handleShape()} variant="subtle">
             <IconRosette />
           </ActionIcon>
 
-          <ActionIcon style={{ pointerEvents: 'auto' }} onClick={() => handleLine()}>
+          <ActionIcon style={{ pointerEvents: 'auto' }} onClick={() => handleLine()} variant="subtle">
             <IconTimeline />
           </ActionIcon>
         </Group>
 
 
         <ActionIcon
+          variant="subtle"
           style={{ pointerEvents: 'auto', opacity: 1 }}
           onMouseDown={(event) => {
             event.stopPropagation();

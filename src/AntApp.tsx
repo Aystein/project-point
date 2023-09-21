@@ -13,6 +13,7 @@ import { SettingsTab } from './MainTabs/SettingsTab';
 import { initializeDatasets } from './Store/FilesSlice';
 import { useAppDispatch } from './Store/hooks';
 import { TopMenu } from './MainTabs/TopMenu';
+import { SideMenu } from './MainTabs/SideMenu';
 
 /**const useStyles = createStyles((theme) => ({
   wrapper: {
@@ -89,6 +90,7 @@ export function AntApp() {
       <AppShell.Main>
         <Box style={{ position: 'absolute', top: 0, left: 300, right: 0, bottom: 0 }}>
           <TopMenu />
+          <SideMenu />
           <Main />
         </Box>
       </AppShell.Main>

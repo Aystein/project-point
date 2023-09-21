@@ -13,6 +13,7 @@ import { SpaghettiModal } from './Modals/SpaghettiModal';
 import '@mantine/core/styles.css'
 import './globals.module.css';
 
+// document.addEventListener('contextmenu', event => event.preventDefault());
 
 const modals = {
   demonstration: TSNEModal,

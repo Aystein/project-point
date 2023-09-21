@@ -69,6 +69,10 @@ export const viewslice = createSlice({
         state.positions[globalIndex] = position[localIndex];
       });
     },
+    activateModel: (state, action: PayloadAction<{ id: EntityId }>) => {
+      const { id } = action.payload;
+      state.activeModel = id;
+    },
     swapView: (state, action: PayloadAction<{ id: EntityId }>) => {
       const children = state.workspace.children;
       const swap = state.history.find((value) => value.id === action.payload.id);
@@ -296,7 +300,8 @@ export const {
   updateLabels,
   changeSize,
   swapView,
-  deleteHistory
+  deleteHistory,
+  activateModel
 } = viewslice.actions;
 
 export default viewslice.reducer;

@@ -1,0 +1,8 @@
+.sidemenu {
+    position: absolute;
+    z-index: 200;
+    top: 64px;
+    left: 12px;
+    min-height: 400px;
+    width: 200px;
+}
