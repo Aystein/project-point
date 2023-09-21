@@ -15,6 +15,7 @@ import { useHotkeys } from '@mantine/hooks';
 import { LassoSelectionPlugin } from './WebGL/Interaction/Behavior/LassoBehavior';
 import { addView, setHover } from './Store/ViewSlice';
 import { TestRun } from './Scatter/Test/Util';
+import { TopMenu } from './MainTabs/TopMenu';
 
 TestRun()
 

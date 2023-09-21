@@ -29,6 +29,8 @@ export interface ViewsState {
 
   lineWidth: number;
   activeHistory: number;
+
+  activeModel: EntityId;
 }
 
 const initialState: ViewsState = {
@@ -48,7 +50,9 @@ const initialState: ViewsState = {
   filterLookup: {},
 
   history: [],
-  activeHistory: -1
+  activeHistory: -1,
+
+  activeModel: undefined,
 };
 
 export const viewslice = createSlice({
@@ -275,12 +279,6 @@ export const viewslice = createSlice({
     },
   },
 });
-
-export const loadDataset = createAsyncThunk(
-  'views/readxy',
-  async (engine, { dispatch }) => {
-  }
-);
 
 // Action creators are generated for each case reducer function
 export const {

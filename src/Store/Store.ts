@@ -2,6 +2,7 @@ import {
   combineReducers,
   configureStore,
   createAction,
+  createAsyncThunk,
   createReducer,
   nanoid,
 } from '@reduxjs/toolkit';
@@ -15,6 +16,7 @@ import { settingsReducer } from './SettingsSlice';
 import { POINT_RADIUS } from '../Layouts/Globals';
 import { spread } from '../Util';
 import { Engine } from '../ts/engine/engine';
+import { parseCSV } from '../DataLoading/CSVLoader';
 
 const combined = combineReducers({
   data: dataReducer,
@@ -152,6 +154,24 @@ export const store = configureStore({
       serializableCheck: false,
     }),
 });
+
+
+export const loadDataset = createAsyncThunk(
+  'users/loadDataset',
+  async (name: string, { dispatch }) => {
+    const opfsRoot = await navigator.storage.getDirectory();
+    const fileHandle = await opfsRoot.getFileHandle(name);
+    const file = await fileHandle.getFile();
+    const reader = new FileReader();
+
+    reader.onload = async () => {
+      const rows = await parseCSV(reader.result.toString());
+      dispatch(loadDatasetGlobal(rows));
+    };
+
+    reader.readAsBinaryString(file.slice(100));
+  }
+);
 
 // Inferred type: {posts: PostsState, comments: CommentsState, users: UsersState}
 export type AppDispatch = typeof store.dispatch;

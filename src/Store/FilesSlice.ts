@@ -6,9 +6,7 @@ import {
   EntityState,
 } from '@reduxjs/toolkit';
 
-import type { PayloadAction } from '@reduxjs/toolkit';
-import { parseCSV } from '../DataLoading/CSVLoader';
-import { loadDatasetGlobal, RootState } from './Store';
+import { RootState } from './Store';
 
 export interface SingleFile {
   name: string;
@@ -116,22 +114,7 @@ export const storeDataset = createAsyncThunk(
   }
 );
 
-export const loadDataset = createAsyncThunk(
-  'users/loadDataset',
-  async (name: string, { dispatch }) => {
-    const opfsRoot = await navigator.storage.getDirectory();
-    const fileHandle = await opfsRoot.getFileHandle(name);
-    const file = await fileHandle.getFile();
-    const reader = new FileReader();
 
-    reader.onload = async () => {
-      const rows = await parseCSV(reader.result.toString());
-      dispatch(loadDatasetGlobal(rows));
-    };
-
-    reader.readAsBinaryString(file.slice(100));
-  }
-);
 
 async function storeFileForLater(
   name: string,
