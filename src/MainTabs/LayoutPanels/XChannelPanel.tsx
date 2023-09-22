@@ -1,7 +1,7 @@
 import { Select, Tabs } from '@mantine/core';
 import * as React from 'react';
 import { useAppDispatch, useAppSelector } from '../../Store/hooks';
-import { Selectors } from '../../Store/Selectors';
+import { Selectors, selectActiveModel } from '../../Store/Selectors';
 import { DataType } from '../../Interfaces';
 import { setLayoutConfig } from '../../Store/ViewSlice';
 import { LayoutConfiguration } from '../../Store/ModelSlice';
@@ -43,6 +43,8 @@ function NumericalScalePanel({ channel }: { channel: 'x' | 'y' }) {
 }
 
 export function ChannelPanel({ channel }: { channel: 'x' | 'y' }) {
+    const activeModel = useAppSelector(selectActiveModel);
+    
     const data = React.useMemo(() => {
         return [
             { label: 'Numerical scale', value: 'numericalscale' },

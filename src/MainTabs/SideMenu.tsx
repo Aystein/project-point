@@ -12,6 +12,7 @@ import {
 import classes from './SideMenu.module.css';
 import { useAppSelector } from '../Store/hooks';
 import { ChannelPanel } from './LayoutPanels/XChannelPanel';
+import { selectActiveModel, selectModelById } from '../Store/Selectors';
 
 
 
@@ -21,6 +22,7 @@ export function SideMenu() {
       (e) => e.id === state.views.activeModel
     )
   );**/
+  const activeModel = useAppSelector(selectActiveModel);
 
   const data = [
     { label: 'X', value: 'x' },
