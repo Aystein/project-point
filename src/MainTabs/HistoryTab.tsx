@@ -62,13 +62,15 @@ function HistoryView({ view, active, index }: { view: SpatialModel, active: bool
     dispatch(swapView({ id }));
   };
 
-  const outlineColor = theme.colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[3];
-  const activeColor = theme.fn.variant({ color: theme.primaryColor, variant: 'outline' });
+  //const outlineColor = theme.colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[3];
+  //const activeColor = theme.fn.variant({ color: theme.primaryColor, variant: 'outline' });
+  const outlineColor = '#ff0000';
+  const activeColor = '#00ff00';
 
   return (
     <Card
       style={{
-        outlineColor: active ? activeColor.border : outlineColor,
+        outlineColor: active ? activeColor : outlineColor,
         outlineWidth: active ? 2 : 1,
         outlineStyle: 'solid'
       }}

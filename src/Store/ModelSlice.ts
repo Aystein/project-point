@@ -1,4 +1,4 @@
-import { EntityId } from '@reduxjs/toolkit';
+import { EntityId, EntityState, createEntityAdapter } from '@reduxjs/toolkit';
 import { Boundaries, VectorLike } from '../Interfaces';
 import { IRectangle } from '../WebGL/Math/Rectangle';
 
@@ -13,15 +13,31 @@ export type EmbeddingParameters = {
 
 export type LabelContainer =
   | {
-      discriminator: 'positionedlabels';
-      type: 'x' | 'y' | 'absolute';
-      labels: { position: number; content: string }[];
-    }
+    discriminator: 'positionedlabels';
+    type: 'x' | 'y' | 'absolute';
+    labels: { position: number; content: string }[];
+  }
   | {
-      discriminator: 'scalelabels';
-      type: 'x' | 'y';
-      labels: { domain: number[]; range: number[] };
-    };
+    discriminator: 'scalelabels';
+    type: 'x' | 'y';
+    labels: { domain: number[]; range: number[] };
+  };
+
+
+type LinearScaleConfiguration = {
+  channel: 'x' | 'y';
+  type: 'numericalscale';
+  column: string;
+}
+
+type CondenseConfiguration = {
+  channel: 'x' | 'y' | 'xy',
+  type: 'condense'
+}
+
+export type LayoutConfiguration = LinearScaleConfiguration | CondenseConfiguration;
+
+export const layoutAdapter = createEntityAdapter<LayoutConfiguration>();
 
 export interface SpatialModel extends BaseModel {
   id: EntityId;
@@ -42,6 +58,8 @@ export interface SpatialModel extends BaseModel {
   shape?: number[];
 
   labels?: LabelContainer[];
+
+  layoutConfigurations: EntityState<LayoutConfiguration>;
 }
 
 export type Model = SpatialModel;

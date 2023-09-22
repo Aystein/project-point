@@ -1,19 +1,23 @@
-import type { PayloadAction } from '@reduxjs/toolkit';
-import { createAsyncThunk, createSlice, EntityId, nanoid } from '@reduxjs/toolkit';
+import type { EntityState, PayloadAction } from '@reduxjs/toolkit';
+import { createAsyncThunk, createEntityAdapter, createSelector, createSlice, EntityId, nanoid } from '@reduxjs/toolkit';
 import isEqual from 'lodash/isEqual';
 import { VectorLike } from '../Interfaces';
-import { scaleInto } from '../Util';
+import { getMinMax, scaleInto } from '../Util';
 import { Rectangle } from '../WebGL/Math/Rectangle';
-import { LabelContainer, SpatialModel } from './ModelSlice';
+import { LabelContainer, layoutAdapter, LayoutConfiguration, SpatialModel } from './ModelSlice';
+import { runCondenseLayout, runForceLayout } from '../Layouts/Layouts';
+import { scaleLinear } from 'd3-scale';
+import { RootState } from './Store';
 
 export type Selection = {
   global: number[];
   local: number[];
 }
 
+export const modelAdapter = createEntityAdapter<SpatialModel>();
+
 export interface ViewsState {
   history: SpatialModel[];
-  workspace: SpatialModel;
 
   hover: number[];
   localHover: number[];
@@ -24,6 +28,9 @@ export interface ViewsState {
   lines: number[];
   positions: VectorLike[];
 
+  color?: number[];
+  shape?: number[];
+
   filter: number[];
   filterLookup: Record<number, number>
 
@@ -31,10 +38,11 @@ export interface ViewsState {
   activeHistory: number;
 
   activeModel: EntityId;
+
+  models: EntityState<SpatialModel>
 }
 
 const initialState: ViewsState = {
-  workspace: undefined,
 
   hover: undefined,
   localHover: undefined,
@@ -53,6 +61,11 @@ const initialState: ViewsState = {
   activeHistory: -1,
 
   activeModel: undefined,
+
+  models: modelAdapter.getInitialState(),
+
+  shape: undefined,
+  color: undefined,
 };
 
 export const viewslice = createSlice({
@@ -74,17 +87,17 @@ export const viewslice = createSlice({
       state.activeModel = id;
     },
     swapView: (state, action: PayloadAction<{ id: EntityId }>) => {
-      const children = state.workspace.children;
+      const children = state.models;
       const swap = state.history.find((value) => value.id === action.payload.id);
-      state.workspace = { ...swap };
+
       state.activeHistory = state.history.indexOf(swap);
-      state.workspace.children = children;
+      state.models = children;
       state.selection = null;
       state.localSelection = null;
       state.hover = null;
       state.localHover = null;
 
-      state.positions = state.workspace.x.map((x, i) => ({ x, y: state.workspace.y[i] }))
+      state.positions = swap.x.map((x, i) => ({ x, y: swap.y[i] }))
 
       state.filter = swap.filter;
 
@@ -106,7 +119,7 @@ export const viewslice = createSlice({
       action: PayloadAction<{ id: EntityId; labels: LabelContainer[] }>
     ) => {
       const { id, labels } = action.payload;
-      const model = state.workspace.children.find((value) => value.id === id);
+      const model = state.models.entities[id];
 
       (labels ?? []).forEach((labelContainer) => {
         model.labels =
@@ -114,36 +127,8 @@ export const viewslice = createSlice({
         model.labels.push(labelContainer);
       })
     },
-    updateTrueEmbedding: (
-      state,
-      action: PayloadAction<{
-        id: EntityId;
-        x?: number[];
-        y?: number[];
-      }>
-    ) => {
-      const { id, x, y } = action.payload;
-      const model = state.workspace.children.find((value) => value.id === id);
-
-      if (x) {
-        model.filter.forEach((index, local) => {
-          state.workspace.x[index] = x[local];
-        });
-      }
-
-      if (y) {
-        model.filter.forEach((index, local) => {
-          state.workspace.y[index] = y[local];
-        });
-      }
-    },
     removeEmbedding: (state, action: PayloadAction<{ id: EntityId }>) => {
-      state.workspace.children.splice(
-        state.workspace.children.findIndex(
-          (value) => value.id === action.payload.id
-        ),
-        1
-      );
+      modelAdapter.removeOne(state.models, action.payload.id)
     },
     addView: (state, action: PayloadAction<{ filter: number[], localSelection: number[], positions: VectorLike[] }>) => {
       const { filter, localSelection, positions } = action.payload;
@@ -162,6 +147,7 @@ export const viewslice = createSlice({
         },
         x: normalizedPositions.map((value) => value.x),
         y: normalizedPositions.map((value) => value.y),
+        layoutConfigurations: layoutAdapter.getInitialState(),
       });
     },
     translateArea: (
@@ -169,7 +155,7 @@ export const viewslice = createSlice({
       action: PayloadAction<{ id: EntityId; x: number; y: number }>
     ) => {
       const { id, x, y } = action.payload;
-      const model = state.workspace.children.find((value) => value.id === id);
+      const model = state.models.entities[id];
 
       model.area.x += x;
       model.area.y += y;
@@ -184,7 +170,7 @@ export const viewslice = createSlice({
       action: PayloadAction<{ id: EntityId; width: number; height: number }>
     ) => {
       const { id, width, height } = action.payload;
-      const model = state.workspace.children.find((value) => value.id === id);
+      const model = state.models.entities[id];
 
       model.area.width = width;
       model.area.height = height;
@@ -233,29 +219,32 @@ export const viewslice = createSlice({
     ) => {
       const { colors, id } = action.payload;
 
-      const model = state.workspace.children.find((value) => value.id === id);
-      model.color = Array.from({ length: model.filter.length })
-        .map(() => [1, 0, 0, 1])
-        .flat();
+      const model = state.models.entities[id];
+      const color = state.color.slice(0);
 
       model.filter.forEach((index, j) => {
-        state.workspace.color[index * 4] = colors[j * 4 + 0];
-        state.workspace.color[index * 4 + 1] = colors[j * 4 + 1];
-        state.workspace.color[index * 4 + 2] = colors[j * 4 + 2];
-        state.workspace.color[index * 4 + 3] = colors[j * 4 + 3];
+        color[index * 4] = colors[j * 4 + 0];
+        color[index * 4 + 1] = colors[j * 4 + 1];
+        color[index * 4 + 2] = colors[j * 4 + 2];
+        color[index * 4 + 3] = colors[j * 4 + 3];
       });
+
+      state.color = color;
     },
     setShape: (
       state,
       action: PayloadAction<{ id: EntityId; shape: number[] }>
     ) => {
-      const { shape, id } = action.payload;
+      const { id } = action.payload;
 
-      const model = state.workspace.children.find((value) => value.id === id);
+      const model = state.models.entities[id];
+      const shape = state.shape.slice(0);
 
       model.filter.forEach((i, local) => {
-        state.workspace.shape[i] = shape[local];
+        shape[i] = action.payload.shape[local];
       });
+
+      state.shape = shape;
     },
     setLines: (state, action: PayloadAction<number[]>) => {
       state.lines = action.payload;
@@ -270,19 +259,83 @@ export const viewslice = createSlice({
     ) => {
       const { filter, area } = action.payload;
 
-      const Y = filter.map((i) => state.positions[i]);
-
       const subModel: SpatialModel = {
         id: nanoid(),
         filter,
         area: area.serialize(),
         children: [],
+        layoutConfigurations: layoutAdapter.getInitialState(),
       };
 
-      state.workspace.children.push(subModel);
+      state.activeModel = subModel.id;
+
+      modelAdapter.addOne(state.models, subModel);
     },
   },
 });
+
+export const setLayoutConfig = createAsyncThunk(
+  'layouts/set',
+  async ({ id, layoutConfig }: { id: EntityId; layoutConfig: LayoutConfiguration }, { dispatch, getState }) => {
+    const state = getState() as RootState;
+    const model = state.views.models.entities[id];
+
+    switch (layoutConfig.type) {
+      case 'numericalscale': {
+        const X = model.filter
+          .map((i) => state.data.rows[i])
+          .map((row) => row[layoutConfig.column]);
+
+        const domain = getMinMax(X);
+
+        let scale = scaleLinear().domain(domain).range([0, 1]);
+
+        const mapped = X.map((value) => scale(value));
+
+        const labels: LabelContainer = {
+          discriminator: 'scalelabels',
+          type: layoutConfig.channel,
+          labels: {
+            domain,
+            range: [0, 1],
+          },
+        };
+
+        const { Y } = await runForceLayout({
+          N: model.filter.length,
+          area: model.area,
+          axis: layoutConfig.channel,
+          Y_in: model.filter.map((i) => state.views.positions[i]),
+          X: mapped
+        });
+
+        dispatch(updateLabels({ id: model.id, labels: [labels] }));
+
+        dispatch(
+          updatePositionByFilter({ position: Y, filter: model.filter })
+        );
+        break;
+      }
+      case 'condense': {
+        console.log("condesne")
+        const { Y, labels } = await runCondenseLayout(
+          model.filter.length,
+          model.area,
+          layoutConfig.channel,
+          model.filter.map((i) => state.views.positions[i])
+        );
+
+        dispatch(updateLabels({
+          id: model.id, labels
+        }));
+        dispatch(
+          updatePositionByFilter({ position: Y, filter: model.filter })
+        );
+        break;
+      }
+    }
+  }
+);
 
 // Action creators are generated for each case reducer function
 export const {
@@ -296,7 +349,6 @@ export const {
   setSelection,
   setLines,
   addView,
-  updateTrueEmbedding,
   updateLabels,
   changeSize,
   swapView,

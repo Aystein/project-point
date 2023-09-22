@@ -72,11 +72,9 @@ export function runGroupLayout(
   area: IRectangle,
   feature: string,
   axis: 'x' | 'y',
-  xLayout: number[],
-  yLayout: number[]
 ) {
   return runLayout(
-    { X, area, feature, axis, xLayout, yLayout },
+    { X, area, feature, axis },
     new Worker(new URL('../Workers/group.worker.ts', import.meta.url), {
       type: 'module',
     })

@@ -11,19 +11,16 @@ import {
 } from '@mantine/core';
 import classes from './SideMenu.module.css';
 import { useAppSelector } from '../Store/hooks';
+import { ChannelPanel } from './LayoutPanels/XChannelPanel';
 
-export function LinearScalePanel() {
-  return <div>
-    test
-  </div>
-}
+
 
 export function SideMenu() {
-  const view = useAppSelector((state) =>
+  /**const view = useAppSelector((state) =>
     state.views.workspace?.children.find(
       (e) => e.id === state.views.activeModel
     )
-  );
+  );**/
 
   const data = [
     { label: 'X', value: 'x' },
@@ -34,6 +31,7 @@ export function SideMenu() {
   ];
 
   const [value, setValue] = React.useState(data[0].value);
+  
 
   return (
     <Paper
@@ -51,11 +49,12 @@ export function SideMenu() {
           label="Select channel"
         />
 
-        <Divider />
-
         <Tabs color="teal" value={value}>
-          <Tabs.Panel value={data[0].value}>
-            <LinearScalePanel />
+          <Tabs.Panel value="x">
+            <ChannelPanel channel='x' />
+          </Tabs.Panel>
+          <Tabs.Panel value="y">
+            <ChannelPanel channel='y' />
           </Tabs.Panel>
           <Tabs.Panel value={data[1].value}>hello2</Tabs.Panel>
         </Tabs>

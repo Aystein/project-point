@@ -7,7 +7,7 @@ import {
   nanoid,
 } from '@reduxjs/toolkit';
 import { Column, Row, dataReducer } from './DataSlice.';
-import viewReducer from './ViewSlice';
+import viewReducer, { modelAdapter } from './ViewSlice';
 import { datasetReducer } from './FilesSlice';
 import { DataType } from '../Interfaces';
 import isNumber from 'lodash/isNumber';
@@ -17,6 +17,7 @@ import { POINT_RADIUS } from '../Layouts/Globals';
 import { spread } from '../Util';
 import { Engine } from '../ts/engine/engine';
 import { parseCSV } from '../DataLoading/CSVLoader';
+import { layoutAdapter } from './ModelSlice';
 
 const combined = combineReducers({
   data: dataReducer,
@@ -130,18 +131,9 @@ const reducer = createReducer<RootState>(undefined, (builder) => {
 
     state.views.lines = null;
 
-    state.views.workspace = {
-      id: nanoid(),
-      children: [],
-      filter: Array.from({ length: rows.length }).map((_, i) => {
-        return i;
-      }),
-      area: null,
-      color: rows.map(() => [0.5, 0.5, 0.5, 1]).flat(),
-      shape: rows.map(() => 0),
-      x: state.views.positions.map((value) => spread(0.5, 0.5)),
-      y: state.views.positions.map((value) => spread(0.5, 0.5)),
-    };
+    state.views.models = modelAdapter.getInitialState();
+    state.views.color = rows.map(() => [0.5, 0.5, 0.5, 1]).flat();
+    state.views.shape = rows.map(() => 0);
   });
 
   builder.addDefaultCase(combined);

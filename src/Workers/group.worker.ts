@@ -20,14 +20,12 @@ interface Props {
     feature: string;
     type: string;
     axis: 'x' | 'y';
-    xLayout: number[];
-    yLayout: number[];
   };
 }
 
 
 self.onmessage = ({
-  data: { X, area, type, feature, yLayout },
+  data: { X, area, type, feature },
 }: Props) => {
   if (type !== 'init') {
     return;

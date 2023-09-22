@@ -46,7 +46,6 @@ import {
   translateArea,
   updateLabels,
   updatePositionByFilter,
-  updateTrueEmbedding
 } from '../../../Store/ViewSlice';
 import { useAppSelector } from '../../../Store/hooks';
 import { getMinMax } from '../../../Util';
@@ -58,7 +57,7 @@ import { useMouseEvent } from './useMouseDrag';
 import classes from './BoxBehavior.module.css';
 
 
-export function BoxBehavior({ parentModel }: { parentModel: SpatialModel }) {
+export function BoxBehavior() {
   const { scaledXDomain, scaledYDomain } = useVisContext();
 
   const ref = React.useRef<HTMLDivElement>(null);
@@ -66,6 +65,7 @@ export function BoxBehavior({ parentModel }: { parentModel: SpatialModel }) {
   const dispatch = useDispatch();
 
   const positions = useAppSelector((state) => state.views.positions);
+  const models = useAppSelector((state) => Object.values(state.views.models.entities))
 
   // register to mousedrag...
   useMouseEvent(
@@ -163,9 +163,9 @@ export function BoxBehavior({ parentModel }: { parentModel: SpatialModel }) {
         />
       ) : null}
 
-      {parentModel?.children.map((model) => {
+      {models.map((model) => {
         return (
-          <SingleBox key={model.id} parentModel={model} />
+          <SingleBox key={model.id} model={model} />
         );
       })}
     </div>
@@ -173,17 +173,17 @@ export function BoxBehavior({ parentModel }: { parentModel: SpatialModel }) {
 }
 
 function SingleBox({
-  parentModel,
+  model,
 }: {
-  parentModel: SpatialModel;
+  model: SpatialModel;
 }) {
   const { scaledXDomain, scaledYDomain, world } = useVisContext();
   const dispatch = useDispatch();
   const data = useAppSelector((state) => state.data.rows);
-  const xLayout = useAppSelector((state) => state.views.workspace.x);
-  const yLayout = useAppSelector((state) => state.views.workspace.y);
   const positions = useAppSelector((state) => state.views.positions);
-  const area = parentModel.area;
+  const area = model.area;
+
+  // const layoutConfigurations = useAppSelector();
 
   const [drag, setDrag] = React.useState<{
     direction: 'x' | 'y' | 'xy';
@@ -192,24 +192,24 @@ function SingleBox({
 
   const handleCondense = async (axis: 'x' | 'y' | 'xy') => {
     const { Y, labels } = await runCondenseLayout(
-      parentModel.filter.length,
+      model.filter.length,
       area,
       axis,
-      parentModel.filter.map((i) => positions[i])
+      model.filter.map((i) => positions[i])
     );
 
     dispatch(updateLabels({
-      id: parentModel.id, labels
+      id: model.id, labels
     }));
     // dispatch(updateTrueEmbedding({ id: parentModel.id, x, y }));
     dispatch(
-      updatePositionByFilter({ position: Y, filter: parentModel.filter })
+      updatePositionByFilter({ position: Y, filter: model.filter })
     );
   };
 
   const handleColor = () => {
     const onFinish = (feature: string, type: string) => {
-      const filteredRows = parentModel.filter
+      const filteredRows = model.filter
         .map((i) => data[i])
         .map((row) => row[feature]);
       const extent = getMinMax(filteredRows);
@@ -226,7 +226,7 @@ function SingleBox({
 
       dispatch(
         setColor({
-          id: parentModel.id,
+          id: model.id,
           colors: mappedColors
             .map((hex) => {
               let red = parseInt(hex.substring(1, 3), 16);
@@ -251,7 +251,7 @@ function SingleBox({
 
   const handleShape = () => {
     const onFinish = (feature: string) => {
-      const filteredRows = parentModel.filter.map((i) => data[i]);
+      const filteredRows = model.filter.map((i) => data[i]);
 
       let shape = scaleOrdinal([0, 1, 2, 3]).domain(
         filteredRows.map((row) => row[feature])
@@ -261,7 +261,7 @@ function SingleBox({
 
       dispatch(
         setShape({
-          id: parentModel.id,
+          id: model.id,
           shape: mappedColors,
         })
       );
@@ -278,7 +278,7 @@ function SingleBox({
 
   const handleLine = () => {
     const onFinish = (feature: string) => {
-      const filteredRows = parentModel.filter.map((i) => data[i]);
+      const filteredRows = model.filter.map((i) => data[i]);
       const grouped = groupBy(filteredRows, (value) => value[feature]);
       const lines = new Array<number>();
 
@@ -305,7 +305,7 @@ function SingleBox({
 
   const handleSpaghettiBy = async (axis: 'x' | 'y') => {
     const onFinish = async (groups: string[], secondary: string) => {
-      const X = parentModel.filter.map((i) => data[i]);
+      const X = model.filter.map((i) => data[i]);
 
       const { Y, x, y, labels } = await runSpaghettiLayout(
         X,
@@ -313,12 +313,12 @@ function SingleBox({
         groups,
         secondary,
         axis,
-        parentModel.filter.map((i) => positions[i]),
+        model.filter.map((i) => positions[i]),
       );
 
-      dispatch(updateLabels({ id: parentModel.id, labels }));
+      dispatch(updateLabels({ id: model.id, labels }));
       dispatch(
-        updatePositionByFilter({ position: Y, filter: parentModel.filter })
+        updatePositionByFilter({ position: Y, filter: model.filter })
       );
     };
 
@@ -333,21 +333,18 @@ function SingleBox({
 
   const handleGroupBy = async (axis: 'x' | 'y') => {
     const onFinish = async (groups) => {
-      const X = parentModel.filter.map((i) => data[i]);
-      console.log(groups);
+      const X = model.filter.map((i) => data[i]);
+
       const { Y, x, y, labels } = await runGroupLayout(
         X,
         area,
         groups,
         axis,
-        parentModel.filter.map((index) => xLayout[index]),
-        parentModel.filter.map((index) => yLayout[index])
       );
 
-      dispatch(updateLabels({ id: parentModel.id, labels }));
-      dispatch(updateTrueEmbedding({ id: parentModel.id, x, y }));
+      dispatch(updateLabels({ id: model.id, labels }));
       dispatch(
-        updatePositionByFilter({ position: Y, filter: parentModel.filter })
+        updatePositionByFilter({ position: Y, filter: model.filter })
       );
     };
 
@@ -362,7 +359,7 @@ function SingleBox({
 
   const handleLinearScale = async (axis: 'x' | 'y') => {
     const onFinish = async (feature: string) => {
-      const X = parentModel.filter
+      const X = model.filter
         .map((i) => data[i])
         .map((row) => row[feature]);
 
@@ -382,16 +379,16 @@ function SingleBox({
       };
 
       const { Y } = await runForceLayout({
-        N: parentModel.filter.length,
+        N: model.filter.length,
         area,
         axis,
-        Y_in: parentModel.filter.map((i) => positions[i]),
+        Y_in: model.filter.map((i) => positions[i]),
         X: mapped
       });
 
-      dispatch(updateLabels({ id: parentModel.id, labels: [labels] }));
+      dispatch(updateLabels({ id: model.id, labels: [labels] }));
       dispatch(
-        updatePositionByFilter({ position: Y, filter: parentModel.filter })
+        updatePositionByFilter({ position: Y, filter: model.filter })
       );
     };
 
@@ -407,6 +404,7 @@ function SingleBox({
 
   return (
     <Group
+      onClick={() => { console.log("test"); dispatch(activateModel({ id: model.id })) }}
       style={{
         position: 'absolute',
         left: scaledXDomain(area.x),
@@ -415,6 +413,7 @@ function SingleBox({
         height: scaledYDomain(area.y + area.height) - scaledYDomain(area.y),
         background: '#f8f9fa',
       }}
+      data-interaction
     >
       <Menu shadow="md" width={200} position='left' withArrow>
         <Menu.Target>
@@ -448,14 +447,14 @@ function SingleBox({
                 title: 't-SNE embedding',
                 size: '70%',
                 innerProps: {
-                  id: parentModel.id,
+                  id: model.id,
                   axis: 'y',
                   onFinish: ({ Y, labels }) => {
-                    dispatch(updateLabels({ id: parentModel.id, labels }));
+                    dispatch(updateLabels({ id: model.id, labels }));
                     dispatch(
                       updatePositionByFilter({
                         position: Y,
-                        filter: parentModel.filter,
+                        filter: model.filter,
                       })
                     );
                   },
@@ -499,14 +498,14 @@ function SingleBox({
                 title: 't-SNE embedding',
                 size: '70%',
                 innerProps: {
-                  id: parentModel.id,
+                  id: model.id,
                   axis: 'x',
                   onFinish: ({ Y, labels }) => {
-                    dispatch(updateLabels({ id: parentModel.id, labels }));
+                    dispatch(updateLabels({ id: model.id, labels }));
                     dispatch(
                       updatePositionByFilter({
                         position: Y,
-                        filter: parentModel.filter,
+                        filter: model.filter,
                       })
                     );
                   },
@@ -524,14 +523,14 @@ function SingleBox({
         onMove={(movement) => {
           dispatch(
             translateArea({
-              id: parentModel.id,
+              id: model.id,
               x: world(movement.x),
               y: world(movement.y),
             })
           );
         }}
         setDrag={(position) => {
-          dispatch(activateModel({ id: parentModel.id }))
+          dispatch(activateModel({ id: model.id }))
           setDrag(position ? { position, direction: 'xy' } : null);
         }}
         drag={drag?.direction === 'xy' ? drag.position : null}
@@ -546,8 +545,8 @@ function SingleBox({
         icon={<IconArrowsMove />}
       />
 
-      <DragCoverHorizontal parentModel={parentModel} />
-      <DragCoverVertical parentModel={parentModel} />
+      <DragCoverHorizontal parentModel={model} />
+      <DragCoverVertical parentModel={model} />
 
       <Group
         style={{
@@ -578,14 +577,14 @@ function SingleBox({
                     title: 't-SNE embedding',
                     size: '70%',
                     innerProps: {
-                      id: parentModel.id,
+                      id: model.id,
                       axis: 'xy',
                       onFinish: ({ Y, labels }) => {
-                        dispatch(updateLabels({ id: parentModel.id, labels }));
+                        dispatch(updateLabels({ id: model.id, labels }));
                         dispatch(
                           updatePositionByFilter({
                             position: Y,
-                            filter: parentModel.filter,
+                            filter: model.filter,
                           })
                         );
                       },
@@ -619,7 +618,7 @@ function SingleBox({
             event.stopPropagation();
           }}
           onClick={(event) => {
-            dispatch(removeEmbedding({ id: parentModel.id }));
+            dispatch(removeEmbedding({ id: model.id }));
           }}
         >
           <IconX />
@@ -628,7 +627,7 @@ function SingleBox({
 
       </Group>
 
-      <LabelsOverlay labels={parentModel.labels} />
+      <LabelsOverlay labels={model.labels} />
     </Group>
   );
 }
