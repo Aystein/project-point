@@ -68,12 +68,12 @@ fn main(in: ComputeIn) {
     }
 
     // upper bound
-    let upperBoundPenetration = particle.position - uniforms.upperBound;
+    let upperBoundPenetration = particle.position - particle.bounds.zw;
     let upperBoundCheck = step(vec2<f32>(0), upperBoundPenetration); // 1 if out of bounds, 0 if in bounds
     particle.acceleration -= upperBoundCheck * (2.0 * upperBoundPenetration) / uniforms.dt;
 
     // lower bound
-    let lowerBoundPenetration = uniforms.lowerBound - particle.position;
+    let lowerBoundPenetration = particle.bounds.xy - particle.position;
     let lowerBoundCheck = step(vec2<f32>(0), lowerBoundPenetration); // 1 if out of bounds, 0 if in bounds
     particle.acceleration += lowerBoundCheck * (2.0 * lowerBoundPenetration) / uniforms.dt;
 

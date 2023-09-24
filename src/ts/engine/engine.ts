@@ -7,6 +7,7 @@ import { SetPositions } from "./simulation/SetPositions";
 import { Acceleration } from "./simulation/acceleration";
 import { Initialization } from "./simulation/initialization";
 import { Integration } from "./simulation/integration";
+import { SetBounds } from "./simulation/SetBounds";
 
 type Data = {
     spheresRadius: number;
@@ -42,6 +43,7 @@ class Engine {
         { name: "index", type: WebGPU.Types.u32 },
         { name: "force", type: WebGPU.Types.vec2F32 },
         { name: "selected", type: WebGPU.Types.u32 },
+        { name: "bounds", type: WebGPU.Types.vec4F32 }
     ]);
 
     private readonly device: GPUDevice;
@@ -85,6 +87,8 @@ class Engine {
     private needsMapXY = false;
 
     public hover: Hover;
+
+    private bounds?: number[];
 
     public constructor(device: GPUDevice, public N: number, data: Data) {
         this.device = device;
@@ -169,7 +173,6 @@ class Engine {
         }
 
         if (this.needsForceUpdate) {
-            const t0 = performance.now()
             new SetPositions(this.device, {
                 particlesPositions: Array.from({ length: this.N }).map((_, i) => ([this.x[i], this.y[i]])),
                 particlesBufferData: {
@@ -178,9 +181,21 @@ class Engine {
                     particlesStructType: Engine.particleStructType,
                 },
             }).compute(commandEncoder);
-            const t1 = performance.now()
 
             this.needsForceUpdate = false;
+        }
+
+        if (this.bounds) {
+            new SetBounds(this.device, {
+                bounds: this.bounds,
+                particlesBufferData: {
+                    particlesBuffer: this.particlesBuffer,
+                    particlesCount: this.N,
+                    particlesStructType: Engine.particleStructType,
+                },
+            }).compute(commandEncoder);
+
+            this.bounds = undefined;
         }
 
         this.indexIfNeeded(commandEncoder);
@@ -201,6 +216,10 @@ class Engine {
         this.x = x;
         this.y = y;
         this.needsForceUpdate = true;
+    }
+
+    public setBounds(bounds: number[]) {
+        this.bounds = bounds;
     }
 
     public reinitialize(): void {

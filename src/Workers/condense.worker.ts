@@ -1,7 +1,7 @@
 /* eslint-disable no-restricted-globals */
 import { IRectangle } from '../WebGL/Math/Rectangle';
 import { forceNormalizationNew, scaleToWorld } from '../Layouts/ForceUtil';
-import { LabelContainer } from '../Store/ModelSlice';
+import { LabelContainer } from '../Store/interfaces';
 import { VectorLike } from '../Interfaces';
 
 interface Props {

@@ -4,7 +4,7 @@ import * as WebGPU from "../../webgpu-utils/webgpu-utils";
 import { ParticlesBufferData } from "../engine";
 
 type Data = {
-    particlesPositions: ReadonlyArray<glMatrix.ReadonlyVec2>;
+    bounds: number[];
     particlesBufferData: ParticlesBufferData;
 };
 
@@ -14,11 +14,17 @@ type ResetResult = {
     bindgroup: GPUBindGroup;
 };
 
-export class SetPositions {
+export class SetBounds {
     private static readonly WORKGROUP_SIZE: number = 256;
 
-    private static readonly setForceStructType: WebGPU.Types.StructType = new WebGPU.Types.StructType("BoundsPosition", [
-        { name: "force", type: WebGPU.Types.vec4F32 },
+    public static readonly PARTICLE_WEIGHT_WATER: number = 1;
+
+    public static readonly PARTICLE_WEIGHT_THRESHOLD: number = 10;
+
+    public static readonly PARTICLE_WEIGHT_OBSTACLE: number = 100000;
+
+    private static readonly setForceStructType: WebGPU.Types.StructType = new WebGPU.Types.StructType("ForcePosition", [
+        { name: "force", type: WebGPU.Types.vec2F32 },
     ]);
 
     private readonly device: GPUDevice;
@@ -43,11 +49,11 @@ export class SetPositions {
             compute: {
                 module: WebGPU.ShaderModule.create(device, {
                     code: ShaderSources.Engine.Simulation.SetPositions,
-                    structs: [data.particlesBufferData.particlesStructType, this.uniforms, SetPositions.setForceStructType],
+                    structs: [data.particlesBufferData.particlesStructType, this.uniforms, SetBounds.setForceStructType],
                 }),
                 entryPoint: "main",
                 constants: {
-                    workgroupSize: SetPositions.WORKGROUP_SIZE,
+                    workgroupSize: SetBounds.WORKGROUP_SIZE,
                 },
             },
         });
@@ -66,25 +72,25 @@ export class SetPositions {
     }
 
     private applyReset(data: Data): ResetResult {
-        if (data.particlesBufferData.particlesCount !== (data.particlesPositions.length)) {
+        if (data.particlesBufferData.particlesCount !== (data.bounds.length)) {
             throw new Error();
         }
 
-        const workgroupsCount = Math.ceil(data.particlesBufferData.particlesCount / SetPositions.WORKGROUP_SIZE);
+        const workgroupsCount = Math.ceil(data.particlesBufferData.particlesCount / SetBounds.WORKGROUP_SIZE);
 
         this.uniforms.setValueFromName("particlesCount", data.particlesBufferData.particlesCount);
         this.uniforms.uploadToGPU();
 
         const positionsBuffer = new WebGPU.Buffer(this.device, {
-            size: SetPositions.setForceStructType.size * (data.particlesPositions.length),
+            size: SetBounds.setForceStructType.size * (data.bounds.length),
             usage: GPUBufferUsage.STORAGE,
         });
 
         const positionsData = positionsBuffer.getMappedRange();
 
-        data.particlesPositions.forEach((position: glMatrix.ReadonlyVec2, index: number) => {
-            const offset = index * SetPositions.setForceStructType.size;
-            SetPositions.setForceStructType.setValue(positionsData, offset, {
+        data.bounds.forEach((position: number, index: number) => {
+            const offset = index * SetBounds.setForceStructType.size;
+            SetBounds.setForceStructType.setValue(positionsData, offset, {
                 force: position,
             });
         });

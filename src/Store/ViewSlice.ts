@@ -4,10 +4,13 @@ import isEqual from 'lodash/isEqual';
 import { VectorLike } from '../Interfaces';
 import { getMinMax, scaleInto } from '../Util';
 import { Rectangle } from '../WebGL/Math/Rectangle';
-import { LabelContainer, layoutAdapter, LayoutConfiguration, SpatialModel } from './ModelSlice';
-import { runCondenseLayout, runForceLayout } from '../Layouts/Layouts';
-import { scaleLinear } from 'd3-scale';
+import { LabelContainer, layoutAdapter, LayoutConfiguration, SpatialModel } from './interfaces';
+import { runCondenseLayout, runForceLayout, runGroupLayout, runUMAPLayout } from '../Layouts/Layouts';
+import { scaleLinear, scaleOrdinal } from 'd3-scale';
 import { RootState } from './Store';
+import { schemeCategory10 } from 'd3-scale-chromatic';
+import { RGBColor, color } from 'd3-color';
+import { encode } from '../DataLoading/Encode';
 
 export type Selection = {
   global: number[];
@@ -30,6 +33,8 @@ export interface ViewsState {
 
   color?: number[];
   shape?: number[];
+
+  bounds: number[];
 
   filter: number[];
   filterLookup: Record<number, number>
@@ -66,6 +71,8 @@ const initialState: ViewsState = {
 
   shape: undefined,
   color: undefined,
+
+  bounds: undefined,
 };
 
 export const viewslice = createSlice({
@@ -220,16 +227,13 @@ export const viewslice = createSlice({
       const { colors, id } = action.payload;
 
       const model = state.models.entities[id];
-      const color = state.color.slice(0);
+      const colorArr = state.color.slice(0);
 
       model.filter.forEach((index, j) => {
-        color[index * 4] = colors[j * 4 + 0];
-        color[index * 4 + 1] = colors[j * 4 + 1];
-        color[index * 4 + 2] = colors[j * 4 + 2];
-        color[index * 4 + 3] = colors[j * 4 + 3];
+        colorArr[index] = colors[j];
       });
 
-      state.color = color;
+      state.color = colorArr;
     },
     setShape: (
       state,
@@ -271,67 +275,153 @@ export const viewslice = createSlice({
 
       modelAdapter.addOne(state.models, subModel);
     },
+    upsertLayoutConfig: (state, action: PayloadAction<{ id: EntityId, layoutConfig: LayoutConfiguration }>) => {
+      const { id, layoutConfig } = action.payload;
+
+      const model = state.models.entities[id];
+      layoutAdapter.upsertOne(model.layoutConfigurations, layoutConfig)
+    },
+    removeLayoutConfig: (state, action: PayloadAction<{ channel: string }>) => {
+      const activeModel = state.models.entities[state.activeModel];
+
+      layoutAdapter.removeOne(activeModel.layoutConfigurations, action.payload.channel);
+    }
   },
 });
 
+export const rerunLayouts = createAsyncThunk(
+  'layouts/rerun',
+  async ({ id }: { id: EntityId }, { dispatch, getState }) => {
+
+  }
+)
+
 export const setLayoutConfig = createAsyncThunk(
   'layouts/set',
-  async ({ id, layoutConfig }: { id: EntityId; layoutConfig: LayoutConfiguration }, { dispatch, getState }) => {
+  async ({ id, layoutConfig }: { id: EntityId; layoutConfig: LayoutConfiguration }, { dispatch, getState, requestId }) => {
     const state = getState() as RootState;
     const model = state.views.models.entities[id];
+    const modelRows = model.filter
+      .map((i) => state.data.rows[i]);
 
-    switch (layoutConfig.type) {
-      case 'numericalscale': {
-        const X = model.filter
-          .map((i) => state.data.rows[i])
-          .map((row) => row[layoutConfig.column]);
+    dispatch(upsertLayoutConfig({ id, layoutConfig }))
 
-        const domain = getMinMax(X);
+    if (layoutConfig.channel === 'x' || layoutConfig.channel === 'y') {
+      switch (layoutConfig.type) {
+        case 'numericalscale': {
+          const X = model.filter
+            .map((i) => state.data.rows[i])
+            .map((row) => row[layoutConfig.column]);
 
-        let scale = scaleLinear().domain(domain).range([0, 1]);
+          const domain = getMinMax(X);
 
-        const mapped = X.map((value) => scale(value));
+          let scale = scaleLinear().domain(domain).range([0, 1]);
 
-        const labels: LabelContainer = {
-          discriminator: 'scalelabels',
-          type: layoutConfig.channel,
-          labels: {
-            domain,
-            range: [0, 1],
-          },
-        };
+          const mapped = X.map((value) => scale(value));
 
-        const { Y } = await runForceLayout({
-          N: model.filter.length,
-          area: model.area,
-          axis: layoutConfig.channel,
-          Y_in: model.filter.map((i) => state.views.positions[i]),
-          X: mapped
-        });
+          const labels: LabelContainer = {
+            discriminator: 'scalelabels',
+            type: layoutConfig.channel,
+            labels: {
+              domain,
+              range: [0, 1],
+            },
+          };
 
-        dispatch(updateLabels({ id: model.id, labels: [labels] }));
+          const { Y } = await runForceLayout({
+            N: model.filter.length,
+            area: model.area,
+            axis: layoutConfig.channel,
+            Y_in: model.filter.map((i) => state.views.positions[i]),
+            X: mapped
+          });
 
-        dispatch(
-          updatePositionByFilter({ position: Y, filter: model.filter })
-        );
-        break;
+          dispatch(updateLabels({ id: model.id, labels: [labels] }));
+
+          dispatch(
+            updatePositionByFilter({ position: Y, filter: model.filter })
+          );
+          break;
+        }
+        case 'condense': {
+          const { Y, labels } = await runCondenseLayout(
+            model.filter.length,
+            model.area,
+            layoutConfig.channel,
+            model.filter.map((i) => state.views.positions[i])
+          );
+
+          dispatch(updateLabels({
+            id: model.id, labels
+          }));
+          dispatch(
+            updatePositionByFilter({ position: Y, filter: model.filter })
+          );
+          break;
+        }
       }
-      case 'condense': {
-        console.log("condesne")
-        const { Y, labels } = await runCondenseLayout(
-          model.filter.length,
-          model.area,
-          layoutConfig.channel,
-          model.filter.map((i) => state.views.positions[i])
-        );
+    } else if (layoutConfig.channel === 'color') {
+      switch (layoutConfig.type) {
+        case 'setcolor': {
+          const filteredRows = modelRows
+            .map((row) => row[layoutConfig.column]);
+          const extent = getMinMax(filteredRows);
 
-        dispatch(updateLabels({
-          id: model.id, labels
-        }));
-        dispatch(
-          updatePositionByFilter({ position: Y, filter: model.filter })
-        );
-        break;
+          let colorScale =
+            layoutConfig.featureType === 'categorical'
+              ? scaleOrdinal(schemeCategory10).domain(filteredRows)
+              : scaleLinear<string>().domain(extent).range(['red', 'green']);
+
+          const mappedColors = filteredRows.map((row) => {
+            const value =color(colorScale(row)) as RGBColor
+            return (value.r << 24) | (value.g << 16) | (value.b << 8) | Math.floor(value.opacity * 255)
+          });
+
+          dispatch(
+            setColor({
+              id: model.id,
+              colors: mappedColors
+                .map((hex) => {
+                  return hex;
+                })
+            })
+          );
+          break;
+        }
+      }
+    } else if (layoutConfig.channel === 'xy') {
+      switch (layoutConfig.type) {
+        case 'group': {
+          const { Y, x, y, labels } = await runGroupLayout(
+            modelRows,
+            model.area,
+            layoutConfig.column,
+            layoutConfig.strategy,
+          );
+
+          dispatch(updateLabels({ id: model.id, labels }));
+          dispatch(
+            updatePositionByFilter({ position: Y, filter: model.filter })
+          );
+
+          break;
+        }
+        case 'umap': {
+          const { X, N, D } = encode(state.data, model.filter, layoutConfig.columns);
+
+          const { Y, labels } = await runUMAPLayout({
+            X,
+            N,
+            D,
+            area: model.area,
+            axis: 'xy',
+            Y_in: model.filter.map((i) => state.views.positions[i]),
+          });
+
+          dispatch(
+            updatePositionByFilter({ position: Y, filter: model.filter })
+          );
+        }
       }
     }
   }
@@ -353,7 +443,9 @@ export const {
   changeSize,
   swapView,
   deleteHistory,
-  activateModel
+  activateModel,
+  upsertLayoutConfig,
+  removeLayoutConfig
 } = viewslice.actions;
 
 export default viewslice.reducer;

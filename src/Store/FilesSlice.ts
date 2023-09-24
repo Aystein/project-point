@@ -81,8 +81,7 @@ export const storeDataset = createAsyncThunk(
   async (
     {
       pickerFile,
-      meta,
-    }: { pickerFile: File; meta: { rows: number; columns: number } },
+    }: { pickerFile: File; },
     { dispatch, getState }
   ) => {
     const state = getState() as RootState;

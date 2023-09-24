@@ -1,18 +1,18 @@
-import { Select, Tabs } from '@mantine/core';
+import { Select, Stack, Tabs } from '@mantine/core';
 import * as React from 'react';
-import { useAppDispatch, useAppSelector } from '../../Store/hooks';
-import { Selectors, selectActiveModel } from '../../Store/Selectors';
 import { DataType } from '../../Interfaces';
+import { LayoutConfiguration, LinearScaleConfiguration } from '../../Store/interfaces';
+import { Selectors } from '../../Store/Selectors';
 import { setLayoutConfig } from '../../Store/ViewSlice';
-import { LayoutConfiguration } from '../../Store/ModelSlice';
+import { useAppDispatch, useAppSelector } from '../../Store/hooks';
 import { CondensePanel } from './CondensePanel';
 
-function NumericalScalePanel({ channel }: { channel: 'x' | 'y' }) {
+function NumericalScalePanel({ channel, defaultValue }: { channel: 'x' | 'y', defaultValue: LinearScaleConfiguration }) {
     const dispatch = useAppDispatch();
     const data = useAppSelector(Selectors.data);
     const id = useAppSelector((state) => state.views.activeModel);
 
-    const [column, setColumn] = React.useState<string>();
+    const [column, setColumn] = React.useState<string>(defaultValue?.column);
 
     const options = React.useMemo(() => {
         return data.columns
@@ -22,7 +22,7 @@ function NumericalScalePanel({ channel }: { channel: 'x' | 'y' }) {
 
     const handleChange = (value: string) => {
         setColumn(value);
-        console.log(value);
+
         const layoutConfig: LayoutConfiguration = {
             channel,
             type: 'numericalscale',
@@ -42,9 +42,7 @@ function NumericalScalePanel({ channel }: { channel: 'x' | 'y' }) {
     />
 }
 
-export function ChannelPanel({ channel }: { channel: 'x' | 'y' }) {
-    const activeModel = useAppSelector(selectActiveModel);
-    
+export function AxisPanel({ channel, defaultValue }: { channel: 'x' | 'y', defaultValue: LayoutConfiguration }) {
     const data = React.useMemo(() => {
         return [
             { label: 'Numerical scale', value: 'numericalscale' },
@@ -52,18 +50,18 @@ export function ChannelPanel({ channel }: { channel: 'x' | 'y' }) {
         ]
     }, []);
 
-    const [value, setValue] = React.useState(data[0].value);
+    const [value, setValue] = React.useState(defaultValue?.type ?? data[0].value);
 
-    return <>
+    return <Stack gap="xs">
         <Select label="Select layout" data={data} value={value} onChange={setValue} />
 
         <Tabs value={value} keepMounted={false}>
             <Tabs.Panel value='numericalscale'>
-                <NumericalScalePanel channel={channel} />
+                <NumericalScalePanel channel={channel} defaultValue={defaultValue?.type === 'numericalscale' ? defaultValue : undefined} />
             </Tabs.Panel>
             <Tabs.Panel value='condense'>
-                <CondensePanel channel={channel} />
+                <CondensePanel channel={channel} defaultValue={defaultValue} />
             </Tabs.Panel>
         </Tabs>
-    </>
+    </Stack>
 }

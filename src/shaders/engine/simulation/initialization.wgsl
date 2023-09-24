@@ -26,6 +26,7 @@ fn main(in: ComputeIn) {
     particle.force = vec2f(2.5, 2.5);
     particle.index = particleId;
     particle.selected = 0;
+    particle.bounds = vec4f(0, 0, 20, 20);
 
     indexBuffer[particleId] = particleId;
 

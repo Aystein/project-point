@@ -7,34 +7,22 @@ import React from 'react';
 import DataGrid, { SelectColumn } from 'react-data-grid';
 import 'react-data-grid/lib/styles.css';
 import { useSelector } from 'react-redux';
-import { encode } from '../DataLoading/Encode';
-import { VectorLike } from '../Interfaces';
-import { runUMAPLayout } from '../Layouts/Layouts';
 import { Selectors } from '../Store/Selectors';
-import { useAppSelector } from '../Store/hooks';
-import { LabelContainer } from '../Store/interfaces';
 
-export function TSNEModal({
+export function UMAPModal({
   context,
   id,
   innerProps,
 }: ContextModalProps<{
   onFinish: ({
-    Y,
-    labels,
+    columns,
   }: {
-    Y: VectorLike[];
-    labels: LabelContainer[];
+    columns: string[]
   }) => void;
   id: EntityId;
   axis: 'x' | 'y' | 'xy';
 }>) {
   const data = useSelector(Selectors.data);
-  const model = useAppSelector((state) =>
-    state.views.models.entities[innerProps.id]
-  );
-
-  const positions = useAppSelector((state) => state.views.positions);
 
   const form = useForm({
     initialValues: {
@@ -66,19 +54,7 @@ export function TSNEModal({
   }));
 
   const run = async () => {
-    const result = Array.from(selectedRows).map((value) => rows[value].name);
-
-    const { X, N, D } = encode(data, model.filter, result);
-
-    const { Y, labels } = await runUMAPLayout({
-      X,
-      N,
-      D,
-      area: model.area,
-      axis: innerProps.axis,
-      Y_in: model.filter.map((i) => positions[i]),
-    });
-    innerProps.onFinish({ Y, labels });
+    innerProps.onFinish({ columns: Array.from(selectedRows).map((value) => rows[value].name) })
   };
 
   return (

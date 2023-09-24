@@ -47,9 +47,7 @@ export function DataTab() {
   };
 
   return (
-    <Flex direction={'column'} p="sm" gap="md" style={{ overflowY: 'auto' }}>
-      <Statistics />
-
+    <Flex direction={'column'} p="sm" gap="md" style={{ overflowY: 'auto' }} mah={600} maw={400}>
       <FileInput
         placeholder="Pick file"
         label="CSV Upload"
@@ -63,7 +61,7 @@ export function DataTab() {
           leftSection={<IconDatabase size="1rem" />}
           onClick={() => {
             dispatch(
-              storeDataset({ pickerFile, meta: { rows: 100, columns: 100 } })
+              storeDataset({ pickerFile })
             );
           }}
         >

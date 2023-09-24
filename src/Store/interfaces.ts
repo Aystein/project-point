@@ -1,5 +1,4 @@
 import { EntityId, EntityState, createEntityAdapter } from '@reduxjs/toolkit';
-import { Boundaries, VectorLike } from '../Interfaces';
 import { IRectangle } from '../WebGL/Math/Rectangle';
 
 interface BaseModel {
@@ -24,20 +23,50 @@ export type LabelContainer =
   };
 
 
-type LinearScaleConfiguration = {
+export type LinearScaleConfiguration = {
   channel: 'x' | 'y';
   type: 'numericalscale';
   column: string;
 }
 
-type CondenseConfiguration = {
+export type CondenseConfiguration = {
   channel: 'x' | 'y' | 'xy',
   type: 'condense'
 }
 
-export type LayoutConfiguration = LinearScaleConfiguration | CondenseConfiguration;
+export type ColorConfiguration = {
+  channel: 'color',
+  type: 'setcolor',
+  column: string,
+  featureType: 'categorical' | 'numerical'
+}
 
-export const layoutAdapter = createEntityAdapter<LayoutConfiguration>();
+export type LineConfiguration = {
+  channel: 'line',
+  type: 'setline',
+  column: string,
+}
+
+export type GroupConfiguration = {
+  channel: 'xy',
+  type: 'group',
+  column: string,
+  strategy: 'slice' | 'treemap'
+}
+
+export type UmapConfiguration = {
+  channel: 'xy' | 'x' | 'y',
+  type: 'umap',
+  columns: string[],
+  perplexity: number,
+  neighbors: number,
+}
+
+export type LayoutConfiguration = LinearScaleConfiguration | CondenseConfiguration | ColorConfiguration | GroupConfiguration | UmapConfiguration | LineConfiguration;
+
+export const layoutAdapter = createEntityAdapter<LayoutConfiguration>({
+  selectId: (model) => model.channel
+});
 
 export interface SpatialModel extends BaseModel {
   id: EntityId;

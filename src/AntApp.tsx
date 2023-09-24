@@ -1,6 +1,7 @@
 import {
   AppShell,
   Box,
+  Center,
   Tabs,
   useMantineColorScheme
 } from '@mantine/core';
@@ -11,7 +12,7 @@ import { DataTab } from './MainTabs/DataTab';
 import { HistoryTab } from './MainTabs/HistoryTab';
 import { SettingsTab } from './MainTabs/SettingsTab';
 import { initializeDatasets } from './Store/FilesSlice';
-import { useAppDispatch } from './Store/hooks';
+import { useAppDispatch, useAppSelector } from './Store/hooks';
 import { TopMenu } from './MainTabs/TopMenu';
 import { SideMenu } from './MainTabs/SideMenu';
 
@@ -65,7 +66,7 @@ import { SideMenu } from './MainTabs/SideMenu';
 export function AntApp() {
   const [active, setActive] = React.useState("dataset");
   const dispatch = useAppDispatch();
-  const colorScheme = useMantineColorScheme();
+  const dataId = useAppSelector((state) => state.data.id);
 
   React.useEffect(() => {
     dispatch(initializeDatasets());
@@ -88,13 +89,16 @@ export function AntApp() {
       })}
     >
       <AppShell.Main>
-        <Box style={{ position: 'absolute', top: 0, left: 300, right: 0, bottom: 0 }}>
+        <Box style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
           <TopMenu />
           <SideMenu />
-          <Main />
+          {
+            dataId ? <Main /> : <Center style={{ width: '100%', height: '100%' }}><DataTab /></Center>
+          }
+          
         </Box>
       </AppShell.Main>
-      <AppShell.Navbar>
+      {/**<AppShell.Navbar>
         <Tabs
           value={active}
           onChange={setActive}
@@ -123,7 +127,7 @@ export function AntApp() {
             <SettingsTab />
           </Tabs.Panel>
         </Tabs>
-      </AppShell.Navbar>
+        </AppShell.Navbar>**/}
     </AppShell>
   );
 }

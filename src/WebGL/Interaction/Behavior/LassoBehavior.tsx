@@ -3,6 +3,7 @@ import { useDispatch } from 'react-redux';
 import { VectorLike } from '../../../Interfaces';
 import { fillOperation } from '../../../Layouts/Layouts';
 import {
+  activateModel,
   setHover,
   setSelection,
   updatePositionByFilter,
@@ -63,6 +64,7 @@ export function LassoSelectionPlugin() {
   const [points, setPoints] = React.useState<[number, number][]>([]);
 
   const ref = React.useRef(null);
+  const activeTool = useAppSelector((state) => state.settings.activeTool)
 
   const selection = useAppSelector((state) => state.views.selection);
   const localSelection = useAppSelector((state) => state.views.localSelection);
@@ -70,9 +72,10 @@ export function LassoSelectionPlugin() {
   useMouseEvent(
     MOUSE_DOWN,
     (event) => {
-      if (event.button === 0 && !(event.altKey || event.ctrlKey || event.shiftKey)) {
+      if (event.button === 0 && activeTool === 'select') {
         setDrag({ x: event.offsetX, y: event.offsetY });
         dispatch(setHover([]));
+        dispatch(activateModel({ id: undefined }))
 
         return true;
       }
@@ -80,7 +83,7 @@ export function LassoSelectionPlugin() {
       return false;
     },
     COMMAND_PRIORITY_CRITICAL,
-    []
+    [activeTool]
   );
 
   const handleCondense = async (position: VectorLike) => {

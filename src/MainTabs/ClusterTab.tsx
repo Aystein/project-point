@@ -35,7 +35,7 @@ export function ClusterTab() {
 
   const handleClick = () => {
     dispatch(addCluster({
-      name: `Cluster ${i++}`,
+      name: `Cluster ${i += 1}`,
       indices: selection
     }))
   }

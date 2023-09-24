@@ -1,22 +1,56 @@
 import {
   ActionIcon,
   Box,
-  Card,
   Group,
-  Indicator,
   Menu,
   Paper,
   rem,
   Stack,
   Text,
+  useMantineTheme
 } from '@mantine/core';
+import { useHotkeys } from '@mantine/hooks';
+import { IconHandStop, IconMenu2, IconPointer, IconBoxMultiple } from '@tabler/icons-react';
+import { useAppDispatch, useAppSelector } from '../Store/hooks';
+import { setActiveTool } from '../Store/SettingsSlice';
 import classes from './TopMenu.module.css';
-import { IconHandStop } from '@tabler/icons-react';
-import { IconAdjustments } from '@tabler/icons-react';
-import { IconMenu2 } from '@tabler/icons-react';
-import { IconPointer } from '@tabler/icons-react';
+
+const tools = [
+  {
+    key: 'pan',
+    icon: <IconHandStop
+      style={{ width: '50%', height: '50%' }}
+      stroke={1}
+    />,
+    description: 'Click and hold the left mouse button to pan the visualization.'
+  },
+  {
+    key: 'select',
+    icon: <IconPointer
+      style={{ width: '50%', height: '50%' }}
+      stroke={1}
+    />,
+    description: 'Click and hold the left mouse button to select points.'
+  },
+  {
+    key: 'box',
+    icon: <IconBoxMultiple
+      style={{ width: '50%', height: '50%' }}
+      stroke={1}
+    />,
+    description: 'Click and hold the left mouse button to create a layout.'
+  }
+]
 
 export function TopMenu() {
+  const activeTool = useAppSelector((state) => state.settings.activeTool)
+  const theme = useMantineTheme();
+  const dispatch = useAppDispatch();
+
+  useHotkeys(tools.map((tool, i) => {
+    return [(i + 1).toString(), () => dispatch(setActiveTool(tool.key))]
+  }))
+
   return (
     <Box className={classes.button} style={{ pointerEvents: 'none' }}>
       <Stack>
@@ -36,6 +70,9 @@ export function TopMenu() {
           <Menu.Dropdown>
             <Menu.Item>Open CSV</Menu.Item>
           </Menu.Dropdown>
+          <Menu.Dropdown>
+            <Menu.Item>Open saved dataset</Menu.Item>
+          </Menu.Dropdown>
         </Menu>
       </Stack>
 
@@ -49,49 +86,29 @@ export function TopMenu() {
             style={{ pointerEvents: 'initial' }}
           >
             <Group gap={rem(4)}>
-              <ActionIcon variant="subtle" size={rem(40)} radius="md" color="dark">
-                <IconHandStop
-                  style={{ width: '50%', height: '50%' }}
-                  stroke={1}
-                />
-                <Text
-                  bottom={8}
-                  right={6}
-                  size="xs"
-                  c="gray"
-                  pos="absolute"
-                  style={{ transform: 'translateX(50%) translateY(50%)' }}
-                >
-                  1
-                </Text>
-              </ActionIcon>
-              <ActionIcon
-                variant="subtle"
-                size={rem(40)}
-                radius="md"
-                color="dark"
-              >
-                <IconPointer
-                  style={{ width: '50%', height: '50%' }}
-                  stroke={1}
-                />
-                <Text
-                  bottom={8}
-                  right={6}
-                  size="xs"
-                  c="gray"
-                  pos="absolute"
-                  style={{ transform: 'translateX(50%) translateY(50%)' }}
-                >
-                  2
-                </Text>
-              </ActionIcon>
+              {
+                tools.map((tool, i) => {
+                  return <ActionIcon onClick={() => dispatch(setActiveTool(tool.key))} key={tool.key} variant="subtle" size={rem(40)} radius="md" color="dark" bg={activeTool === tool.key ? theme.colors[theme.primaryColor][3] : undefined}>
+                    {tool.icon}
+                    <Text
+                      bottom={8}
+                      right={6}
+                      size="xs"
+                      c="gray"
+                      pos="absolute"
+                      style={{ transform: 'translateX(50%) translateY(50%)' }}
+                    >
+                      {i + 1}
+                    </Text>
+                  </ActionIcon>
+                })
+              }
             </Group>
           </Paper>
         </Group>
         <Group justify="center">
           <Text size="xs" c="gray">
-            To move the canvas, press the middle mouse button.
+            {tools.find((e) => e.key === activeTool).description}
           </Text>
         </Group>
       </Stack>

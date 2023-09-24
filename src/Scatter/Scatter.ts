@@ -134,7 +134,7 @@ export class Scatter {
     );
   }
 
-  setColor(data: Float32Array) {
+  setColor(data: Uint32Array) {
     const {
       device,
       buffers: { color },
@@ -336,7 +336,7 @@ export class Scatter {
     const colorBuffer = createYBuffer({
       device,
       layout: {
-        3: 'float32x4',
+        3: 'uint32',
       },
       n: this.N,
       usage:
@@ -394,8 +394,6 @@ export class Scatter {
       },
       multisample: { count: this.multisample },
     });
-
-
 
     this.buffers = {
       color: colorBuffer,

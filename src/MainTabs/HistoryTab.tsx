@@ -1,7 +1,7 @@
 import { AspectRatio, Button, Card, CloseButton, Group, ScrollArea, Stack, Text, rem, useMantineTheme } from '@mantine/core';
 import { EntityId } from '@reduxjs/toolkit';
 import * as React from 'react';
-import { SpatialModel } from '../Store/ModelSlice';
+import { SpatialModel } from '../Store/interfaces';
 import { addView, deleteHistory, swapView } from '../Store/ViewSlice';
 import { useAppDispatch, useAppSelector } from '../Store/hooks';
 import { Scatterplot } from '../WebGL/Scatter/Scatterplot';

@@ -12,13 +12,15 @@ import { store } from './Store/Store';
 import { SpaghettiModal } from './Modals/SpaghettiModal';
 import '@mantine/core/styles.css'
 import './globals.module.css';
+import { UMAPModal } from './Modals/UMAPModal';
 
 // document.addEventListener('contextmenu', event => event.preventDefault());
 
 const modals = {
   demonstration: TSNEModal,
   colorby: ColorByModal,
-  spaghetti: SpaghettiModal
+  spaghetti: SpaghettiModal,
+  umap: UMAPModal
 };
 
 declare module '@mantine/modals' {

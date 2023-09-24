@@ -96,7 +96,7 @@ export function Scatterplot({
   }, [interpolate, myRenderer]);
 
   useEffect(() => {
-    myRenderer?.scatter.setColor(new Float32Array(color));
+    myRenderer?.scatter.setColor(new Uint32Array(color));
   }, [color, myRenderer]);
 
   useEffect(() => {

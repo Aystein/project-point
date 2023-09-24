@@ -47,8 +47,6 @@ export function ColorByModal({
           label="Column"
           placeholder="Pick one"
           searchable
-          withinPortal
-          nothingFound="No options"
           data={options}
           {...form.getInputProps('feature')}
         />
@@ -56,8 +54,6 @@ export function ColorByModal({
         <Select
           label="Type"
           placeholder="Pick one"
-          withinPortal
-          nothingFound="No options"
           data={['categorical', 'numeric']}
           {...form.getInputProps('type')}
         />

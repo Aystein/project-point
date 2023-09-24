@@ -77,6 +77,7 @@ export function SimpleDragCover({
 
       {icon ? (
         <ActionIcon
+          variant="default"
           size="sm"
           style={style}
           onMouseDown={(event) => {

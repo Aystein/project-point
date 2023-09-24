@@ -7,7 +7,7 @@ import { VectorLike } from '../Interfaces';
 import {
   forceNormalizationNew,
 } from '../Layouts/ForceUtil';
-import { LabelContainer } from '../Store/ModelSlice';
+import { LabelContainer } from '../Store/interfaces';
 import { IRectangle } from '../WebGL/Math/Rectangle';
 import mapValues from 'lodash/mapValues';
 import { nanoid } from '@reduxjs/toolkit';

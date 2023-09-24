@@ -1,5 +1,5 @@
 import { scaleLinear } from 'd3-scale';
-import { LabelContainer } from '../../../Store/ModelSlice';
+import { LabelContainer } from '../../../Store/interfaces';
 
 export function LabelTick({
   content,

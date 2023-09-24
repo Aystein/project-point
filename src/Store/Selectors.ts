@@ -15,7 +15,14 @@ export const selectModelById = (entityId: number) => {
   );
 };
 
+const activeModel = (state: RootState) => state.views.models.entities[state.views.activeModel];
+
 export const selectActiveModel = createSelector(
   (state: RootState) => state.views,
   (views) => views.models.entities[views.activeModel],
 );
+
+export const selectChannelTypes = createSelector(
+  activeModel,
+  (model) => model ? Object.values(model.layoutConfigurations.entities).map((config) => config.channel) : []
+)

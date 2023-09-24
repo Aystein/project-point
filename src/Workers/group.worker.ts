@@ -6,12 +6,13 @@ import { VectorLike } from '../Interfaces';
 import {
   forceNormalizationNew
 } from '../Layouts/ForceUtil';
-import { LabelContainer } from '../Store/ModelSlice';
+import { LabelContainer } from '../Store/interfaces';
 import { IRectangle } from '../WebGL/Math/Rectangle';
-import { stratify, treemap, treemapSquarify } from 'd3-hierarchy';
+import { RatioSquarifyTilingFactory, stratify, treemap, treemapSlice, treemapSquarify } from 'd3-hierarchy';
 import { nanoid } from '@reduxjs/toolkit';
 import { fillRect } from './util';
 import { POINT_RADIUS } from '../Layouts/Globals';
+import { Stream } from 'stream';
 
 interface Props {
   data: {
@@ -19,13 +20,13 @@ interface Props {
     area: IRectangle;
     feature: string;
     type: string;
-    axis: 'x' | 'y';
+    strategy: 'slice' | 'treemap';
   };
 }
 
 
 self.onmessage = ({
-  data: { X, area, type, feature },
+  data: { X, area, type, feature, strategy },
 }: Props) => {
   if (type !== 'init') {
     return;
@@ -65,10 +66,10 @@ self.onmessage = ({
     });
   }
 
+  let algorithm = strategy === 'slice' ? treemapSlice : treemapSquarify;
   
   const root = stratify<{ id, parent? }>().id((d) => d.id).parentId((d) => d.parent)(data).count();
-  const map = treemap().tile(treemapSquarify).padding(POINT_RADIUS * 3).size([area.width, area.height])(root);
-  console.log(map);
+  const map = treemap().tile(algorithm).padding(POINT_RADIUS * 3).size([area.width, area.height])(root);
 
   for (const key of keys(groups)) {
     const group = groups[key];
