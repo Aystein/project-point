@@ -9,6 +9,7 @@ import ResetCells from "../shaders/engine/indexing/reset-cells.wgsl?raw";
 import Acceleration from "../shaders/engine/simulation/acceleration.wgsl?raw";
 import Initialization from "../shaders/engine/simulation/initialization.wgsl?raw";
 import SetPositions from "../shaders/engine/simulation/set_positions.wgsl?raw";
+import SetBounds from "../shaders/engine/simulation/set_bounds.wgsl?raw";
 import Integration from "../shaders/engine/simulation/integration.wgsl?raw";
 
 
@@ -29,6 +30,7 @@ const engine = {
         Initialization,
         Integration,
         SetPositions,
+        SetBounds,
     },
 };
 

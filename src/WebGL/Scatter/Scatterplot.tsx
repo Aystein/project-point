@@ -49,6 +49,7 @@ export function Scatterplot({
   color,
   size,
   opacity,
+  bounds,
   globalConfig = { pointSize: 16 },
   hover,
   selection,
@@ -67,6 +68,7 @@ export function Scatterplot({
   selection?: number[];
   shape?: number[];
   line?: number[];
+  bounds?: number[];
   interpolate?: boolean;
 }) {
   const [myRenderer, setRenderer] = useState<{ scatter: Scatter, engine: Engine }>();
@@ -98,6 +100,14 @@ export function Scatterplot({
   useEffect(() => {
     myRenderer?.scatter.setColor(new Uint32Array(color));
   }, [color, myRenderer]);
+
+  useEffect(() => {
+    if (bounds) {
+      myRenderer?.scatter.setBounds(new Float32Array(bounds));
+    } else {
+      myRenderer?.scatter.setBounds(new Float32Array(Array.from({ length: n }).map(() => [0, 0, 20, 20]).flat()));
+    }
+  }, [bounds, myRenderer, n]);
 
   useEffect(() => {
     myRenderer?.scatter.setLine(line);

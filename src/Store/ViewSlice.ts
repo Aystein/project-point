@@ -11,6 +11,7 @@ import { RootState } from './Store';
 import { schemeCategory10 } from 'd3-scale-chromatic';
 import { RGBColor, color } from 'd3-color';
 import { encode } from '../DataLoading/Encode';
+import groupBy from 'lodash/groupBy';
 
 export type Selection = {
   global: number[];
@@ -284,6 +285,11 @@ export const viewslice = createSlice({
     removeLayoutConfig: (state, action: PayloadAction<{ channel: string }>) => {
       const activeModel = state.models.entities[state.activeModel];
 
+      switch (action.payload.channel) {
+        case 'line':
+          break;
+      }
+      
       layoutAdapter.removeOne(activeModel.layoutConfigurations, action.payload.channel);
     }
   },
@@ -373,7 +379,7 @@ export const setLayoutConfig = createAsyncThunk(
               : scaleLinear<string>().domain(extent).range(['red', 'green']);
 
           const mappedColors = filteredRows.map((row) => {
-            const value =color(colorScale(row)) as RGBColor
+            const value = color(colorScale(row)) as RGBColor
             return (value.r << 24) | (value.g << 16) | (value.b << 8) | Math.floor(value.opacity * 255)
           });
 
@@ -421,6 +427,25 @@ export const setLayoutConfig = createAsyncThunk(
           dispatch(
             updatePositionByFilter({ position: Y, filter: model.filter })
           );
+        }
+      }
+    } else if (layoutConfig.channel === 'line') {
+      switch (layoutConfig.type) {
+        case 'setline': {
+          const grouped = groupBy(modelRows, (value) => value[layoutConfig.column]);
+          const lines = new Array<number>();
+
+          Object.keys(grouped).forEach((group) => {
+            const values = grouped[group];
+            values.forEach((row, i) => {
+              if (i < values.length - 1) {
+                lines.push(values[i].index, values[i + 1].index);
+              }
+            });
+          });
+
+          dispatch(setLines(lines));
+          break;
         }
       }
     }

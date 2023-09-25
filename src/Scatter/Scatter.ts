@@ -152,6 +152,10 @@ export class Scatter {
     device.queue.writeBuffer(shape._buffer, 0, data);
   }
 
+  setBounds(bounds: Float32Array) {
+    this.engine.setBounds(bounds);
+  }
+
   setHover(indices: number[]) {
     const {
       device,

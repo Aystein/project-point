@@ -63,6 +63,8 @@ export function SideMenu() {
           value={value}
           onChange={setValue}
           label="Select channel"
+          maxLength={10}
+          maxDropdownHeight={500}
         />
 
         <Tabs color="teal" value={value} keepMounted={false}>

@@ -1,8 +1,8 @@
 import { Select, Stack } from "@mantine/core";
 import * as React from "react";
-import { ColorConfiguration } from "../../Store/interfaces";
+import { ColorConfiguration, LineConfiguration } from "../../Store/interfaces";
 import { useAppDispatch, useAppSelector } from "../../Store/hooks";
-import { setLayoutConfig } from "../../Store/ViewSlice";
+import { removeLayoutConfig, setLayoutConfig } from "../../Store/ViewSlice";
 
 export function LinePanel({ defaultValue }: { defaultValue: ColorConfiguration }) {
     const dispatch = useAppDispatch();
@@ -18,18 +18,21 @@ export function LinePanel({ defaultValue }: { defaultValue: ColorConfiguration }
 
     const [column, setColumn] = React.useState(defaultValue?.column ?? options[0].value)
 
-    React.useEffect(() => {
-        if (column) {
-            const layoutConfig: ColorConfiguration = {
-                channel: 'color',
-                type: 'setcolor',
+    const handleColumnChange = (value: string) => {
+        setColumn(value);
+
+        if (value) {
+            const layoutConfig: LineConfiguration = {
+                channel: 'line',
+                type: 'setline',
                 column,
-                featureType,
             }
 
             dispatch(setLayoutConfig({ id, layoutConfig }))
+        } else {
+            dispatch(removeLayoutConfig({ channel: 'line' }))
         }
-    }, [dispatch, id, column, featureType]);
+    }
 
     return <Stack gap="xs">
         <Select
@@ -38,7 +41,7 @@ export function LinePanel({ defaultValue }: { defaultValue: ColorConfiguration }
             searchable
             data={options}
             value={column}
-            onChange={setColumn}
+            onChange={handleColumnChange}
         />
 
         <Select

@@ -88,7 +88,7 @@ function HoverComponent({ row }: { row: Row }) {
         overflowY: 'auto',
       }}
     >
-      <Table withBorder withColumnBorders>
+      <Table withTableBorder>
         <tbody>{rows}</tbody>
       </Table>
     </div>

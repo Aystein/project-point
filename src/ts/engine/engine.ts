@@ -88,7 +88,7 @@ class Engine {
 
     public hover: Hover;
 
-    private bounds?: number[];
+    private bounds?: Float32Array;
 
     public constructor(device: GPUDevice, public N: number, data: Data) {
         this.device = device;
@@ -186,6 +186,7 @@ class Engine {
         }
 
         if (this.bounds) {
+            console.log(this.bounds);
             new SetBounds(this.device, {
                 bounds: this.bounds,
                 particlesBufferData: {
@@ -218,8 +219,8 @@ class Engine {
         this.needsForceUpdate = true;
     }
 
-    public setBounds(bounds: number[]) {
-        this.bounds = bounds;
+    public setBounds(bounds: Float32Array) {
+        //this.bounds = bounds;
     }
 
     public reinitialize(): void {

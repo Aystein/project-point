@@ -17,8 +17,8 @@ type ResetResult = {
 export class SetPositions {
     private static readonly WORKGROUP_SIZE: number = 256;
 
-    private static readonly setForceStructType: WebGPU.Types.StructType = new WebGPU.Types.StructType("BoundsPosition", [
-        { name: "force", type: WebGPU.Types.vec4F32 },
+    private static readonly setForceStructType: WebGPU.Types.StructType = new WebGPU.Types.StructType("ForcePosition", [
+        { name: "force", type: WebGPU.Types.vec2F32 },
     ]);
 
     private readonly device: GPUDevice;

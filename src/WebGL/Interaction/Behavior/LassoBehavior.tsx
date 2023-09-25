@@ -153,7 +153,7 @@ export function LassoSelectionPlugin() {
               indices.push(globalFilter[i]);
             }
           });
-
+          
           dispatch(setSelection(indices.length === 0 ? undefined : indices));
 
           setDrag(null);
