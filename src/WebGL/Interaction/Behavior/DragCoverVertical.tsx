@@ -1,4 +1,4 @@
-import { IconArrowMoveUp } from '@tabler/icons-react';
+import { IconArrowMoveUp, IconCircle } from '@tabler/icons-react';
 import * as React from 'react';
 import { VectorLike } from '../../../Interfaces';
 import { changeSize } from '../../../Store/ViewSlice';
@@ -34,7 +34,7 @@ export function DragCoverVertical({ parentModel }: { parentModel }) {
             left: 0,
             top: 0,
         }}
-        icon={<IconArrowMoveUp />}
+        icon={<IconCircle />}
         setDrag={(position) => {
             setDrag(position ? { position, direction: 'y' } : null);
         }}

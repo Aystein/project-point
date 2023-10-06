@@ -92,12 +92,6 @@ export function Scatterplot({
   }
 
   useEffect(() => {
-    if (myRenderer) {
-      myRenderer.scatter.interpolateBetweenFrames = interpolate;
-    }
-  }, [interpolate, myRenderer]);
-
-  useEffect(() => {
     myRenderer?.scatter.setColor(new Uint32Array(color));
   }, [color, myRenderer]);
 
@@ -105,7 +99,7 @@ export function Scatterplot({
     if (bounds) {
       myRenderer?.scatter.setBounds(new Float32Array(bounds));
     } else {
-      myRenderer?.scatter.setBounds(new Float32Array(Array.from({ length: n }).map(() => [0, 0, 20, 20]).flat()));
+      myRenderer?.scatter.setBounds(new Float32Array(Array.from({ length: n }).map(() => [5, 5, 20, 20]).flat()));
     }
   }, [bounds, myRenderer, n]);
 

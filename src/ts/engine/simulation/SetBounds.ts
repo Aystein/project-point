@@ -17,12 +17,6 @@ type ResetResult = {
 export class SetBounds {
     private static readonly WORKGROUP_SIZE: number = 256;
 
-    public static readonly PARTICLE_WEIGHT_WATER: number = 1;
-
-    public static readonly PARTICLE_WEIGHT_THRESHOLD: number = 10;
-
-    public static readonly PARTICLE_WEIGHT_OBSTACLE: number = 100000;
-
     private static readonly setForceStructType: WebGPU.Types.StructType = new WebGPU.Types.StructType("BoundsPosition", [
         { name: "bounds", type: WebGPU.Types.vec4F32 },
     ]);

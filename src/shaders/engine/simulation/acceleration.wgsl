@@ -28,9 +28,6 @@ fn main(in: ComputeIn) {
 
     let particleIndex = indexBuffer[particleId];
     var particle = particlesBuffer[particleIndex];
-    if (particle.weight >= uniforms.weightThreshold) {
-        return;
-    }
 
     particle.acceleration = vec2<f32>(0);
 
@@ -60,7 +57,7 @@ fn main(in: ComputeIn) {
                     let penetration = 2.0 * particleRadius - distance;
 
                     if (penetration > 0.0) {
-                        particle.acceleration += (0.96 * neighbour.weight / (particle.weight + neighbour.weight)) * penetration * normalize(fromVector) / uniforms.dt;
+                        particle.acceleration += (0.96 / 2) * penetration * normalize(fromVector) / uniforms.dt;
                     }
                 }
             }

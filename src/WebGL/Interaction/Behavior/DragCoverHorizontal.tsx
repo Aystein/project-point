@@ -1,9 +1,9 @@
-import { IconArrowMoveRight } from '@tabler/icons-react';
+import { IconArrowMoveRight, IconCircle } from '@tabler/icons-react';
 import { scaleLinear } from 'd3-scale';
 import * as React from 'react';
 import { VectorLike } from '../../../Interfaces';
 import { runForceLayout } from '../../../Layouts/Layouts';
-import { changeSize, updatePositionByFilter } from '../../../Store/ViewSlice';
+import { changeSize, rerunLayouts, updatePositionByFilter } from '../../../Store/ViewSlice';
 import { useAppDispatch, useAppSelector } from '../../../Store/hooks';
 import { useVisContext } from '../../VisualizationContext';
 import { SimpleDragCover } from './DragCover';
@@ -40,12 +40,13 @@ export function DragCoverHorizontal({ parentModel }: { parentModel }) {
                     X: Y_in.map((vec) => rescale(vec.x))
                 });
 
-                dispatch(
+                dispatch(rerunLayouts({ id: parentModel.id }))
+                /**dispatch(
                     updatePositionByFilter({
                         position: Y,
                         filter: parentModel.filter,
                     })
-                );
+                );**/
             }
         }}
         drag={drag?.direction === 'x' ? drag.position : null}
@@ -67,6 +68,6 @@ export function DragCoverHorizontal({ parentModel }: { parentModel }) {
             bottom: 0,
             right: 0,
         }}
-        icon={<IconArrowMoveRight />}
+        icon={<IconCircle />}
     />
 }

@@ -21,6 +21,7 @@ function MainView({ data }: { data: DataState; }) {
   const positions = useAppSelector((state) => state.views.positions);
   const color = useAppSelector((state) => state.views.color);
   const shape = useAppSelector((state) => state.views.shape);
+  const bounds = useAppSelector((state) => state.views.bounds);
 
   const { scaledXDomain, scaledYDomain } = useVisContext();
 
@@ -54,6 +55,7 @@ function MainView({ data }: { data: DataState; }) {
         n={data.rows.length}
         x={x}
         y={y}
+        bounds={bounds}
         color={color}
         hover={hover}
         shape={shape}

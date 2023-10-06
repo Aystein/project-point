@@ -20,7 +20,6 @@ fn main(in: ComputeIn) {
 
     var particle: Particle;
     particle.position = initialParticle.position;
-    particle.weight = initialParticle.weight;
     particle.velocity = vec2<f32>(0);
     particle.acceleration = vec2<f32>(0);
     particle.force = vec2f(2.5, 2.5);

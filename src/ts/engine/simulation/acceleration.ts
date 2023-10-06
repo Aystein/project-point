@@ -10,7 +10,6 @@ type Data = {
     cellsBufferData: CellsBufferData;
     gridSize: glMatrix.ReadonlyVec2,
     cellSize: number,
-    weightThreshold: number,
     indexBuffer: WebGPU.Buffer,
 };
 
@@ -51,7 +50,6 @@ class Acceleration {
             { name: "upperBound", type: WebGPU.Types.vec2F32 },
             { name: "particlesCount", type: WebGPU.Types.u32 },
             { name: "lowerBound", type: WebGPU.Types.vec2F32 },
-            { name: "weightThreshold", type: WebGPU.Types.f32 },
             { name: "radiusScaling", type: WebGPU.Types.f32 }
         ]);
 
@@ -102,7 +100,6 @@ class Acceleration {
         this.uniforms.setValueFromName("cellsStride", [1, data.gridSize[0]]);
         this.uniforms.setValueFromName("particlesCount", data.particlesBufferData.particlesCount);
         this.uniforms.setValueFromName("particleRadius", data.particleRadius);
-        this.uniforms.setValueFromName("weightThreshold", data.weightThreshold);
 
         const workgroupsCount = Math.ceil(data.particlesBufferData.particlesCount / Acceleration.WORKGROUP_SIZE);
 

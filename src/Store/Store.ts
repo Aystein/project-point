@@ -17,7 +17,6 @@ import { POINT_RADIUS } from '../Layouts/Globals';
 import { spread } from '../Util';
 import { Engine } from '../ts/engine/engine';
 import { parseCSV } from '../DataLoading/CSVLoader';
-import { layoutAdapter } from './interfaces';
 
 const combined = combineReducers({
   data: dataReducer,
@@ -133,7 +132,6 @@ const reducer = createReducer<RootState>(undefined, (builder) => {
 
     state.views.bounds = rows.map(() => [5, 5, 15, 15]).flat()
     state.views.models = modelAdapter.getInitialState();
-    //state.views.color = rows.map(() => [0.5, 0.5, 0.5, 1]).flat();
     state.views.color = rows.map(() => 0x888888ff);
     state.views.shape = rows.map(() => 0);
   });

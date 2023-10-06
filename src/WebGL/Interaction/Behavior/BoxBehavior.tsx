@@ -1,14 +1,9 @@
 import {
-  ActionIcon,
   Box,
-  Group,
-  Menu
+  Group
 } from '@mantine/core';
 import {
-  IconArrowsMove,
-  IconCircleLetterA,
-  IconRosette,
-  IconTimeline
+  IconArrowsMove
 } from '@tabler/icons-react';
 import * as React from 'react';
 import {
@@ -18,36 +13,33 @@ import {
 import { Rectangle } from '../../Math/Rectangle';
 import { useVisContext } from '../../VisualizationContext';
 
+import { useHotkeys } from '@mantine/hooks';
 import { openContextModal } from '@mantine/modals';
-import { IconX } from '@tabler/icons-react';
 import { scaleOrdinal } from 'd3-scale';
-import groupBy from 'lodash/groupBy';
 import { useDispatch } from 'react-redux';
 import { VectorLike } from '../../../Interfaces';
 import {
   fillOperation,
   runSpaghettiLayout
 } from '../../../Layouts/Layouts';
-import { SpatialModel } from '../../../Store/interfaces';
 import {
   activateModel,
   addSubEmbedding,
   removeEmbedding,
-  setLines,
   setShape,
   translateArea,
   updateLabels,
   updatePositionByFilter
 } from '../../../Store/ViewSlice';
 import { useAppSelector } from '../../../Store/hooks';
-import classes from './BoxBehavior.module.css';
+import { SpatialModel } from '../../../Store/interfaces';
 import { SimpleDragCover } from './DragCover';
 import { DragCoverHorizontal } from './DragCoverHorizontal';
 import { DragCoverVertical } from './DragCoverVertical';
 import { LabelsOverlay } from './LabelsOverlay';
 import { useMouseEvent } from './useMouseDrag';
-import { useHotkeys } from '@mantine/hooks';
 
+import classes from './BoxBehavior.module.css';
 
 export function BoxBehavior() {
   const { scaledXDomain, scaledYDomain } = useVisContext();
@@ -224,33 +216,6 @@ function SingleBox({
     });
   };
 
-  const handleLine = () => {
-    const onFinish = (feature: string) => {
-      const filteredRows = model.filter.map((i) => data[i]);
-      const grouped = groupBy(filteredRows, (value) => value[feature]);
-      const lines = new Array<number>();
-
-      Object.keys(grouped).forEach((group) => {
-        const values = grouped[group];
-        values.forEach((row, i) => {
-          if (i < values.length - 1) {
-            lines.push(values[i].index, values[i + 1].index);
-          }
-        });
-      });
-
-      dispatch(setLines(lines));
-    };
-
-    openContextModal({
-      modal: 'colorby',
-      title: 'Line by',
-      innerProps: {
-        onFinish,
-      },
-    });
-  };
-
   const handleSpaghettiBy = async (axis: 'x' | 'y') => {
     const onFinish = async (groups: string[], secondary: string) => {
       const X = model.filter.map((i) => data[i]);
@@ -280,20 +245,23 @@ function SingleBox({
   };
 
   return (
-    <Group
-      onClick={() => { console.log("test"); dispatch(activateModel({ id: model.id })) }}
+    <Box
       style={{
         position: 'absolute',
         left: scaledXDomain(area.x),
         top: scaledYDomain(area.y),
         width: scaledXDomain(area.x + area.width) - scaledXDomain(area.x),
         height: scaledYDomain(area.y + area.height) - scaledYDomain(area.y),
-        background: '#f8f9fa',
-        border: `1px solid ${model.id === activeId ? 'var(--mantine-color-blue-3)' : 'var(--mantine-color-gray-3)'}`,
-        borderRadius: '1rem',
+        background: 'var(--mantine-color-gray-0)',
+        border: `3px solid ${model.id === activeId ? 'var(--mantine-color-blue-1)' : 'var(--mantine-color-gray-1)'}`,
       }}
-      data-interaction
     >
+      <Box className={classes.leftHandle} data-interaction onClick={() => dispatch(activateModel({ id: model.id }))} />
+      <Box className={classes.rightHandle} data-interaction onClick={() => dispatch(activateModel({ id: model.id }))} />
+      <Box className={classes.topHandle} data-interaction onClick={() => dispatch(activateModel({ id: model.id }))} />
+      <Box className={classes.bottomHandle} data-interaction onClick={() => dispatch(activateModel({ id: model.id }))} />
+
+
       {
         activeId === model.id ? <>
           <SimpleDragCover
@@ -329,6 +297,8 @@ function SingleBox({
 
 
       <LabelsOverlay labels={model.labels} />
-    </Group>
+
+      
+    </Box>
   );
 }

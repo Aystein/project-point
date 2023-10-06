@@ -2,7 +2,7 @@ import { AspectRatio, Button, Card, CloseButton, Group, ScrollArea, Stack, Text,
 import { EntityId } from '@reduxjs/toolkit';
 import * as React from 'react';
 import { SpatialModel } from '../Store/interfaces';
-import { addView, deleteHistory, swapView } from '../Store/ViewSlice';
+import { pushHistoryView, deleteHistory, swapView } from '../Store/ViewSlice';
 import { useAppDispatch, useAppSelector } from '../Store/hooks';
 import { Scatterplot } from '../WebGL/Scatter/Scatterplot';
 import { VisProvider } from '../WebGL/VisualizationContext';
@@ -122,7 +122,7 @@ export function HistoryTab() {
         return { x: data[(Engine.particleStructType.size / 4) * i], y: data[(Engine.particleStructType.size / 4) * i + 1] }
       });
 
-      dispatch(addView({
+      dispatch(pushHistoryView({
         filter: selection,
         localSelection,
         positions

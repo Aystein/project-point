@@ -38,3 +38,41 @@
     height: 100%;
     background-color: var(--mantine-color-black);
 }
+
+
+
+.leftHandle {
+    cursor: move;
+    position: absolute;
+    width: 10px;
+    top: 0px;
+    bottom: 0px;
+    left: -5px;
+}
+
+.rightHandle {
+    cursor: move;
+    position: absolute;
+    width: 10px;
+    top: 0px;
+    bottom: 0px;
+    right: -5px;
+}
+
+.topHandle {
+    cursor: move;
+    position: absolute;
+    height: 10px;
+    left: 0px;
+    right: 0px;
+    top: -5px;
+}
+
+.bottomHandle {
+    cursor: move;
+    position: absolute;
+    height: 10px;
+    left: 0px;
+    right: 0px;
+    bottom: -5px;
+}

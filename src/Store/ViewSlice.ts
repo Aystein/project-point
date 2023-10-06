@@ -1,17 +1,17 @@
 import type { EntityState, PayloadAction } from '@reduxjs/toolkit';
-import { createAsyncThunk, createEntityAdapter, createSelector, createSlice, EntityId, nanoid } from '@reduxjs/toolkit';
+import { EntityId, createAsyncThunk, createEntityAdapter, createSlice, nanoid } from '@reduxjs/toolkit';
+import { RGBColor, color } from 'd3-color';
+import { scaleLinear, scaleOrdinal } from 'd3-scale';
+import { schemeCategory10 } from 'd3-scale-chromatic';
+import groupBy from 'lodash/groupBy';
 import isEqual from 'lodash/isEqual';
+import { encode } from '../DataLoading/Encode';
 import { VectorLike } from '../Interfaces';
+import { runCondenseLayout, runForceLayout, runGroupLayout, runUMAPLayout } from '../Layouts/Layouts';
 import { getMinMax, scaleInto } from '../Util';
 import { Rectangle } from '../WebGL/Math/Rectangle';
-import { LabelContainer, layoutAdapter, LayoutConfiguration, SpatialModel } from './interfaces';
-import { runCondenseLayout, runForceLayout, runGroupLayout, runUMAPLayout } from '../Layouts/Layouts';
-import { scaleLinear, scaleOrdinal } from 'd3-scale';
 import { RootState } from './Store';
-import { schemeCategory10 } from 'd3-scale-chromatic';
-import { RGBColor, color } from 'd3-color';
-import { encode } from '../DataLoading/Encode';
-import groupBy from 'lodash/groupBy';
+import { LabelContainer, LayoutConfiguration, SpatialModel, layoutAdapter } from './interfaces';
 
 export type Selection = {
   global: number[];
@@ -136,23 +136,34 @@ export const viewslice = createSlice({
       })
     },
     removeEmbedding: (state, action: PayloadAction<{ id: EntityId }>) => {
+      const model = state.models.entities[action.payload.id];
+
+      model.filter.forEach((globalIndex) => {
+        state.bounds[globalIndex * 4 + 0] = 0;
+        state.bounds[globalIndex * 4 + 1] = 0;
+        state.bounds[globalIndex * 4 + 2] = 20;
+        state.bounds[globalIndex * 4 + 3] = 20;
+      })
+
       modelAdapter.removeOne(state.models, action.payload.id)
     },
-    addView: (state, action: PayloadAction<{ filter: number[], localSelection: number[], positions: VectorLike[] }>) => {
+    pushHistoryView: (state, action: PayloadAction<{ filter: number[], localSelection: number[], positions: VectorLike[] }>) => {
       const { filter, localSelection, positions } = action.payload;
 
       const [normalizedPositions, extent] = scaleInto(positions);
+
+      const area = {
+        x: 10 - extent / 2,
+        y: 10 - extent / 2,
+        width: extent,
+        height: extent
+      };
 
       state.history.push({
         id: nanoid(),
         filter,
         children: [],
-        area: {
-          x: 10 - extent / 2,
-          y: 10 - extent / 2,
-          width: extent,
-          height: extent
-        },
+        area,
         x: normalizedPositions.map((value) => value.x),
         y: normalizedPositions.map((value) => value.y),
         layoutConfigurations: layoutAdapter.getInitialState(),
@@ -172,6 +183,13 @@ export const viewslice = createSlice({
         state.positions[globalIndex].x += x;
         state.positions[globalIndex].y += y;
       });
+
+      model.filter.forEach((globalIndex) => {
+        state.bounds[globalIndex * 4 + 0] = model.area.x;
+        state.bounds[globalIndex * 4 + 1] = model.area.y;
+        state.bounds[globalIndex * 4 + 2] = model.area.x + model.area.width;
+        state.bounds[globalIndex * 4 + 3] = model.area.y + model.area.height;
+      })
     },
     changeSize: (
       state,
@@ -182,6 +200,13 @@ export const viewslice = createSlice({
 
       model.area.width = width;
       model.area.height = height;
+
+      model.filter.forEach((globalIndex) => {
+        state.bounds[globalIndex * 4 + 0] = model.area.x;
+        state.bounds[globalIndex * 4 + 1] = model.area.y;
+        state.bounds[globalIndex * 4 + 2] = model.area.x + model.area.width;
+        state.bounds[globalIndex * 4 + 3] = model.area.y + model.area.height;
+      })
     },
     setHover: (state, action: PayloadAction<number[]>) => {
       const globalHover = action.payload;
@@ -272,6 +297,13 @@ export const viewslice = createSlice({
         layoutConfigurations: layoutAdapter.getInitialState(),
       };
 
+      subModel.filter.forEach((globalIndex) => {
+        state.bounds[globalIndex * 4 + 0] = area.x;
+        state.bounds[globalIndex * 4 + 1] = area.y;
+        state.bounds[globalIndex * 4 + 2] = area.x + area.width;
+        state.bounds[globalIndex * 4 + 3] = area.y + area.height;
+      })
+
       state.activeModel = subModel.id;
 
       modelAdapter.addOne(state.models, subModel);
@@ -289,7 +321,7 @@ export const viewslice = createSlice({
         case 'line':
           break;
       }
-      
+
       layoutAdapter.removeOne(activeModel.layoutConfigurations, action.payload.channel);
     }
   },
@@ -298,7 +330,153 @@ export const viewslice = createSlice({
 export const rerunLayouts = createAsyncThunk(
   'layouts/rerun',
   async ({ id }: { id: EntityId }, { dispatch, getState }) => {
+    const state = getState() as RootState;
+    const model = state.views.models.entities[id];
+    const modelRows = model.filter
+      .map((i) => state.data.rows[i]);
 
+    console.log(model.layoutConfigurations);
+
+    Object.values(model.layoutConfigurations.entities).forEach(async (layoutConfig) => {
+      if (layoutConfig.channel === 'x' || layoutConfig.channel === 'y') {
+        switch (layoutConfig.type) {
+          case 'numericalscale': {
+            const X = model.filter
+              .map((i) => state.data.rows[i])
+              .map((row) => row[layoutConfig.column]);
+
+            const domain = getMinMax(X);
+
+            let scale = scaleLinear().domain(domain).range([0, 1]);
+
+            const mapped = X.map((value) => scale(value));
+
+            const labels: LabelContainer = {
+              discriminator: 'scalelabels',
+              type: layoutConfig.channel,
+              labels: {
+                domain,
+                range: [0, 1],
+              },
+            };
+
+            const { Y } = await runForceLayout({
+              N: model.filter.length,
+              area: model.area,
+              axis: layoutConfig.channel,
+              Y_in: model.filter.map((i) => state.views.positions[i]),
+              X: mapped
+            });
+
+            dispatch(updateLabels({ id: model.id, labels: [labels] }));
+
+            dispatch(
+              updatePositionByFilter({ position: Y, filter: model.filter })
+            );
+            break;
+          }
+          case 'condense': {
+            const { Y, labels } = await runCondenseLayout(
+              model.filter.length,
+              model.area,
+              layoutConfig.channel,
+              model.filter.map((i) => state.views.positions[i])
+            );
+
+            dispatch(updateLabels({
+              id: model.id, labels
+            }));
+            dispatch(
+              updatePositionByFilter({ position: Y, filter: model.filter })
+            );
+            break;
+          }
+        }
+      } else if (layoutConfig.channel === 'color') {
+        switch (layoutConfig.type) {
+          case 'setcolor': {
+            const filteredRows = modelRows
+              .map((row) => row[layoutConfig.column]);
+            const extent = getMinMax(filteredRows);
+
+            let colorScale =
+              layoutConfig.featureType === 'categorical'
+                ? scaleOrdinal(schemeCategory10).domain(filteredRows)
+                : scaleLinear<string>().domain(extent).range(['red', 'green']);
+
+            const mappedColors = filteredRows.map((row) => {
+              const value = color(colorScale(row)) as RGBColor
+              return (value.r << 24) | (value.g << 16) | (value.b << 8) | Math.floor(value.opacity * 255)
+            });
+
+            dispatch(
+              setColor({
+                id: model.id,
+                colors: mappedColors
+                  .map((hex) => {
+                    return hex;
+                  })
+              })
+            );
+            break;
+          }
+        }
+      } else if (layoutConfig.channel === 'xy') {
+        switch (layoutConfig.type) {
+          case 'group': {
+            const { Y, x, y, labels } = await runGroupLayout(
+              modelRows,
+              model.area,
+              layoutConfig.column,
+              layoutConfig.strategy,
+            );
+
+            dispatch(updateLabels({ id: model.id, labels }));
+            dispatch(
+              updatePositionByFilter({ position: Y, filter: model.filter })
+            );
+
+            break;
+          }
+          case 'umap': {
+            const { X, N, D } = encode(state.data, model.filter, layoutConfig.columns);
+
+            const { Y, labels } = await runUMAPLayout({
+              X,
+              N,
+              D,
+              area: model.area,
+              axis: 'xy',
+              Y_in: model.filter.map((i) => state.views.positions[i]),
+            });
+
+            dispatch(
+              updatePositionByFilter({ position: Y, filter: model.filter })
+            );
+          }
+        }
+      } else if (layoutConfig.channel === 'line') {
+        switch (layoutConfig.type) {
+          case 'setline': {
+            const grouped = groupBy(modelRows, (value) => value[layoutConfig.column]);
+            const lines = new Array<number>();
+
+            Object.keys(grouped).forEach((group) => {
+              const values = grouped[group];
+              values.forEach((row, i) => {
+                if (i < values.length - 1) {
+                  lines.push(values[i].index, values[i + 1].index);
+                }
+              });
+            });
+
+            dispatch(setLines(lines));
+            break;
+          }
+        }
+      }
+
+    })
   }
 )
 
@@ -463,7 +641,7 @@ export const {
   setHover,
   setSelection,
   setLines,
-  addView,
+  pushHistoryView,
   updateLabels,
   changeSize,
   swapView,

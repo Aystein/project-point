@@ -18,15 +18,8 @@ type ResetResult = {
 class Initialization {
     private static readonly WORKGROUP_SIZE: number = 256;
 
-    public static readonly PARTICLE_WEIGHT_WATER: number = 1;
-
-    public static readonly PARTICLE_WEIGHT_THRESHOLD: number = 10;
-
-    public static readonly PARTICLE_WEIGHT_OBSTACLE: number = 100000;
-
     private static readonly initialParticleStructType: WebGPU.Types.StructType = new WebGPU.Types.StructType("InitialParticle", [
         { name: "position", type: WebGPU.Types.vec2F32 },
-        { name: "weight", type: WebGPU.Types.f32 },
         { name: "index", type: WebGPU.Types.u32 }
     ]);
 
@@ -112,7 +105,6 @@ f
             const offset = index * Initialization.initialParticleStructType.size;
             Initialization.initialParticleStructType.setValue(positionsData, offset, {
                 position,
-                weight: Initialization.PARTICLE_WEIGHT_WATER,
                 index
             });
         });

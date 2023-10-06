@@ -90,9 +90,9 @@ export class Scatter {
 
   disposed = false;
 
-  interpolateBetweenFrames = true;
-
   fullyLoaded = false;
+
+  indexBuffer;
 
   constructor(
     public N: number,
@@ -114,11 +114,7 @@ export class Scatter {
       buffers: { targetPosition, particle },
     } = this;
 
-    if (this.interpolateBetweenFrames) {
-      device.queue.writeBuffer(targetPosition, 0, data);
-    } else {
-      device.queue.writeBuffer(particle._buffer, 0, data);
-    }
+    device.queue.writeBuffer(particle._buffer, 0, data);
   }
 
   updateBounds(xdomain, ydomain) {
@@ -410,6 +406,16 @@ export class Scatter {
       selection,
     };
 
+    // TEST
+    //const indexBuffer = this.device.createBuffer({
+    //  size: 2 * 10,
+    //  usage: GPUBufferUsage.INDEX |
+    //   GPUBufferUsage.COPY_DST,
+    //});
+
+    //device.queue.writeBuffer(indexBuffer, 0, new Uint16Array(Array.from({ length: 10 }).map((_, i) => (i))))
+    //this.indexBuffer = indexBuffer;
+
     this.createLinePipeline();
   }
 
@@ -536,10 +542,12 @@ export class Scatter {
 
     this.pointBufferGroup.bind(pass);
     pass.setVertexBuffer(6, this.engine.particlesBuffer.gpuBuffer);
+    //pass.setIndexBuffer(this.indexBuffer, "uint16");
 
     pass.setBindGroup(0, this.pointBindGroup);
 
     pass.draw(6, this.N);
+    //pass.drawIndexed(6, 10)
 
     pass.end();
 

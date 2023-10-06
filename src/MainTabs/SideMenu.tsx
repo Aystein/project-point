@@ -13,7 +13,7 @@ import {
 import classes from './SideMenu.module.css';
 import { useAppSelector } from '../Store/hooks';
 import { AxisPanel } from './LayoutPanels/AxisPanel';
-import { selectActiveModel, selectChannelTypes, selectModelById } from '../Store/Selectors';
+import { selectActiveModel, selectChannelTypes } from '../Store/Selectors';
 import { ColorConfiguration, LayoutConfiguration } from '../Store/interfaces';
 import { XYPanel } from './LayoutPanels/XYPanel';
 import { ColorPanel } from './LayoutPanels/ColorPanel';

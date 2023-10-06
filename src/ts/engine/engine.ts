@@ -36,7 +36,6 @@ type ResetResult = {
 class Engine {
     public static readonly particleStructType = new WebGPU.Types.StructType("Particle", [
         { name: "position", type: WebGPU.Types.vec2F32 },
-        { name: "weight", type: WebGPU.Types.f32 },
         { name: "velocity", type: WebGPU.Types.vec2F32 },
         { name: "acceleration", type: WebGPU.Types.vec2F32 },
         { name: "indexInCell", type: WebGPU.Types.u32 },
@@ -127,14 +126,12 @@ class Engine {
             cellsBufferData: this.indexing.cellsBufferData,
             particlesBufferData,
             particleRadius: this.spheresRadius,
-            weightThreshold: Engine.getMaxWeight(),
             indexBuffer: this.indexBuffer
         });
 
         this.integration = new Integration(this.device, {
             particlesBufferData,
             particleRadius: this.spheresRadius,
-            weightThreshold: Engine.getMaxWeight(),
         });
 
         const encoder = device.createCommandEncoder();
@@ -186,7 +183,6 @@ class Engine {
         }
 
         if (this.bounds) {
-            console.log(this.bounds);
             new SetBounds(this.device, {
                 bounds: this.bounds,
                 particlesBufferData: {
@@ -220,7 +216,7 @@ class Engine {
     }
 
     public setBounds(bounds: Float32Array) {
-        //this.bounds = bounds;
+        this.bounds = bounds;
     }
 
     public reinitialize(): void {
@@ -261,13 +257,11 @@ class Engine {
             cellsBufferData: this.indexing.cellsBufferData,
             particlesBufferData,
             particleRadius: this.spheresRadius,
-            weightThreshold: Engine.getMaxWeight(),
             indexBuffer: this.indexBuffer
         });
         this.integration.reset({
             particlesBufferData,
             particleRadius: this.spheresRadius,
-            weightThreshold: Engine.getMaxWeight(),
         });
 
         this.needsInitialization = true;
@@ -296,10 +290,6 @@ class Engine {
         });
 
         return { particlesBuffer, cellSize, gridSize };
-    }
-
-    public static getMaxWeight(): number {
-        return Initialization.PARTICLE_WEIGHT_THRESHOLD;
     }
 
     public static get cellBufferDescriptor(): CellsBufferDescriptor {
