@@ -75,6 +75,18 @@ struct FragInput {
     @location(1) color: vec4f,
 };
 
+fn PixelShaderFunction(texCoord : vec2f) -> vec4f
+{
+    let dist = texCoord.x * texCoord.x
+               + texCoord.y * texCoord.y;
+    if(dist < 1.0) {
+        return vec4f(0, 0, 0, 1);
+    }
+    else {
+        return vec4f(1, 1, 1, 1);
+    }
+}
+
 @fragment
 fn fragmentMain(input: FragInput) -> @location(0) vec4f {
     var col = textureSample(ourTexture, ourSampler, input.texCoord);

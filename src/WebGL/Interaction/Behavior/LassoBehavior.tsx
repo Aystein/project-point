@@ -4,11 +4,13 @@ import { VectorLike } from '../../../Interfaces';
 import { fillOperation } from '../../../Layouts/Layouts';
 import {
   activateModel,
+  rerunLayouts,
   setHover,
   setSelection,
+  transfer,
   updatePositionByFilter,
 } from '../../../Store/ViewSlice';
-import { useAppSelector } from '../../../Store/hooks';
+import { useAppDispatch, useAppSelector } from '../../../Store/hooks';
 import { Rectangle } from '../../Math/Rectangle';
 import { useVisContext } from '../../VisualizationContext';
 import {
@@ -18,11 +20,12 @@ import {
 import { SimpleDragCover } from './DragCover';
 import { useMouseEvent } from './useMouseDrag';
 import { pointInPolygon } from '../../../Util';
+import { selectActiveModel } from '../../../Store/Selectors';
 
 export function lassoPath(lasso) {
   return (lasso ?? []).reduce((svg, [x, y], i) => {
     return (svg +=
-      i == 0 ? `M ${x},${y} ` : i === lasso.length - 1 ? ' Z' : `L ${x},${y} `);
+      i === 0 ? `M ${x},${y}` :  `L ${x},${y} `);
   }, '');
 }
 
@@ -55,7 +58,7 @@ export function LassoSelectionPlugin() {
   const { vis, scaledXDomain, scaledYDomain } = useVisContext();
 
   const [drag, setDrag] = React.useState<VectorLike>(null);
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const spatial = useAppSelector((state) => state.views.positions);
   const globalFilter = useAppSelector((state) => state.views.filter);
 
@@ -64,10 +67,11 @@ export function LassoSelectionPlugin() {
   const [points, setPoints] = React.useState<[number, number][]>([]);
 
   const ref = React.useRef(null);
-  const activeTool = useAppSelector((state) => state.settings.activeTool)
+  const activeTool = useAppSelector((state) => state.views.selectedTool)
 
   const selection = useAppSelector((state) => state.views.selection);
   const localSelection = useAppSelector((state) => state.views.localSelection);
+  const activeModel = useAppSelector(selectActiveModel)
 
   useMouseEvent(
     MOUSE_DOWN,
@@ -75,8 +79,7 @@ export function LassoSelectionPlugin() {
       if (event.button === 0 && activeTool === 'select') {
         setDrag({ x: event.offsetX, y: event.offsetY });
         dispatch(setHover([]));
-        dispatch(activateModel({ id: undefined }))
-
+        // dispatch(activateModel({ id: undefined }))
         return true;
       }
 
@@ -94,7 +97,11 @@ export function LassoSelectionPlugin() {
 
     const { Y } = await fillOperation({ N: selection.length, area: { x: cx - 10, y: cy - 10, width: 20, height: 20 } })
 
-    dispatch(updatePositionByFilter({ filter: localSelection, position: Y }));
+    dispatch(transfer({ globalIds: selection, target: activeModel?.id }))
+
+    if (!activeModel) {
+      dispatch(updatePositionByFilter({ filter: localSelection, position: Y }));
+    }
   };
 
   return (
@@ -111,7 +118,7 @@ export function LassoSelectionPlugin() {
         ref={ref}
       >
         {drag ? (
-          <path fill="rgba(1,1,1,0.1)" stroke="black" d={lassoPath(points)} />
+          <path fill="rgba(1,1,1,0.1)" stroke="black" stroke-dasharray="4 4" d={lassoPath(points)} />
         ) : null}
       </svg>
       <SimpleDragCover

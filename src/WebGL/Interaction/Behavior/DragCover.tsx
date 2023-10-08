@@ -58,7 +58,7 @@ export function SimpleDragCover({
           onMouseUp={(event) => {
             event.stopPropagation();
             event.preventDefault();
-
+            console.log(event);
             const pos = translate(event);
 
             if (dragRef.current) {
@@ -93,6 +93,78 @@ export function SimpleDragCover({
           {icon}
         </ActionIcon>
       ) : null}
+    </>
+  );
+}
+
+
+export function ComplexDragCover({
+  icon,
+  onClick,
+  onMouseMove,
+  onMouseDown,
+  onMouseUp,
+  cursor,
+}: {
+  icon?: JSX.Element;
+  onClick?: () => void;
+  onMouseMove?: (event: { movementX: number, movementY: number }) => void;
+  onMouseDown?: () => void;
+  onMouseUp?: () => void;
+  cursor?: string,
+}) {
+  const dragRef = React.useRef<{ x: number; y: number }>();
+  const [drag, setDrag] = React.useState(false);
+  const [isClick, setIsClick] = React.useState(true);
+
+  return (
+    <>
+      {drag ? (
+        <Affix
+          style={{ pointerEvents: 'initial', width: '100%', height: '100%', cursor }}
+          data-interaction
+          onMouseMove={(event) => {
+            event.stopPropagation();
+            event.preventDefault();
+
+            const { screenX, screenY } = event.nativeEvent;
+
+            if (isClick && distanceXY(dragRef.current, { x: screenX, y: screenY }) > 4) {
+              setIsClick(false);
+              onMouseMove({ movementX: screenX - dragRef.current.x, movementY: screenY - dragRef.current.y });
+              dragRef.current = { x: screenX, y: screenY };
+            }
+
+            if (!isClick) {
+              onMouseMove({ movementX: screenX - dragRef.current.x, movementY: screenY - dragRef.current.y });
+              dragRef.current = { x: screenX, y: screenY };
+            }
+          }}
+          onMouseUp={(event) => {
+            event.stopPropagation();
+            event.preventDefault();
+
+            if (isClick && onClick) {
+              onClick();
+            }
+
+            if (!isClick && onMouseUp) {
+              onMouseUp();
+            }
+
+            dragRef.current = null;
+            setDrag(false);
+            setIsClick(true);
+          }}
+        />
+      ) : null}
+
+      { React.cloneElement(icon, { onMouseDown: (event) => {
+        dragRef.current = { x: event.screenX, y: event.screenY };
+        setDrag(true);
+        
+        if (onMouseDown) onMouseDown();
+      } }) }
     </>
   );
 }

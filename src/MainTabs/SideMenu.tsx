@@ -26,7 +26,8 @@ import { LinePanel } from './LayoutPanels/LinePanel';
 
 export function SideMenu() {
   const activeModel = useAppSelector(selectActiveModel);
-  const layoutConfigurations = useAppSelector((state) => Object.values(state.views.models.entities[state.views.activeModel]?.layoutConfigurations.entities ?? {})) as LayoutConfiguration[]
+  const layoutConfigurations = Object.values(useAppSelector((state) => state.views.models.entities[state.views.activeModel]?.layoutConfigurations.entities) ?? {}) as LayoutConfiguration[]
+
   const usedChannels = useAppSelector(selectChannelTypes);
   const dispatch = useDispatch();
 

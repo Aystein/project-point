@@ -1,14 +1,16 @@
 import React from "react";
-import { GroupConfiguration, LayoutConfiguration } from "../../Store/interfaces";
+import { GroupConfiguration, LayoutConfiguration, SpaghettiConfiguration } from "../../Store/interfaces";
 import { Select, Stack, Tabs } from "@mantine/core";
 import { GroupingPanel } from "./GroupingPanel";
 import { UMAPPanel } from "./UMAPPanel";
+import { SpaghettiPanel } from "./SpaghettiPanel";
 
 export function XYPanel({ defaultValue }: { defaultValue: LayoutConfiguration }) {
     const data = React.useMemo(() => {
         return [
             { label: 'Grouping', value: 'group' },
-            { label: 'UMAP', value: 'umap' }
+            { label: 'UMAP', value: 'umap' },
+            { label: 'Spaghetti', value: 'spaghetti' }
         ]
     }, []);
 
@@ -23,6 +25,9 @@ export function XYPanel({ defaultValue }: { defaultValue: LayoutConfiguration })
             </Tabs.Panel>
             <Tabs.Panel value='umap'>
                 <UMAPPanel defaultValue={defaultValue ? defaultValue as GroupConfiguration : undefined} />
+            </Tabs.Panel>
+            <Tabs.Panel value='spaghetti'>
+                <SpaghettiPanel defaultValue={defaultValue ? defaultValue as SpaghettiConfiguration : undefined} />
             </Tabs.Panel>
         </Tabs>
     </Stack>

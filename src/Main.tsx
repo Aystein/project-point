@@ -43,13 +43,15 @@ function MainView({ data }: { data: DataState; }) {
   return (
     <>
       <ZoomBehavior />
-      <PanBehavior />
+
 
       <Card style={{ position: 'absolute', left: scaledXDomain(0), top: scaledYDomain(0), width: scaledXDomain(20) - scaledXDomain(0), height: scaledYDomain(20) - scaledYDomain(0) }} withBorder shadow="xs"></Card>
 
       <BoxBehavior />
       <HoverBehavior positions={positions} onHover={handleHover} />
       <LassoSelectionPlugin />
+
+      <PanBehavior />
 
       <Scatterplot
         n={data.rows.length}

@@ -9,8 +9,8 @@ export const useAppDispatch: () => AppDispatch = useDispatch;
 export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;
 
 export const selectDatasets = createSelector(
-  (state: RootState) => state.datasets,
-  (state) => Object.values(state.files.entities).map((entry) => entry)
+  (state: RootState) => state.datasets.files.entities,
+  (state) => Object.values(state)
 );
 
 export const filterData = createSelector(

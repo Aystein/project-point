@@ -2,6 +2,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from './Store';
 import { modelAdapter } from './ViewSlice';
 import { createSelector } from '@reduxjs/toolkit';
+import { SpatialModel } from './interfaces';
 
 export const Selectors = {
   data: (state: RootState) => state.data,
@@ -26,6 +27,13 @@ export const selectChannelTypes = createSelector(
   activeModel,
   (model) => model ? Object.values(model.layoutConfigurations.entities).map((config) => config.channel) : []
 )
+
+export const selectConfigByChannel = (channel: string) => {
+  return createSelector(
+    activeModel,
+    (model) => model.layoutConfigurations.entities[channel]
+  );
+};
 
 export const {
   selectById: selectModelById2,

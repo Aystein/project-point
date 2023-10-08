@@ -15,6 +15,7 @@ import { initializeDatasets } from './Store/FilesSlice';
 import { useAppDispatch, useAppSelector } from './Store/hooks';
 import { TopMenu } from './MainTabs/TopMenu';
 import { SideMenu } from './MainTabs/SideMenu';
+import { Legends } from './MainTabs/Legends';
 
 /**const useStyles = createStyles((theme) => ({
   wrapper: {
@@ -92,6 +93,7 @@ export function AntApp() {
         <Box style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
           <TopMenu />
           <SideMenu />
+          <Legends />
           {
             dataId ? <Main /> : <Center style={{ width: '100%', height: '100%' }}><DataTab /></Center>
           }

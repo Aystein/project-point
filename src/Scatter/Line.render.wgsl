@@ -19,6 +19,7 @@ struct VertexInput {
   
 struct VertexOutput {
     @builtin(position) pos: vec4f,
+    @location(0) color: vec4f,
 };
 
 fn map(x: f32, in_min: f32, in_max: f32, out_min: f32, out_max: f32) -> f32
@@ -67,10 +68,16 @@ fn vertexMain(input: VertexInput) -> VertexOutput  {
         output.pos = vec4f(map2f(start) + norm, 0.0, 1.0);
     }
 
+    output.color = vec4f(0, 0, 0, 0.1);
+
     return output;
 }
 
+struct FragInput {
+    @location(0) color: vec4f,
+};
+
 @fragment
-fn fragmentMain() -> @location(0) vec4f {
-    return vec4f(0, 0, 0, 0.1);
+fn fragmentMain(input: FragInput) -> @location(0) vec4f {
+    return input.color;
 }

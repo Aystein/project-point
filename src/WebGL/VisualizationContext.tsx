@@ -47,6 +47,7 @@ export const VisProvider = ({ children, defaultZoom, defaultXDomain }: { default
   );
 
   const { ref, width, height } = useElementSize();
+
   const [renderer, setRenderer] = React.useState<WebGLRenderer>();
 
   const [renderFunctions, setRenderFunctions] = React.useState([]);
@@ -164,7 +165,7 @@ export const VisProvider = ({ children, defaultZoom, defaultXDomain }: { default
           if (!checkTarget(event.target as HTMLElement)) {
             return;
           }
-          
+
           mcontroller.mouseDown(event.nativeEvent);
         }}
         onMouseUp={(event) => {
@@ -175,18 +176,18 @@ export const VisProvider = ({ children, defaultZoom, defaultXDomain }: { default
           mcontroller.mouseUp(event.nativeEvent);
         }}
         onMouseMove={(event) => {
-          
+
           if (!checkTarget(event.target as HTMLElement)) {
             return;
           }
-          
+
           mcontroller.mouseMove(ref.current, event.nativeEvent);
         }}
         onWheel={(event) => {
           mcontroller.mouseWheel(event.nativeEvent);
         }}
       >
-        {children}
+        {width === 0 || height === 0 ? null : children}
       </div>
     </VisContext.Provider>
   );

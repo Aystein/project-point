@@ -1,45 +1,28 @@
-import {
-  Box,
-  Group
-} from '@mantine/core';
-import {
-  IconArrowsMove
-} from '@tabler/icons-react';
+import { Box } from '@mantine/core';
 import * as React from 'react';
 import {
   COMMAND_PRIORITY_NORMAL,
-  MOUSE_DOWN
+  MOUSE_DOWN,
 } from '../../Interaction/Commands';
 import { Rectangle } from '../../Math/Rectangle';
 import { useVisContext } from '../../VisualizationContext';
 
 import { useHotkeys } from '@mantine/hooks';
-import { openContextModal } from '@mantine/modals';
-import { scaleOrdinal } from 'd3-scale';
 import { useDispatch } from 'react-redux';
-import { VectorLike } from '../../../Interfaces';
-import {
-  fillOperation,
-  runSpaghettiLayout
-} from '../../../Layouts/Layouts';
+import { fillOperation } from '../../../Layouts/Layouts';
 import {
   activateModel,
   addSubEmbedding,
   removeEmbedding,
-  setShape,
-  translateArea,
-  updateLabels,
   updatePositionByFilter
 } from '../../../Store/ViewSlice';
 import { useAppSelector } from '../../../Store/hooks';
 import { SpatialModel } from '../../../Store/interfaces';
 import { SimpleDragCover } from './DragCover';
-import { DragCoverHorizontal } from './DragCoverHorizontal';
-import { DragCoverVertical } from './DragCoverVertical';
 import { LabelsOverlay } from './LabelsOverlay';
 import { useMouseEvent } from './useMouseDrag';
 
-import classes from './BoxBehavior.module.css';
+import { Handles, MoveHandles } from './Handles';
 
 export function BoxBehavior() {
   const { scaledXDomain, scaledYDomain } = useVisContext();
@@ -49,19 +32,18 @@ export function BoxBehavior() {
   const dispatch = useDispatch();
 
   const positions = useAppSelector((state) => state.views.positions);
-  const models = useAppSelector((state) => Object.values(state.views.models.entities))
+  const models = Object.values(
+    useAppSelector((state) => state.views.models.entities)
+  );
 
   const activeId = useAppSelector((state) => state.views.activeModel);
-  const activeTool = useAppSelector((state) => state.settings.activeTool)
-
+  const activeTool = useAppSelector((state) => state.views.selectedTool);
 
   const handleDelete = () => {
-    dispatch(removeEmbedding({ id: activeId }))
-  }
+    dispatch(removeEmbedding({ id: activeId }));
+  };
 
-  useHotkeys([
-    ['delete', handleDelete]
-  ])
+  useHotkeys([['delete', handleDelete]]);
 
   // register to mousedrag...
   useMouseEvent(
@@ -88,6 +70,13 @@ export function BoxBehavior() {
         left: 0,
         overflow: 'hidden',
       }}
+      onMouseDown={(event) => {
+        const target = event.target as HTMLElement;
+        console.log(target);
+        if (!target.hasAttribute('data-model') && !target.hasAttribute('data-interaction')) {
+          dispatch(activateModel({ id: null }))
+        }
+      }}
       ref={ref}
     >
       {rect ? (
@@ -102,9 +91,9 @@ export function BoxBehavior() {
                 scaledXDomain.invert(rect.x),
                 scaledYDomain.invert(rect.y),
                 scaledXDomain.invert(rect.x + rect.width) -
-                scaledXDomain.invert(rect.x),
+                  scaledXDomain.invert(rect.x),
                 scaledYDomain.invert(rect.y + rect.height) -
-                scaledYDomain.invert(rect.y)
+                  scaledYDomain.invert(rect.y)
               );
 
               const filter = new Array<number>();
@@ -123,8 +112,10 @@ export function BoxBehavior() {
                 })
               );
 
-              const { Y } = await fillOperation({ N: filter.length, area: worldRect });
-              //console.log(T);
+              const { Y } = await fillOperation({
+                N: filter.length,
+                area: worldRect,
+              });
 
               dispatch(updatePositionByFilter({ position: Y, filter }));
 
@@ -153,96 +144,24 @@ export function BoxBehavior() {
             top: rect.y,
             width: rect.width,
             height: rect.height,
-            border: '1px solid black',
-            borderRadius: '0.25rem',
+            border: '3px solid var(--mantine-color-gray-filled)',
           }}
         />
       ) : null}
 
       {models.map((model) => {
-        return (
-          <SingleBox key={model.id} model={model} />
-        );
+        return <SingleBox key={model.id} model={model} />;
       })}
     </div>
   );
 }
 
-function SingleBox({
-  model,
-}: {
-  model: SpatialModel;
-}) {
-  const { scaledXDomain, scaledYDomain, world } = useVisContext();
-  const dispatch = useDispatch();
-  const data = useAppSelector((state) => state.data.rows);
-  const positions = useAppSelector((state) => state.views.positions);
+
+function SingleBox({ model }: { model: SpatialModel }) {
+  const { scaledXDomain, scaledYDomain } = useVisContext();
   const area = model.area;
   const activeId = useAppSelector((state) => state.views.activeModel);
-
-  // const layoutConfigurations = useAppSelector();
-
-  const [drag, setDrag] = React.useState<{
-    direction: 'x' | 'y' | 'xy';
-    position: VectorLike;
-  }>();
-
-
-
-  const handleShape = () => {
-    const onFinish = (feature: string) => {
-      const filteredRows = model.filter.map((i) => data[i]);
-
-      let shape = scaleOrdinal([0, 1, 2, 3]).domain(
-        filteredRows.map((row) => row[feature])
-      );
-
-      const mappedColors = filteredRows.map((row) => shape(row[feature]));
-
-      dispatch(
-        setShape({
-          id: model.id,
-          shape: mappedColors,
-        })
-      );
-    };
-
-    openContextModal({
-      modal: 'colorby',
-      title: 'Shape by',
-      innerProps: {
-        onFinish,
-      },
-    });
-  };
-
-  const handleSpaghettiBy = async (axis: 'x' | 'y') => {
-    const onFinish = async (groups: string[], secondary: string) => {
-      const X = model.filter.map((i) => data[i]);
-
-      const { Y, x, y, labels } = await runSpaghettiLayout(
-        X,
-        area,
-        groups,
-        secondary,
-        axis,
-        model.filter.map((i) => positions[i]),
-      );
-
-      dispatch(updateLabels({ id: model.id, labels }));
-      dispatch(
-        updatePositionByFilter({ position: Y, filter: model.filter })
-      );
-    };
-
-    openContextModal({
-      modal: 'spaghetti',
-      title: 'Spaghetti',
-      innerProps: {
-        onFinish,
-      },
-    });
-  };
+  const dispatch = useDispatch();
 
   return (
     <Box
@@ -253,52 +172,22 @@ function SingleBox({
         width: scaledXDomain(area.x + area.width) - scaledXDomain(area.x),
         height: scaledYDomain(area.y + area.height) - scaledYDomain(area.y),
         background: 'var(--mantine-color-gray-0)',
-        border: `3px solid ${model.id === activeId ? 'var(--mantine-color-blue-1)' : 'var(--mantine-color-gray-1)'}`,
+        border: `3px solid ${
+          model.id === activeId
+            ? 'var(--mantine-color-blue-1)'
+            : 'var(--mantine-color-gray-1)'
+        }`,
       }}
+      onMouseDown={() => {
+        dispatch(activateModel({ id: model.id }))
+      }}
+      data-model
     >
-      <Box className={classes.leftHandle} data-interaction onClick={() => dispatch(activateModel({ id: model.id }))} />
-      <Box className={classes.rightHandle} data-interaction onClick={() => dispatch(activateModel({ id: model.id }))} />
-      <Box className={classes.topHandle} data-interaction onClick={() => dispatch(activateModel({ id: model.id }))} />
-      <Box className={classes.bottomHandle} data-interaction onClick={() => dispatch(activateModel({ id: model.id }))} />
+      <MoveHandles model={model} />
 
+      {model.id === activeId ? <Handles model={model} /> : null}
 
-      {
-        activeId === model.id ? <>
-          <SimpleDragCover
-            onMove={(movement) => {
-              dispatch(
-                translateArea({
-                  id: model.id,
-                  x: world(movement.x),
-                  y: world(movement.y),
-                })
-              );
-            }}
-            setDrag={(position) => {
-              dispatch(activateModel({ id: model.id }))
-              setDrag(position ? { position, direction: 'xy' } : null);
-            }}
-            drag={drag?.direction === 'xy' ? drag.position : null}
-            style={{
-              pointerEvents: 'initial',
-              transform: 'translate(-50%, 50%)',
-              position: 'absolute',
-              bottom: 0,
-
-            }}
-            data-interaction
-            icon={<IconArrowsMove />}
-          />
-
-          <DragCoverHorizontal parentModel={model} />
-          <DragCoverVertical parentModel={model} />
-        </> : null
-      }
-
-
-      <LabelsOverlay labels={model.labels} />
-
-      
+      <LabelsOverlay labels={model.labels} area={area} />
     </Box>
   );
 }

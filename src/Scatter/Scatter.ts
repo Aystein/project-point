@@ -346,7 +346,7 @@ export class Scatter {
       stepMode: 'instance',
     });
 
-    device.queue.writeBuffer(colorBuffer._buffer, 0, new Float32Array(Array.from({ length: this.N }).map(() => ([0.5, 0.5, 0.5, 1])).flat()))
+    device.queue.writeBuffer(colorBuffer._buffer, 0, new Float32Array(Array.from({ length: this.N }).map(() => 0xffffffff)))
 
     // Create render pipeline
     const cellShaderModule = device.createShaderModule({

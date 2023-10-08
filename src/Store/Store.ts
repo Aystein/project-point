@@ -23,7 +23,7 @@ const combined = combineReducers({
   views: viewReducer,
   datasets: datasetReducer,
   clusters: clusterReducer,
-  settings: settingsReducer
+  settings: settingsReducer,
 });
 
 export type RootState = ReturnType<typeof combined>;

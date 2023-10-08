@@ -10,17 +10,25 @@ export type EmbeddingParameters = {
   perplexity: number;
 };
 
-export type LabelContainer =
-  | {
-    discriminator: 'positionedlabels';
-    type: 'x' | 'y' | 'absolute';
-    labels: { position: number; content: string }[];
-  }
-  | {
-    discriminator: 'scalelabels';
-    type: 'x' | 'y';
-    labels: { domain: number[]; range: number[] };
-  };
+export type PositionLabelContainer = {
+  discriminator: 'positionedlabels';
+  type: 'x' | 'y';
+  labels: { position: number; content: string }[];
+}
+
+export type ScaleLabelContainer = {
+  discriminator: 'scalelabels';
+  type: 'x' | 'y';
+  labels: { domain: number[]; range: number[] };
+}
+
+export type AnnotationLabelContainer = {
+  discriminator: 'annotations';
+  type: 'xy',
+  labels: { position: IRectangle; content: string }[]
+}
+
+export type LabelContainer = PositionLabelContainer | ScaleLabelContainer | AnnotationLabelContainer;
 
 
 export type LinearScaleConfiguration = {
@@ -54,6 +62,13 @@ export type GroupConfiguration = {
   strategy: 'slice' | 'treemap'
 }
 
+export type SpaghettiConfiguration = {
+  channel: 'xy',
+  type: 'spaghetti',
+  columns: string[],
+  timeColumn: string,
+}
+
 export type UmapConfiguration = {
   channel: 'xy' | 'x' | 'y',
   type: 'umap',
@@ -62,11 +77,17 @@ export type UmapConfiguration = {
   neighbors: number,
 }
 
-export type LayoutConfiguration = LinearScaleConfiguration | CondenseConfiguration | ColorConfiguration | GroupConfiguration | UmapConfiguration | LineConfiguration;
+export type LayoutConfiguration = LinearScaleConfiguration | CondenseConfiguration | ColorConfiguration | GroupConfiguration | UmapConfiguration | LineConfiguration | SpaghettiConfiguration;
 
 export const layoutAdapter = createEntityAdapter<LayoutConfiguration>({
   selectId: (model) => model.channel
 });
+
+export type ColorFilter = {
+  color: string,
+  column: string,
+  active: boolean,
+}[]
 
 export interface SpatialModel extends BaseModel {
   id: EntityId;
@@ -87,6 +108,8 @@ export interface SpatialModel extends BaseModel {
   shape?: number[];
 
   labels?: LabelContainer[];
+
+  colorFilter?: ColorFilter,
 
   layoutConfigurations: EntityState<LayoutConfiguration>;
 }

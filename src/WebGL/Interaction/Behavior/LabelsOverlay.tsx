@@ -1,5 +1,10 @@
 import { scaleLinear } from 'd3-scale';
-import { LabelContainer } from '../../../Store/interfaces';
+import {
+  AnnotationLabelContainer,
+  LabelContainer,
+} from '../../../Store/interfaces';
+import { useVisContext } from '../../VisualizationContext';
+import { IRectangle, Rectangle } from '../../Math/Rectangle';
 
 export function LabelTick({
   content,
@@ -14,7 +19,9 @@ export function LabelTick({
     <div
       style={{
         position: 'absolute',
-        transform: `translate(${axis === 'y' ? 'calc(-100% - 8px)' : '-50%'}, ${axis === 'x' ? 'calc(100% + 8px)' : '50%'})`,
+        transform: `translate(${axis === 'y' ? 'calc(-100% - 8px)' : '-50%'}, ${
+          axis === 'x' ? 'calc(100% + 8px)' : '50%'
+        })`,
         transformOrigin: 'right',
         pointerEvents: 'none',
         [axis === 'x' ? 'left' : 'bottom']: `${(value * 100).toFixed(2)}%`,
@@ -54,7 +61,49 @@ export function ScaleLabels({
   );
 }
 
-export function LabelsOverlay({ labels }: { labels: LabelContainer[] }) {
+function SemanticLabels({
+  container,
+  area,
+}: {
+  container: AnnotationLabelContainer;
+  area: Rectangle;
+}) {
+  const { scaledXDomain, scaledYDomain } = useVisContext();
+
+  return container.labels.map((label) => {
+    return (
+      <div
+        key={label.content}
+        style={{
+          position: 'absolute',
+          pointerEvents: 'none',
+          left: `${(label.position.x * 100).toFixed(2)}%`,
+          top: `${(label.position.y * 100).toFixed(2)}%`,
+          width: `${(label.position.width * 100).toFixed(2)}%`,
+          height: `${(label.position.height * 100).toFixed(2)}%`,
+          textAnchor: 'middle',
+          fontSize: 16,
+          fontWeight: 500,
+          lineHeight: 1,
+          display: 'flex',
+          alignItems: 'flex-end',
+          justifyContent: 'center',
+          padding: 4,
+        }}
+      >
+        {label.content}
+      </div>
+    );
+  });
+}
+
+export function LabelsOverlay({
+  labels,
+  area,
+}: {
+  labels: LabelContainer[];
+  area: IRectangle;
+}) {
   if (!labels) return <></>;
 
   return (
@@ -74,10 +123,23 @@ export function LabelsOverlay({ labels }: { labels: LabelContainer[] }) {
         }
 
         if (container.discriminator === 'scalelabels') {
-          return <ScaleLabels
-            domain={container.labels.domain}
-            axis={container.type}
-          />;
+          return (
+            <ScaleLabels
+              key={container.type}
+              domain={container.labels.domain}
+              axis={container.type}
+            />
+          );
+        }
+
+        if (container.discriminator === 'annotations') {
+          return (
+            <SemanticLabels
+              key={container.type}
+              area={Rectangle.deserialize(area)}
+              container={container}
+            />
+          );
         }
       })}
     </>

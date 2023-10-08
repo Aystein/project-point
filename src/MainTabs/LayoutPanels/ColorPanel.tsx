@@ -3,6 +3,7 @@ import * as React from "react";
 import { ColorConfiguration } from "../../Store/interfaces";
 import { useAppDispatch, useAppSelector } from "../../Store/hooks";
 import { setLayoutConfig } from "../../Store/ViewSlice";
+import { useForm } from "@mantine/form";
 
 export function ColorPanel({ defaultValue }: { defaultValue: ColorConfiguration }) {
     const dispatch = useAppDispatch();
@@ -16,20 +17,30 @@ export function ColorPanel({ defaultValue }: { defaultValue: ColorConfiguration 
             .map((column) => ({ label: column.key, value: column.key }));
     }, [columns]);
 
-    const [column, setColumn] = React.useState(defaultValue?.column ?? options[0].value)
+    const [column, setColumn] = React.useState(defaultValue?.column)
 
-    React.useEffect(() => {
-        if (column) {
+    const update = (p_column, p_featureType) => {
+        if (p_column) {
             const layoutConfig: ColorConfiguration = {
                 channel: 'color',
                 type: 'setcolor',
-                column,
-                featureType,
+                column: p_column,
+                featureType: p_featureType,
             }
 
             dispatch(setLayoutConfig({ id, layoutConfig }))
         }
-    }, [dispatch, id, column, featureType]);
+    };
+
+    const handleChangeType = (newVal: 'categorical' | 'numerical') => {
+        setFeatureType(newVal)
+        update(column, newVal)
+    }
+
+    const handleChangeColumn = (newVal: string) => {
+        setColumn(newVal);
+        update(newVal, featureType);
+    }
 
     return <Stack gap="xs">
         <Select
@@ -38,7 +49,7 @@ export function ColorPanel({ defaultValue }: { defaultValue: ColorConfiguration 
             searchable
             data={options}
             value={column}
-            onChange={setColumn}
+            onChange={handleChangeColumn}
         />
 
         <Select
@@ -46,7 +57,7 @@ export function ColorPanel({ defaultValue }: { defaultValue: ColorConfiguration 
             placeholder="Pick one"
             data={['categorical', 'numeric']}
             value={featureType}
-            onChange={(newVal: 'categorical' | 'numerical') => setFeatureType(newVal)}
+            onChange={handleChangeType}
         />
     </Stack>
 }
