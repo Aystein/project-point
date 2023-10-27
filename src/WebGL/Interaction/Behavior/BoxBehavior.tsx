@@ -9,14 +9,13 @@ import { useVisContext } from '../../VisualizationContext';
 
 import { useHotkeys } from '@mantine/hooks';
 import { useDispatch } from 'react-redux';
-import { fillOperation } from '../../../Layouts/Layouts';
 import {
   activateModel,
   addSubEmbedding,
+  addSubEmbeddingAsync,
   removeEmbedding,
-  updatePositionByFilter
 } from '../../../Store/ViewSlice';
-import { useAppSelector } from '../../../Store/hooks';
+import { useAppDispatch, useAppSelector } from '../../../Store/hooks';
 import { SpatialModel } from '../../../Store/interfaces';
 import { SimpleDragCover } from './DragCover';
 import { LabelsOverlay } from './LabelsOverlay';
@@ -29,7 +28,7 @@ export function BoxBehavior() {
 
   const ref = React.useRef<HTMLDivElement>(null);
   const [rect, setRect] = React.useState<Rectangle>();
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
 
   const positions = useAppSelector((state) => state.views.positions);
   const models = Object.values(
@@ -72,9 +71,12 @@ export function BoxBehavior() {
       }}
       onMouseDown={(event) => {
         const target = event.target as HTMLElement;
-        console.log(target);
-        if (!target.hasAttribute('data-model') && !target.hasAttribute('data-interaction')) {
-          dispatch(activateModel({ id: null }))
+
+        if (
+          !target.hasAttribute('data-model') &&
+          !target.hasAttribute('data-interaction')
+        ) {
+          dispatch(activateModel({ id: null }));
         }
       }}
       ref={ref}
@@ -83,7 +85,7 @@ export function BoxBehavior() {
         <SimpleDragCover
           boxRef={ref}
           drag={{ x: rect.x, y: rect.y }}
-          setDrag={async () => {
+          onDragEnd={async () => {
             if (rect) {
               setRect(null);
 
@@ -105,24 +107,17 @@ export function BoxBehavior() {
               });
 
               dispatch(
-                addSubEmbedding({
+                addSubEmbeddingAsync({
                   filter,
                   Y: null,
                   area: worldRect,
                 })
               );
 
-              const { Y } = await fillOperation({
-                N: filter.length,
-                area: worldRect,
-              });
-
-              dispatch(updatePositionByFilter({ position: Y, filter }));
-
               return true;
             }
           }}
-          onMove={(_, event) => {
+          onDrag={(_, event) => {
             const bounds = ref.current.getBoundingClientRect();
             setRect((value) => {
               return new Rectangle(
@@ -156,7 +151,6 @@ export function BoxBehavior() {
   );
 }
 
-
 function SingleBox({ model }: { model: SpatialModel }) {
   const { scaledXDomain, scaledYDomain } = useVisContext();
   const area = model.area;
@@ -179,7 +173,7 @@ function SingleBox({ model }: { model: SpatialModel }) {
         }`,
       }}
       onMouseDown={() => {
-        dispatch(activateModel({ id: model.id }))
+        dispatch(activateModel({ id: model.id }));
       }}
       data-model
     >

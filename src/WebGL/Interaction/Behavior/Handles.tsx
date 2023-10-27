@@ -8,7 +8,7 @@ import {
 import { useAppDispatch } from '../../../Store/hooks';
 import { SpatialModel } from '../../../Store/interfaces';
 import { useVisContext } from '../../VisualizationContext';
-import { ComplexDragCover } from './DragCover';
+import { IconDragCover } from './DragCover';
 import classes from './Handles.module.css';
 
 export function MoveHandles({ model }: { model: SpatialModel }) {
@@ -22,7 +22,7 @@ export function MoveHandles({ model }: { model: SpatialModel }) {
     classes.topHandle,
   ].map((cls) => {
     return (
-      <ComplexDragCover
+      <IconDragCover
         key={cls}
         onMouseDown={() => dispatch(activateModel({ id: model.id }))}
         onMouseMove={(event) =>
@@ -54,7 +54,7 @@ export function Handles({ model }: { model: SpatialModel }) {
   return (
     <>
       {/* top left */}
-      <ComplexDragCover
+      <IconDragCover
         onMouseMove={(event) => {
           const { movementX, movementY } = event;
 
@@ -77,7 +77,7 @@ export function Handles({ model }: { model: SpatialModel }) {
         icon={<Box className={classes.topLeftHandle} data-interaction />}
       />
       {/* bottom right */}
-      <ComplexDragCover
+      <IconDragCover
         onMouseMove={(event) => {
           const { movementX, movementY } = event;
 
@@ -106,7 +106,7 @@ export function Handles({ model }: { model: SpatialModel }) {
         }
       />
       {/* top right */}
-      <ComplexDragCover
+      <IconDragCover
         onMouseMove={(event) => {
           const { movementX, movementY } = event;
 
@@ -135,7 +135,7 @@ export function Handles({ model }: { model: SpatialModel }) {
         }
       />
       {/* bottom left */}
-      <ComplexDragCover
+      <IconDragCover
         onMouseMove={(event) => {
           const { movementX, movementY } = event;
 
@@ -164,7 +164,7 @@ export function Handles({ model }: { model: SpatialModel }) {
         }
       />
       {/* middle left */}
-      <ComplexDragCover
+      <IconDragCover
         onMouseMove={(event) => {
           const { movementX } = event;
 
@@ -193,7 +193,7 @@ export function Handles({ model }: { model: SpatialModel }) {
         }
       />
 
-      <ComplexDragCover
+      <IconDragCover
         onMouseMove={(event) => {
           const { movementX } = event;
 
@@ -222,7 +222,7 @@ export function Handles({ model }: { model: SpatialModel }) {
         }
       />
 
-      <ComplexDragCover
+      <IconDragCover
         onMouseMove={(event) => {
           const { movementY } = event;
 
@@ -251,7 +251,7 @@ export function Handles({ model }: { model: SpatialModel }) {
         }
       />
 
-      <ComplexDragCover
+      <IconDragCover
         onMouseMove={(event) => {
           const { movementY } = event;
 

@@ -38,8 +38,13 @@ export type LinearScaleConfiguration = {
 }
 
 export type CondenseConfiguration = {
-  channel: 'x' | 'y' | 'xy',
+  channel: 'x' | 'y',
   type: 'condense'
+}
+
+export type FillRectConfiguration = {
+  channel: 'xy',
+  type: 'fillrect',
 }
 
 export type ColorConfiguration = {
@@ -77,7 +82,7 @@ export type UmapConfiguration = {
   neighbors: number,
 }
 
-export type LayoutConfiguration = LinearScaleConfiguration | CondenseConfiguration | ColorConfiguration | GroupConfiguration | UmapConfiguration | LineConfiguration | SpaghettiConfiguration;
+export type LayoutConfiguration = LinearScaleConfiguration | CondenseConfiguration | ColorConfiguration | GroupConfiguration | UmapConfiguration | LineConfiguration | SpaghettiConfiguration | FillRectConfiguration;
 
 export const layoutAdapter = createEntityAdapter<LayoutConfiguration>({
   selectId: (model) => model.channel
@@ -113,5 +118,9 @@ export interface SpatialModel extends BaseModel {
 
   layoutConfigurations: EntityState<LayoutConfiguration>;
 }
+
+
+
+
 
 export type Model = SpatialModel;

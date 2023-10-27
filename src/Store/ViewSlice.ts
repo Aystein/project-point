@@ -7,11 +7,12 @@ import groupBy from 'lodash/groupBy';
 import isEqual from 'lodash/isEqual';
 import { encode } from '../DataLoading/Encode';
 import { VectorLike } from '../Interfaces';
-import { runCondenseLayout, runForceLayout, runGroupLayout, runSpaghettiLayout, runUMAPLayout } from '../Layouts/Layouts';
+import { fillOperation, runCondenseLayout, runForceLayout, runGroupLayout, runSpaghettiLayout, runUMAPLayout } from '../Layouts/Layouts';
 import { getMinMax, scaleInto } from '../Util';
 import { IRectangle, Rectangle } from '../WebGL/Math/Rectangle';
 import { RootState } from './Store';
 import { LabelContainer, LayoutConfiguration, Model, SpatialModel, layoutAdapter } from './interfaces';
+import { Root } from 'react-dom/client';
 
 export type Selection = {
   global: number[];
@@ -97,12 +98,20 @@ export const viewslice = createSlice({
     },
     updatePositionByFilter: (
       state,
-      action: PayloadAction<{ position: VectorLike[]; filter: number[] }>
+      action: PayloadAction<{ position: VectorLike[]; filter: number[]; axis?: 'x' | 'y' }>
     ) => {
-      const { filter, position } = action.payload;
+      const { filter, position, axis } = action.payload;
 
       filter.forEach((globalIndex, localIndex) => {
-        state.positions[globalIndex] = position[localIndex];
+        if (axis === 'x') {
+          state.positions[globalIndex].x = position[localIndex].x;
+        }
+        if (axis === 'y') {
+          state.positions[globalIndex].y = position[localIndex].y;
+        }
+        if (!axis) {
+          state.positions[globalIndex] = position[localIndex];
+        }
       });
     },
     activateModel: (state, action: PayloadAction<{ id: EntityId }>) => {
@@ -321,35 +330,9 @@ export const viewslice = createSlice({
     },
     addSubEmbedding: (
       state,
-      action: PayloadAction<{
-        filter: number[];
-        Y: VectorLike[];
-        area: Rectangle;
-      }>
+      action: PayloadAction<SpatialModel>
     ) => {
-      const { filter, area } = action.payload;
-
-      const subModel: SpatialModel = {
-        id: nanoid(),
-        filter,
-        area: area.serialize(),
-        children: [],
-        layoutConfigurations: layoutAdapter.getInitialState(),
-      };
-
-      subModel.filter.forEach((globalIndex) => {
-        state.bounds[globalIndex * 4 + 0] = area.x;
-        state.bounds[globalIndex * 4 + 1] = area.y;
-        state.bounds[globalIndex * 4 + 2] = area.x + area.width;
-        state.bounds[globalIndex * 4 + 3] = area.y + area.height;
-      })
-
-      state.activeModel = subModel.id;
-
-      modelAdapter.addOne(state.models, subModel);
-
-      // reset tool
-      state.selectedTool = 'select';
+      modelAdapter.addOne(state.models, action.payload);
     },
     upsertLayoutConfig: (state, action: PayloadAction<{ id: EntityId, layoutConfig: LayoutConfiguration }>) => {
       const { id, layoutConfig } = action.payload;
@@ -426,6 +409,36 @@ export const viewslice = createSlice({
   };
  */
 
+export const removeLayoutConfigAsync = createAsyncThunk('layouts/addsubembedding',
+  async ({ channel }: { channel: string }, { dispatch, getState }) => {
+    dispatch(removeLayoutConfig({ channel }))
+    dispatch(rerunLayouts({ id: (getState() as RootState).views.activeModel }))
+  })
+
+export const addSubEmbeddingAsync = createAsyncThunk('layouts/addsubembedding',
+  async ({ filter, Y, area }: {
+    filter: number[];
+    Y: VectorLike[];
+    area: Rectangle;
+  }, { dispatch }) => {
+    const modelId = nanoid();
+
+    const subModel: SpatialModel = {
+      id: modelId,
+      filter,
+      area: area.serialize(),
+      children: [],
+      layoutConfigurations: layoutAdapter.getInitialState(),
+    };
+
+    dispatch(addSubEmbedding(subModel))
+    dispatch(setBounds({ id: modelId }))
+    dispatch(setTool('select'))
+    dispatch(activateModel({ id: modelId }))
+    dispatch(rerunLayouts({ id: modelId }))
+  })
+
+
 export const transfer = createAsyncThunk(
   'layouts/transfer',
   async ({ target, globalIds }: { target?: EntityId, globalIds: number[] }, { getState, dispatch }) => {
@@ -469,7 +482,29 @@ export const rerunLayouts = createAsyncThunk(
     dispatch(setBounds({ id }))
     dispatch(updateModel({ id, changes: { labels: [] } }))
 
-    Object.values(model.layoutConfigurations.entities).map(async (layoutConfig) => {
+    const layoutIds = model.layoutConfigurations.ids;
+    const layouts = Object.values(model.layoutConfigurations.entities);
+
+    if (!layoutIds.includes('xy')) {
+      if (!layoutIds.includes('x') && layoutIds.includes('y')) {
+        layouts.push({
+          type: 'condense',
+          channel: 'x'
+        })
+      } else if (!layoutIds.includes('y') && layoutIds.includes('x')) {
+        layouts.push({
+          type: 'condense',
+          channel: 'y'
+        })
+      } else {
+        layouts.push({
+          channel: 'xy',
+          type: 'fillrect'
+        })
+      }
+    }
+
+    layouts.map(async (layoutConfig) => {
       if (layoutConfig.channel === 'x' || layoutConfig.channel === 'y') {
         switch (layoutConfig.type) {
           case 'numericalscale': {
@@ -519,7 +554,7 @@ export const rerunLayouts = createAsyncThunk(
               id: model.id, labels
             }));
             dispatch(
-              updatePositionByFilter({ position: Y, filter: model.filter })
+              updatePositionByFilter({ position: Y, filter: model.filter, axis: layoutConfig.channel })
             );
             break;
           }
@@ -563,8 +598,12 @@ export const rerunLayouts = createAsyncThunk(
         }
       } else if (layoutConfig.channel === 'xy') {
         switch (layoutConfig.type) {
+          case 'fillrect': {
+            const { Y } = await fillOperation({ N: modelRows.length, area: model.area });
+            dispatch(updatePositionByFilter({ position: Y, filter: model.filter }));
+            break;
+          }
           case 'spaghetti': {
-            console.log("t")
             const { Y, x, y, labels } = await runSpaghettiLayout(
               modelRows,
               model.area,
@@ -573,7 +612,6 @@ export const rerunLayouts = createAsyncThunk(
               'y',
               model.filter.map((i) => state.views.positions[i])
             );
-            console.log(Y);
             dispatch(updateLabels({ id: model.id, labels }));
             dispatch(updatePositionByFilter({ position: Y, filter: model.filter }));
             break;
@@ -630,7 +668,6 @@ export const rerunLayouts = createAsyncThunk(
           }
         }
       }
-
     })
   }
 )

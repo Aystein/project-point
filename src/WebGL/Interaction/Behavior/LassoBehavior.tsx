@@ -13,19 +13,17 @@ import {
 import { useAppDispatch, useAppSelector } from '../../../Store/hooks';
 import { Rectangle } from '../../Math/Rectangle';
 import { useVisContext } from '../../VisualizationContext';
-import {
-  COMMAND_PRIORITY_CRITICAL,
-  MOUSE_DOWN
-} from '../Commands';
+import { COMMAND_PRIORITY_CRITICAL, MOUSE_DOWN } from '../Commands';
 import { SimpleDragCover } from './DragCover';
 import { useMouseEvent } from './useMouseDrag';
 import { pointInPolygon } from '../../../Util';
-import { selectActiveModel } from '../../../Store/Selectors';
+import { selectActiveModel, selectAllModels } from '../../../Store/Selectors';
+import { flushSync } from 'react-dom';
+import { EntityId } from '@reduxjs/toolkit';
 
 export function lassoPath(lasso) {
   return (lasso ?? []).reduce((svg, [x, y], i) => {
-    return (svg +=
-      i === 0 ? `M ${x},${y}` :  `L ${x},${y} `);
+    return (svg += i === 0 ? `M ${x},${y}` : `L ${x},${y} `);
   }, '');
 }
 
@@ -53,6 +51,24 @@ export function distanceXY(p1: VectorLike, p2: VectorLike) {
   return c;
 }
 
+function useAnimationFrame(callback) {
+  const functionRef = React.useRef(callback);
+  functionRef.current = callback;
+
+  const dirtyRef = React.useRef(false);
+
+  return {
+    request: (args) => {
+      if (!dirtyRef.current) {
+        dirtyRef.current = true;
+      }
+      requestAnimationFrame(() => {
+        dirtyRef.current = false;
+        functionRef.current(args);
+      });
+    },
+  };
+}
 
 export function LassoSelectionPlugin() {
   const { vis, scaledXDomain, scaledYDomain } = useVisContext();
@@ -62,16 +78,26 @@ export function LassoSelectionPlugin() {
   const spatial = useAppSelector((state) => state.views.positions);
   const globalFilter = useAppSelector((state) => state.views.filter);
 
-  const [ripple, setRipple] = React.useState<VectorLike>()
+  const [ripple, setRipple] = React.useState<VectorLike>();
 
   const [points, setPoints] = React.useState<[number, number][]>([]);
 
   const ref = React.useRef(null);
-  const activeTool = useAppSelector((state) => state.views.selectedTool)
+  const activeTool = useAppSelector((state) => state.views.selectedTool);
 
   const selection = useAppSelector((state) => state.views.selection);
   const localSelection = useAppSelector((state) => state.views.localSelection);
-  const activeModel = useAppSelector(selectActiveModel)
+  const activeModel = useAppSelector(selectActiveModel);
+
+  const models = useAppSelector(selectAllModels)
+
+  const { request } = useAnimationFrame(([x, y]) => {
+    if (drag) {
+      flushSync(() => {
+        setPoints((old) => [...old, [x, y]]);
+      });
+    }
+  })
 
   useMouseEvent(
     MOUSE_DOWN,
@@ -89,17 +115,20 @@ export function LassoSelectionPlugin() {
     [activeTool]
   );
 
-  const handleCondense = async (position: VectorLike) => {
+  const handleCondense = async (position: VectorLike, target: EntityId) => {
     if (!selection || selection.length === 0) return;
 
     const cx = scaledXDomain.invert(position.x);
     const cy = scaledYDomain.invert(position.y);
 
-    const { Y } = await fillOperation({ N: selection.length, area: { x: cx - 10, y: cy - 10, width: 20, height: 20 } })
+    const { Y } = await fillOperation({
+      N: selection.length,
+      area: { x: cx - 10, y: cy - 10, width: 20, height: 20 },
+    });
 
-    dispatch(transfer({ globalIds: selection, target: activeModel?.id }))
+    dispatch(transfer({ globalIds: selection, target }));
 
-    if (!activeModel) {
+    if (!target) {
       dispatch(updatePositionByFilter({ filter: localSelection, position: Y }));
     }
   };
@@ -118,30 +147,53 @@ export function LassoSelectionPlugin() {
         ref={ref}
       >
         {drag ? (
-          <path fill="rgba(1,1,1,0.1)" stroke="black" stroke-dasharray="4 4" d={lassoPath(points)} />
+          <path
+            fill="rgba(1,1,1,0.1)"
+            stroke="black"
+            stroke-dasharray="4 4"
+            d={lassoPath(points)}
+          />
         ) : null}
       </svg>
       <SimpleDragCover
         boxRef={ref}
         onClick={(position) => {
-          handleCondense(position);
-          setRipple(position)
+          const x = scaledXDomain.invert(position.x);
+          const y = scaledYDomain.invert(position.y);
+
+          setRipple(position);
           setDrag(null);
+          setPoints([]);
+
+          let target: EntityId = null;
+
+          for (let i = models.length - 1; i >= 0; i--) {
+            const model = models[i];
+
+            if (Rectangle.deserialize(model.area).within({ x, y })) {
+              dispatch(activateModel({ id: model.id }));
+              
+              target = model.id;
+              break;
+            }
+          }
+
+          handleCondense(position, target);
         }}
-        onMove={(_, event) => {
+        onDrag={(_, event) => {
           const bound = ref.current.getBoundingClientRect();
           const x = event.offsetX - bound.x;
           const y = event.offsetY - bound.y;
 
-          if (
-            points.length === 0 ||
-            distance(points[points.length - 1], [x, y]) > 5
-          ) {
-            setPoints((old) => [...old, [x, y]]);
+          if (points.length === 0) {
+
+            setPoints([[x, y]])
+          } else if (distance(points[points.length - 1], [x, y]) > 5) {
+            request([x, y]);
           }
         }}
         drag={drag}
-        setDrag={(val) => {
+        onDragEnd={(val) => {
           const worldPoints = points.map((point) => [
             scaledXDomain.invert(point[0]),
             scaledYDomain.invert(point[1]),
@@ -149,9 +201,14 @@ export function LassoSelectionPlugin() {
 
           const minX = Math.min(...worldPoints.map((point) => point[0]));
           const minY = Math.min(...worldPoints.map((point) => point[1]));
-          const maxX = Math.max(...worldPoints.map((point) => point[0]))
-          const maxY = Math.max(...worldPoints.map((point) => point[1]))
-          let box = new Rectangle(minX, minY, minX + (maxX - minX), minY + (maxY - minY));
+          const maxX = Math.max(...worldPoints.map((point) => point[0]));
+          const maxY = Math.max(...worldPoints.map((point) => point[1]));
+          let box = new Rectangle(
+            minX,
+            minY,
+            minX + (maxX - minX),
+            minY + (maxY - minY)
+          );
 
           let indices = new Array<number>();
 
@@ -160,10 +217,11 @@ export function LassoSelectionPlugin() {
               indices.push(globalFilter[i]);
             }
           });
-          
+
           dispatch(setSelection(indices.length === 0 ? undefined : indices));
 
           setDrag(null);
+
           setPoints([]);
         }}
       />

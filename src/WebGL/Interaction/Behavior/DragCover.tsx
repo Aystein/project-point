@@ -4,21 +4,17 @@ import { ActionIcon, Affix } from '@mantine/core';
 import { distanceXY } from './LassoBehavior';
 
 export function SimpleDragCover({
-  onMove,
+  onDrag,
   onClick,
   boxRef,
   drag,
-  setDrag,
-  icon,
-  style,
+  onDragEnd,
 }: {
-  onMove: (amount: VectorLike, event: MouseEvent) => void;
+  onDrag: (amount: VectorLike, event: MouseEvent) => void;
   onClick?: (position: VectorLike) => void;
   boxRef?: React.RefObject<HTMLElement>;
   drag: VectorLike;
-  setDrag: (value: VectorLike) => void;
-  icon?: JSX.Element;
-  style?;
+  onDragEnd: (value: VectorLike) => void;
 }) {
   const dragRef = React.useRef(false);
 
@@ -49,7 +45,7 @@ export function SimpleDragCover({
             }
 
             if (dragRef.current) {
-              onMove(
+              onDrag(
                 { x: event.movementX, y: event.movementY },
                 event.nativeEvent
               );
@@ -58,11 +54,11 @@ export function SimpleDragCover({
           onMouseUp={(event) => {
             event.stopPropagation();
             event.preventDefault();
-            console.log(event);
+
             const pos = translate(event);
 
             if (dragRef.current) {
-              setDrag(null);
+              onDragEnd(null);
             }
 
             if (!dragRef.current) {
@@ -74,31 +70,12 @@ export function SimpleDragCover({
           }}
         />
       ) : null}
-
-      {icon ? (
-        <ActionIcon
-          variant="subtle"
-          size="sm"
-          style={style}
-          onMouseDown={(event) => {
-            //event.preventDefault();
-            //event.stopPropagation();
-
-            setDrag({ x: event.screenX, y: event.screenY });
-          }}
-          onContextMenu={(event) => {
-            event.preventDefault();
-          }}
-        >
-          {icon}
-        </ActionIcon>
-      ) : null}
     </>
   );
 }
 
 
-export function ComplexDragCover({
+export function IconDragCover({
   icon,
   onClick,
   onMouseMove,

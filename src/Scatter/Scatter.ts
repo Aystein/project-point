@@ -9,6 +9,7 @@ import { POINT_RADIUS } from '../Layouts/Globals';
 import { Engine, SpheresBuffer } from '../ts/engine/engine';
 import { ShaderModule } from '../ts/webgpu-utils/webgpu-shader-module';
 import { SettingsType } from '../Store/SettingsSlice';
+import { createDefaultTexture } from './TextureGeneration';
 
 export interface ScatterConfig {
   background: GPUColor;
@@ -46,7 +47,7 @@ async function webGPUTextureFromImageUrl(gpuDevice, url) {
   const blob = await response.blob();
   const imgBitmap = await createImageBitmap(blob);
 
-  return webGPUTextureFromImageBitmapOrCanvas(gpuDevice, imgBitmap);
+  return webGPUTextureFromImageBitmapOrCanvas(gpuDevice, await createDefaultTexture());
 }
 
 export class Scatter {
@@ -212,7 +213,7 @@ export class Scatter {
       entries: [
         {
           binding: 0,
-          resource: this.device.createSampler(),
+          resource: this.device.createSampler({ magFilter: 'linear', minFilter: 'linear', addressModeU: 'repeat', addressModeV: 'repeat', mipmapFilter: "linear" }),
         },
         {
           binding: 1,
