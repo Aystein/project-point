@@ -42,7 +42,7 @@ struct VertexOutput {
 fn vertexMain(input: VertexInput) -> VertexOutput  {
     var output: VertexOutput;
 
-    let dim = vec2f(2, 2);
+    let dim = vec2f(2, 4);
 
     output.pos = vec4f(map(input.center.x, uniforms.xdomain.x, uniforms.xdomain.y, -1, 1) + input.vertexPosition.x * uniforms.sizeX, map(input.center.y, uniforms.ydomain.x, uniforms.ydomain.y, 1, -1) + input.vertexPosition.y * uniforms.sizeY, 0, 1);
     
@@ -60,12 +60,16 @@ fn vertexMain(input: VertexInput) -> VertexOutput  {
     } else {
         //output.color = input.color;
     }
+    var shape = input.shape;
     if (input.hover > 0.0) {
         output.color = output.color * 1.5;
+        shape = shape + 4;
     } else {
         output.color = output.color;
     }
-    output.texCoord = (input.texCoord / dim) + vec2f(input.shape % dim.x, floor(input.shape / dim.y)) / dim;
+    output.texCoord =
+        (input.texCoord / dim) +
+        vec2f(shape % dim.x, floor(shape / dim.y)) / dim;
 
     return output;
 }

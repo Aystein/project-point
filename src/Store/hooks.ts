@@ -1,6 +1,6 @@
 import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch, store } from './Store';
-import { createSelector } from '@reduxjs/toolkit';
+import { createAsyncThunk, createSelector } from '@reduxjs/toolkit';
 import { clusterAdapter } from './ClusterSlice';
 import { layoutAdapter } from './interfaces';
 
@@ -26,5 +26,11 @@ const clusterSelectors = clusterAdapter.getSelectors<RootState>(
 
 const layoutSelectors = layoutAdapter.getSelectors()
 
+export const createAppAsyncThunk = createAsyncThunk.withTypes<{
+  state: RootState
+  dispatch: AppDispatch
+  rejectValue: string
+  // extra: { s: string; n: number } // This is extra data prop, can leave it out if you are not passing extra data
+}>()
 
 export const selectClusters = clusterSelectors.selectAll;

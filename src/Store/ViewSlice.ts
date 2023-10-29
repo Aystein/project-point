@@ -13,6 +13,7 @@ import { IRectangle, Rectangle } from '../WebGL/Math/Rectangle';
 import { RootState } from './Store';
 import { LabelContainer, LayoutConfiguration, Model, SpatialModel, layoutAdapter } from './interfaces';
 import { Root } from 'react-dom/client';
+import { createAppAsyncThunk } from './hooks';
 
 export type Selection = {
   global: number[];
@@ -89,6 +90,12 @@ export const viewslice = createSlice({
   name: 'views',
   initialState,
   reducers: {
+    clearModel: (state, action: PayloadAction<{ id: EntityId }>) => {
+      const model = state.models.entities[state.activeModel];
+
+      model.labels = [];
+      model.line = [];
+    },
     setTool: (state, action: PayloadAction<Tool>) => {
       state.selectedTool = action.payload;
 
@@ -194,6 +201,7 @@ export const viewslice = createSlice({
         filter,
         children: [],
         area,
+        line: [],
         x: normalizedPositions.map((value) => value.x),
         y: normalizedPositions.map((value) => value.y),
         layoutConfigurations: layoutAdapter.getInitialState(),
@@ -281,7 +289,7 @@ export const viewslice = createSlice({
     },
     setColor: (
       state,
-      action: PayloadAction<{ id: EntityId; colors: number[], colorFilter?: { column: string, color: string, active: boolean }[] }>
+      action: PayloadAction<{ id: EntityId; colors: number[], colorFilter?: { column: string, color: string, active: boolean, indices: number[] }[] }>
     ) => {
       const { colors, id } = action.payload;
 
@@ -429,6 +437,7 @@ export const addSubEmbeddingAsync = createAsyncThunk('layouts/addsubembedding',
       area: area.serialize(),
       children: [],
       layoutConfigurations: layoutAdapter.getInitialState(),
+      line: [],
     };
 
     dispatch(addSubEmbedding(subModel))
@@ -471,7 +480,7 @@ export const transfer = createAsyncThunk(
 )
 
 
-export const rerunLayouts = createAsyncThunk(
+export const rerunLayouts = createAppAsyncThunk(
   'layouts/rerun',
   async ({ id }: { id: EntityId }, { dispatch, getState }) => {
     const state = getState() as RootState;
@@ -480,7 +489,9 @@ export const rerunLayouts = createAsyncThunk(
       .map((i) => state.data.rows[i]);
 
     dispatch(setBounds({ id }))
-    dispatch(updateModel({ id, changes: { labels: [] } }))
+    dispatch(clearModel({ id }))
+    dispatch(setLines([]))
+
 
     const layoutIds = model.layoutConfigurations.ids;
     const layouts = Object.values(model.layoutConfigurations.entities);
@@ -580,15 +591,15 @@ export const rerunLayouts = createAsyncThunk(
             dispatch(
               setColor({
                 id: model.id,
-                colors: mappedColors
-                  .map((hex) => {
-                    return hex;
-                  }),
+                colors: mappedColors,
                 colorFilter: layoutConfig.featureType === 'categorical' ? colorScale.domain().map((value) => {
+                  const indices = modelRows.filter((row) => row[layoutConfig.column] === value).map((row) => row.index);
+
                   return {
                     column: value,
                     color: colorScale(value),
-                    active: true
+                    active: true,
+                    indices,
                   }
                 }) : null
               })
@@ -652,23 +663,31 @@ export const rerunLayouts = createAsyncThunk(
         switch (layoutConfig.type) {
           case 'setline': {
             const grouped = groupBy(modelRows, (value) => value[layoutConfig.column]);
-            const lines = new Array<number>();
+            const line = new Array<number>();
 
             Object.keys(grouped).forEach((group) => {
               const values = grouped[group];
               values.forEach((row, i) => {
                 if (i < values.length - 1) {
-                  lines.push(values[i].index, values[i + 1].index);
+                  line.push(values[i].index, values[i + 1].index);
                 }
               });
             });
 
-            dispatch(setLines(lines));
+            dispatch(updateModel({ id: model.id, changes: { line } }));
+          
             break;
           }
         }
       }
     })
+
+
+    const lineBuffer = [];
+    Object.values(getState().views.models.entities).forEach((e) => {
+      lineBuffer.push(...e.line)
+    })
+    dispatch(setLines(lineBuffer))
   }
 )
 
@@ -684,6 +703,7 @@ export const setLayoutConfig = createAsyncThunk(
 export const {
   updatePositionByFilter,
   addSubEmbedding,
+  clearModel,
   removeEmbedding,
   translateArea,
   setColor,

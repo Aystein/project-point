@@ -188,7 +188,7 @@ export function LassoSelectionPlugin() {
           if (points.length === 0) {
 
             setPoints([[x, y]])
-          } else if (distance(points[points.length - 1], [x, y]) > 5) {
+          } else if (distance(points[points.length - 1], [x, y]) > 8) {
             request([x, y]);
           }
         }}

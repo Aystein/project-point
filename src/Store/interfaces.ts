@@ -92,6 +92,7 @@ export type ColorFilter = {
   color: string,
   column: string,
   active: boolean,
+  indices: number[]
 }[]
 
 export interface SpatialModel extends BaseModel {
@@ -111,6 +112,7 @@ export interface SpatialModel extends BaseModel {
 
   color?: number[];
   shape?: number[];
+  line: number[];
 
   labels?: LabelContainer[];
 
