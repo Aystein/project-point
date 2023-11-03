@@ -37,7 +37,6 @@ class Initialization {
 
     private indexBuffer: WebGPU.Buffer;
 
-f
 
     public constructor(device: GPUDevice, data: Data) {
         this.device = device;

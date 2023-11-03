@@ -67,7 +67,7 @@ export class Scatter {
 
   lineBuffer: YBuffer;
 
-  multisample = 1;
+  multisample = 4;
 
   multisampleTexture;
 
@@ -426,7 +426,7 @@ export class Scatter {
     const canvasFormat = navigator.gpu.getPreferredCanvasFormat();
 
     this.lineBuffer = createYBuffer({
-      n: 500,
+      n: 100000,
       layout: {
         0: 'uint32',
         1: 'uint32',
@@ -466,6 +466,9 @@ export class Scatter {
           },
         ],
       },
+      primitive: {
+        topology: 'triangle-list'
+      },
       multisample: { count: this.multisample },
     });
 
@@ -480,6 +483,10 @@ export class Scatter {
           binding: 1,
           resource: { buffer: this.buffers.uniform },
         },
+        {
+          binding: 2,
+          resource: { buffer: this.buffers.color._buffer }
+        }
       ],
     });
   }
@@ -504,6 +511,8 @@ export class Scatter {
       this.engine.compute(encoder, settings.delta / 1000000, settings.radiusScaling)
     }
 
+    // this.engine.copyBuffer(encoder, this.buffers.targetPosition);
+
     let pass = encoder.beginRenderPass({
       colorAttachments: [
         {
@@ -520,6 +529,7 @@ export class Scatter {
       pass.setPipeline(this.lineRenderPipeline);
 
       this.lineBufferGroup.bind(pass);
+      pass.setVertexBuffer(2, this.buffers.color._buffer);
       pass.setBindGroup(0, this.lineBindGroup);
 
       pass.draw(6, this.lineBuffer._buffer.size / 8);

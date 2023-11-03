@@ -95,6 +95,11 @@ export type ColorFilter = {
   indices: number[]
 }[]
 
+export type LineFilter = {
+  value: string,
+  indices: number[]
+}[]
+
 export interface SpatialModel extends BaseModel {
   id: EntityId;
 
@@ -117,6 +122,7 @@ export interface SpatialModel extends BaseModel {
   labels?: LabelContainer[];
 
   colorFilter?: ColorFilter,
+  lineFilter?: LineFilter
 
   layoutConfigurations: EntityState<LayoutConfiguration>;
 }

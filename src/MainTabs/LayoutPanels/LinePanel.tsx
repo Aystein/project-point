@@ -16,7 +16,7 @@ export function LinePanel({ defaultValue }: { defaultValue: ColorConfiguration }
             .map((column) => ({ label: column.key, value: column.key }));
     }, [columns]);
 
-    const [column, setColumn] = React.useState(defaultValue?.column ?? options[0].value)
+    const [column, setColumn] = React.useState(defaultValue?.column)
 
     const handleColumnChange = (value: string) => {
         setColumn(value);
@@ -25,7 +25,7 @@ export function LinePanel({ defaultValue }: { defaultValue: ColorConfiguration }
             const layoutConfig: LineConfiguration = {
                 channel: 'line',
                 type: 'setline',
-                column,
+                column: value,
             }
 
             dispatch(setLayoutConfig({ id, layoutConfig }))

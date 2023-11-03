@@ -8,6 +8,7 @@ import { Acceleration } from "./simulation/acceleration";
 import { Initialization } from "./simulation/initialization";
 import { Integration } from "./simulation/integration";
 import { SetBounds } from "./simulation/SetBounds";
+import { Copy } from "./simulation/copy";
 
 type Data = {
     spheresRadius: number;
@@ -87,6 +88,8 @@ class Engine {
 
     public hover: Hover;
 
+    public copy: Copy;
+
     private bounds?: Float32Array;
 
     public constructor(device: GPUDevice, public N: number, data: Data) {
@@ -155,11 +158,11 @@ class Engine {
         await this.device.queue.onSubmittedWorkDone();
 
         await this.mapXYBuffer.gpuBuffer.mapAsync(GPUMapMode.READ, 0, this.mapXYBuffer.gpuBuffer.size);
-        
+
         const range = new Float32Array(this.mapXYBuffer.gpuBuffer.getMappedRange(0, this.mapXYBuffer.gpuBuffer.size).slice(0));
         this.mapXYBuffer.gpuBuffer.unmap();
 
-        return range; 
+        return range;
     }
 
     public compute(commandEncoder: GPUCommandEncoder, dt: number, radiusScaling: number): void {
@@ -203,10 +206,24 @@ class Engine {
 
             this.needsIndexing = true;
 
-           this.indexIfNeeded(commandEncoder);
+            this.indexIfNeeded(commandEncoder);
         }
 
-       this.hover.compute(commandEncoder, [Math.random(), Math.random()]);
+        this.hover.compute(commandEncoder, [Math.random(), Math.random()]);
+    }
+
+    public copyBuffer(commandEncoder: GPUCommandEncoder, buffer: GPUBuffer) {
+        const { device } = this;
+        
+        this.copy = new Copy(device, {
+            particlesBufferData: {
+                particlesBuffer: this.particlesBuffer,
+                particlesCount: this.N,
+                particlesStructType: Engine.particleStructType,
+            }, positionsBuffer: buffer
+        });
+
+        this.copy.compute(commandEncoder);
     }
 
     public setForces(x: number[], y: number[]) {

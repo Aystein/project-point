@@ -12,6 +12,7 @@ import SetPositions from "../shaders/engine/simulation/set_positions.wgsl?raw";
 import SetBounds from "../shaders/engine/simulation/set_bounds.wgsl?raw";
 import Integration from "../shaders/engine/simulation/integration.wgsl?raw";
 
+import Copy from "../shaders/engine/utility/copy.wgsl?raw";
 
 const engine = {
     Indexing: {
@@ -32,6 +33,9 @@ const engine = {
         SetPositions,
         SetBounds,
     },
+    Util: {
+        Copy,
+    }
 };
 
 export {

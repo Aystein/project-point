@@ -6,6 +6,50 @@ import {
 import { useVisContext } from '../../VisualizationContext';
 import { IRectangle, Rectangle } from '../../Math/Rectangle';
 
+export function XTick({ content, value }: { content: string; value: number }) {
+  const x = `${(value * 100).toFixed(2)}%`;
+  const y = 8;
+
+  return (
+    <>
+      <text
+        x={x}
+        y={y}
+        text-anchor="middle"
+        pointerEvents="none"
+        style={{ userSelect: 'none' }}
+        alignmentBaseline="hanging"
+        fontSize="12"
+      >
+        {content}
+      </text>
+      <line x1={x} y1={0} x2={x} y2={6} stroke="black" />
+    </>
+  );
+}
+
+export function YTick({ content, value }: { content: string; value: number }) {
+  const y = `${(value * 100).toFixed(2)}%`;
+  const x = 32;
+
+  return (
+    <>
+      <text
+        x={x}
+        y={y}
+        text-anchor="end"
+        pointerEvents="none"
+        style={{ userSelect: 'none' }}
+        alignmentBaseline="middle"
+        fontSize="12"
+      >
+        {content}
+      </text>
+      <line x1={34} y1={y} x2={40} y2={y} stroke="black" />
+    </>
+  );
+}
+
 export function LabelTick({
   content,
   value,
@@ -15,24 +59,12 @@ export function LabelTick({
   value: number;
   axis: 'x' | 'y' | 'absolute';
 }) {
-  return (
-    <div
-      style={{
-        position: 'absolute',
-        transform: `translate(${axis === 'y' ? 'calc(-100% - 8px)' : '-50%'}, ${
-          axis === 'x' ? 'calc(100% + 8px)' : '50%'
-        })`,
-        transformOrigin: 'right',
-        pointerEvents: 'none',
-        [axis === 'x' ? 'left' : 'bottom']: `${(value * 100).toFixed(2)}%`,
-        [axis === 'x' ? 'bottom' : 'left']: 0,
-        fontSize: 14,
-        lineHeight: 1,
-      }}
-    >
-      {content}
-    </div>
-  );
+  switch (axis) {
+    case 'x':
+      return <XTick content={content} value={value} />;
+    case 'y':
+      return <YTick content={content} value={value} />;
+  }
 }
 
 export function ScaleLabels({
@@ -45,18 +77,43 @@ export function ScaleLabels({
   const scale = scaleLinear().domain(domain).range([0, 1]);
   const ticks = scale.ticks();
 
+  const getStyle = () => {
+    switch (axis) {
+      case 'x': {
+        return {
+          position: 'absolute',
+          top: 'calc(100% + 3px)',
+          width: '100%',
+          height: 40,
+          pointerEvents: 'none',
+        };
+      }
+      case 'y': {
+        return {
+          position: 'absolute',
+          right: 'calc(100% + 3px)',
+          height: '100%',
+          width: 40,
+          pointerEvents: 'none',
+        };
+      }
+    }
+  };
+
   return (
     <>
-      {ticks.map((tick) => {
-        return (
-          <LabelTick
-            key={tick}
-            value={scale(tick)}
-            content={tick.toString()}
-            axis={axis}
-          />
-        );
-      })}
+      <svg style={getStyle()}>
+        {ticks.map((tick) => {
+          return (
+            <LabelTick
+              key={tick}
+              value={scale(tick)}
+              content={tick.toString()}
+              axis={axis}
+            />
+          );
+        })}
+      </svg>
     </>
   );
 }

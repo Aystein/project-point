@@ -8,6 +8,7 @@ struct Uniforms {
 
 @group(0) @binding(0) var<storage, read> hover: array<Particle>;
 @group(0) @binding(1) var<uniform> uniforms: Uniforms;
+@group(0) @binding(2) var<storage, read> colorBuffer: array<u32>;
 
 struct VertexInput {
     @location(0) start: u32,
@@ -47,28 +48,43 @@ fn vertexMain(input: VertexInput) -> VertexOutput  {
     output.pos = vec4f(0.0, 0.0, 0.0, 1.0);
 
     var direction = start - end;
-    var norm = normalize(vec2f(direction.y, direction.x)) * 0.002;
+    var norm = normalize(vec2f(direction.y, direction.x)) * 0.0012;
+
+    var uintc = 0u;
 
     if (input.vert == 0) {
         output.pos = vec4f(map2f(start) - norm, 0.0, 1.0);
+        uintc = colorBuffer[input.start];
     }
     if (input.vert == 1) {
         output.pos = vec4f(map2f(start) + norm, 0.0, 1.0);
+        uintc = colorBuffer[input.start];
     }
     if (input.vert == 2) {
         output.pos = vec4f(map2f(end) - norm, 0.0, 1.0);
+        uintc = colorBuffer[input.end];
     }
     if (input.vert == 3) {
         output.pos = vec4f(map2f(end) - norm, 0.0, 1.0);
+        uintc = colorBuffer[input.end];
     }
     if (input.vert == 4) {
         output.pos = vec4f(map2f(end) + norm, 0.0, 1.0);
+        uintc = colorBuffer[input.end];
     }
     if (input.vert == 5) {
         output.pos = vec4f(map2f(start) + norm, 0.0, 1.0);
+        uintc = colorBuffer[input.start];
     }
 
-    output.color = vec4f(0, 0, 0, 0.1);
+    let r = (uintc >> 24) & 0xff;
+    let g = (uintc >> 16) & 0xff;
+    let b = (uintc >> 8) & 0xff;
+    let a = uintc & 0xff;
+    output.color.x = f32(r) / 255;
+    output.color.y = f32(g) / 255;
+    output.color.z = f32(b) / 255;
+    output.color.a = 0.5;
 
     return output;
 }

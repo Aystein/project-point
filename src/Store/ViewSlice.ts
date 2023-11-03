@@ -11,7 +11,7 @@ import { fillOperation, runCondenseLayout, runForceLayout, runGroupLayout, runSp
 import { getMinMax, scaleInto } from '../Util';
 import { IRectangle, Rectangle } from '../WebGL/Math/Rectangle';
 import { RootState } from './Store';
-import { LabelContainer, LayoutConfiguration, Model, SpatialModel, layoutAdapter } from './interfaces';
+import { LabelContainer, LayoutConfiguration, LineFilter, Model, SpatialModel, layoutAdapter } from './interfaces';
 import { Root } from 'react-dom/client';
 import { createAppAsyncThunk } from './hooks';
 
@@ -95,6 +95,8 @@ export const viewslice = createSlice({
 
       model.labels = [];
       model.line = [];
+      model.colorFilter = null;
+      model.lineFilter = null;
     },
     setTool: (state, action: PayloadAction<Tool>) => {
       state.selectedTool = action.payload;
@@ -662,11 +664,16 @@ export const rerunLayouts = createAppAsyncThunk(
       } else if (layoutConfig.channel === 'line') {
         switch (layoutConfig.type) {
           case 'setline': {
+            console.log(layoutConfig);
             const grouped = groupBy(modelRows, (value) => value[layoutConfig.column]);
             const line = new Array<number>();
+            const lineFilter: LineFilter = [];
 
             Object.keys(grouped).forEach((group) => {
               const values = grouped[group];
+              
+              lineFilter.push({ value: group, indices: values.map((v) => v.index) })
+              
               values.forEach((row, i) => {
                 if (i < values.length - 1) {
                   line.push(values[i].index, values[i + 1].index);
@@ -674,7 +681,10 @@ export const rerunLayouts = createAppAsyncThunk(
               });
             });
 
-            dispatch(updateModel({ id: model.id, changes: { line } }));
+            
+
+            dispatch(updateModel({ id: model.id, changes: { line, lineFilter } }));
+            console.log({ line, lineFilter })
           
             break;
           }
