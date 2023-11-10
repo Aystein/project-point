@@ -7,6 +7,7 @@ import { useAppSelector } from '../../Store/hooks';
 import { Engine } from '../../ts/engine/engine';
 import { useVisContext } from '../VisualizationContext';
 import { Card } from '@mantine/core';
+import { Shadow } from '../../Store/interfaces';
 
 type ColumnTemp = {
   values: number[];
@@ -56,6 +57,7 @@ export function Scatterplot({
   shape,
   line,
   interpolate,
+  shadows,
 }: {
   n: number;
   x: number[];
@@ -70,6 +72,7 @@ export function Scatterplot({
   line?: number[];
   bounds?: number[];
   interpolate?: boolean;
+  shadows?: Shadow[];
 }) {
   const [myRenderer, setRenderer] = useState<{ scatter: Scatter, engine: Engine }>();
 
@@ -125,7 +128,12 @@ export function Scatterplot({
 
   useEffect(() => {
     myRenderer?.scatter.setHover(hover ?? []);
+    // myRenderer?.engine.setHover(hover ?? []);
   }, [hover, myRenderer]);
+
+  useEffect(() => {
+    myRenderer?.engine.addShadowPoints(shadows ?? []);
+  }, [shadows, myRenderer])
 
   useEffect(() => {
     if (!myRenderer) return;

@@ -8,7 +8,6 @@ struct Uniforms {
 
 @group(0) @binding(0) var<storage, read> hover: array<Particle>;
 @group(0) @binding(1) var<uniform> uniforms: Uniforms;
-@group(0) @binding(2) var<storage, read> colorBuffer: array<u32>;
 
 struct VertexInput {
     @location(0) start: u32,
@@ -33,6 +32,9 @@ fn map2f(x: vec2f) -> vec2f
   return vec2f(map(x.x, uniforms.xdomain.x, uniforms.xdomain.y, -1, 1), map(x.y, uniforms.ydomain.x, uniforms.ydomain.y, 1, -1));
 }
 
+fn intToColor(uintc: u32) -> vec4f {
+    return vec4f(f32((uintc >> 24) & 0xff) / 255, f32( (uintc >> 16) & 0xff) / 255,  f32((uintc >> 8) & 0xff) / 255, f32(uintc & 0xff));
+}
 
 @vertex
 fn vertexMain(input: VertexInput) -> VertexOutput  {
@@ -42,48 +44,42 @@ fn vertexMain(input: VertexInput) -> VertexOutput  {
 
     var uii = uniforms;
 
-    var start = hover[input.start].position;
-    var end = hover[input.end].position;
+    var startPosition = hover[input.start].position;
+    var endPosition = hover[input.end].position;
 
     output.pos = vec4f(0.0, 0.0, 0.0, 1.0);
 
-    var direction = start - end;
-    var norm = normalize(vec2f(direction.y, direction.x)) * 0.0012;
+    var direction = startPosition - endPosition;
+    var norm = normalize(vec2f(direction.y, direction.x)) * 0.0022;
 
     var uintc = 0u;
 
     if (input.vert == 0) {
-        output.pos = vec4f(map2f(start) - norm, 0.0, 1.0);
-        uintc = colorBuffer[input.start];
+        output.pos = vec4f(map2f(startPosition) - norm, 0.0, 1.0);
+        uintc = hover[input.start].color;
     }
     if (input.vert == 1) {
-        output.pos = vec4f(map2f(start) + norm, 0.0, 1.0);
-        uintc = colorBuffer[input.start];
+        output.pos = vec4f(map2f(startPosition) + norm, 0.0, 1.0);
+        uintc = hover[input.start].color;
     }
     if (input.vert == 2) {
-        output.pos = vec4f(map2f(end) - norm, 0.0, 1.0);
-        uintc = colorBuffer[input.end];
+        output.pos = vec4f(map2f(endPosition) - norm, 0.0, 1.0);
+        uintc = hover[input.end].color;
     }
     if (input.vert == 3) {
-        output.pos = vec4f(map2f(end) - norm, 0.0, 1.0);
-        uintc = colorBuffer[input.end];
+        output.pos = vec4f(map2f(endPosition) - norm, 0.0, 1.0);
+        uintc = hover[input.end].color;
     }
     if (input.vert == 4) {
-        output.pos = vec4f(map2f(end) + norm, 0.0, 1.0);
-        uintc = colorBuffer[input.end];
+        output.pos = vec4f(map2f(endPosition) + norm, 0.0, 1.0);
+        uintc = hover[input.end].color;
     }
     if (input.vert == 5) {
-        output.pos = vec4f(map2f(start) + norm, 0.0, 1.0);
-        uintc = colorBuffer[input.start];
+        output.pos = vec4f(map2f(startPosition) + norm, 0.0, 1.0);
+        uintc = hover[input.start].color;
     }
 
-    let r = (uintc >> 24) & 0xff;
-    let g = (uintc >> 16) & 0xff;
-    let b = (uintc >> 8) & 0xff;
-    let a = uintc & 0xff;
-    output.color.x = f32(r) / 255;
-    output.color.y = f32(g) / 255;
-    output.color.z = f32(b) / 255;
+    output.color = intToColor(uintc);
     output.color.a = 0.5;
 
     return output;

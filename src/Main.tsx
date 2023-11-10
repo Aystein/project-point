@@ -22,6 +22,7 @@ function MainView({ data }: { data: DataState; }) {
   const color = useAppSelector((state) => state.views.color);
   const shape = useAppSelector((state) => state.views.shape);
   const bounds = useAppSelector((state) => state.views.bounds);
+  const shadows = useAppSelector((state) => state.views.shadows);
 
   const { scaledXDomain, scaledYDomain } = useVisContext();
 
@@ -64,6 +65,7 @@ function MainView({ data }: { data: DataState; }) {
         line={line}
         selection={selection}
         interpolate={true}
+        shadows={shadows}
       />
 
     </>

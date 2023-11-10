@@ -1,5 +1,6 @@
 import { EntityId, EntityState, createEntityAdapter } from '@reduxjs/toolkit';
 import { IRectangle } from '../WebGL/Math/Rectangle';
+import { VectorLike } from '../Interfaces';
 
 interface BaseModel {
   id: EntityId;
@@ -88,6 +89,12 @@ export const layoutAdapter = createEntityAdapter<LayoutConfiguration>({
   selectId: (model) => model.channel
 });
 
+export type Shadow = {
+  copyOf: number,
+  position: VectorLike,
+  color: number,
+}
+
 export type ColorFilter = {
   color: string,
   column: string,
@@ -108,7 +115,11 @@ export interface SpatialModel extends BaseModel {
   // The indices of the rows this model operates on
   filter: number[];
 
-  children: SpatialModel[];
+  // The dictionary that maps filter points to shadow points
+  shadows: Shadow[]
+  filterToShadow: Record<number, number>;
+
+  children: EntityId[];
 
   area: IRectangle;
 

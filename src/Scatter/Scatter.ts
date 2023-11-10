@@ -1,15 +1,16 @@
-import wgsl from './Scatter.render.wgsl?raw';
-import linewgsl from './Line.render.wgsl?raw';
 import image from '../Assets/square_white.png';
-import { createQuadBuffer } from './Util';
-import { YBuffer, createYBuffer } from './Test/YBuffer';
-import { defaultAlphaBlend } from './Test/Blending';
-import { YBufferGroup, createYBufferGroup } from './Test/YBufferGroup';
 import { POINT_RADIUS } from '../Layouts/Globals';
-import { Engine, SpheresBuffer } from '../ts/engine/engine';
-import { ShaderModule } from '../ts/webgpu-utils/webgpu-shader-module';
 import { SettingsType } from '../Store/SettingsSlice';
+import { Engine } from '../ts/engine/engine';
+import { WebGPUBuffer } from '../ts/webgpu-utils/webgpu-buffer';
+import { ShaderModule } from '../ts/webgpu-utils/webgpu-shader-module';
+import linewgsl from './Line.render.wgsl?raw';
+import wgsl from './Scatter.render.wgsl?raw';
+import { defaultAlphaBlend } from './Test/Blending';
+import { YBuffer, createYBuffer } from './Test/YBuffer';
+import { YBufferGroup, createYBufferGroup } from './Test/YBufferGroup';
 import { createDefaultTexture } from './TextureGeneration';
+import { createQuadBuffer } from './Util';
 
 export interface ScatterConfig {
   background: GPUColor;
@@ -67,22 +68,19 @@ export class Scatter {
 
   lineBuffer: YBuffer;
 
-  multisample = 4;
+  multisample = 1;
 
   multisampleTexture;
 
   multisampleView;
 
   buffers: {
-    color: YBuffer;
-    vertex: YBuffer;
-    particle: YBuffer;
+    color: WebGPUBuffer;
     shape: YBuffer;
 
-    targetPosition: GPUBuffer;
     uniform: GPUBuffer;
-    hover: YBuffer;
-    selection: YBuffer;
+    hover: WebGPUBuffer;
+    selection: WebGPUBuffer;
   };
 
   engine: Engine;
@@ -109,15 +107,6 @@ export class Scatter {
     })
   }
 
-  setXY(data: Float32Array) {
-    const {
-      device,
-      buffers: { targetPosition, particle },
-    } = this;
-
-    device.queue.writeBuffer(particle._buffer, 0, data);
-  }
-
   updateBounds(xdomain, ydomain) {
     this.device.queue.writeBuffer(
       this.buffers.uniform,
@@ -137,7 +126,8 @@ export class Scatter {
       buffers: { color },
     } = this;
 
-    device.queue.writeBuffer(color._buffer, 0, data);
+    device.queue.writeBuffer(color.gpuBuffer, 0, data);
+    this.engine.setColor(color)
   }
 
   setShape(data: Float32Array) {
@@ -165,8 +155,10 @@ export class Scatter {
     indices.forEach((i) => {
       data[i] = 1;
     });
+    
 
-    device.queue.writeBuffer(hover._buffer, 0, data);
+    device.queue.writeBuffer(hover.gpuBuffer, 0, data);
+    this.engine.setHover(hover)
   }
 
   setSelection(indices: number[]) {
@@ -182,7 +174,8 @@ export class Scatter {
       data[i] = 1;
     });
 
-    device.queue.writeBuffer(selection._buffer, 0, data);
+    device.queue.writeBuffer(selection.gpuBuffer, 0, data);
+    this.engine.setSelected(selection)
   }
 
   setLine(line: number[]) {
@@ -222,6 +215,10 @@ export class Scatter {
         {
           binding: 2,
           resource: { buffer: this.buffers.uniform },
+        },
+        {
+          binding: 3,
+          resource: { buffer: this.engine.particlesBuffer.gpuBuffer },
         },
       ],
     });
@@ -269,7 +266,7 @@ export class Scatter {
         0: 'float32x2',
         1: 'float32x2',
       },
-      n: this.N,
+      n: this.N / 2,
       usage:
         GPUBufferUsage.VERTEX |
         GPUBufferUsage.STORAGE |
@@ -283,19 +280,6 @@ export class Scatter {
       vertices
     );
 
-    const particleBuffer = createYBuffer({
-      device,
-      layout: {
-        2: 'float32x2',
-      },
-      n: this.N,
-      usage:
-        GPUBufferUsage.VERTEX |
-        GPUBufferUsage.STORAGE |
-        GPUBufferUsage.COPY_DST,
-      stepMode: 'instance',
-    });
-
     const shape = createYBuffer({
       device,
       layout: {
@@ -306,61 +290,58 @@ export class Scatter {
       stepMode: 'instance',
     });
 
-    const selection = createYBuffer({
+    /*const selection = createYBuffer({
       device,
       layout: {
         6: 'uint32',
       },
-      n: this.N,
+      n: this.N + 1000,
       usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
       stepMode: 'instance',
-    });
+    });*/
 
-    const hover = createYBuffer({
+    const selection = new WebGPUBuffer(this.device, {
+      usage: GPUBufferUsage.VERTEX |
+      GPUBufferUsage.STORAGE |
+      GPUBufferUsage.COPY_DST,
+      size: this.N * 4
+    })
+
+    /** const hover = createYBuffer({
       device,
       layout: {
         5: 'float32',
       },
-      n: this.N,
+      n: this.N + 1000,
       usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
       stepMode: 'instance',
-    });
+    }); */
 
-    const targetPosition = device.createBuffer({
-      size: 8 * this.N,
-      usage:
-        GPUBufferUsage.VERTEX |
+    const hover = new WebGPUBuffer(this.device, {
+      usage: GPUBufferUsage.VERTEX |
         GPUBufferUsage.STORAGE |
         GPUBufferUsage.COPY_DST,
-    });
+        size: this.N * 4
+    })
 
-    const colorBuffer = createYBuffer({
-      device,
-      layout: {
-        3: 'uint32',
-      },
-      n: this.N,
-      usage:
-        GPUBufferUsage.VERTEX |
+    const colorBuffer = new WebGPUBuffer(this.device, {
+      usage: GPUBufferUsage.VERTEX |
         GPUBufferUsage.STORAGE |
         GPUBufferUsage.COPY_DST,
-      stepMode: 'instance',
-    });
+      size: this.N * 4
+    })
 
-    device.queue.writeBuffer(colorBuffer._buffer, 0, new Float32Array(Array.from({ length: this.N }).map(() => 0xffffffff)))
+    device.queue.writeBuffer(colorBuffer.gpuBuffer, 0, new Float32Array(Array.from({ length: this.N }).map(() => 0xffffffff)))
 
-    // Create render pipeline
-    const cellShaderModule = device.createShaderModule({
+
+    const cellShaderModule = ShaderModule.create(device, {
       code: wgsl,
-    });
+      structs: [Engine.particleStructType],
+    })
+
 
     this.pointBufferGroup = createYBufferGroup(
       vertexBuffer,
-      particleBuffer,
-      colorBuffer,
-      shape,
-      hover,
-      selection
     );
 
     this.pointRenderPipeline = device.createRenderPipeline({
@@ -368,20 +349,7 @@ export class Scatter {
       vertex: {
         module: cellShaderModule,
         entryPoint: 'vertexMain',
-        buffers: [...this.pointBufferGroup.layout, {
-          attributes: [
-            {
-              shaderLocation: 7,
-              ...Engine.particleStructType.asVertexAttribute("position")
-            },
-            {
-              shaderLocation: 8,
-              ...Engine.particleStructType.asVertexAttribute("selected")
-            }
-          ],
-          arrayStride: Engine.particleStructType.size,
-          stepMode: "instance",
-        }],
+        buffers: [...this.pointBufferGroup.layout],
       },
       fragment: {
         module: cellShaderModule,
@@ -398,9 +366,6 @@ export class Scatter {
 
     this.buffers = {
       color: colorBuffer,
-      vertex: vertexBuffer,
-      particle: particleBuffer,
-      targetPosition,
       shape,
       uniform: uniformBuffer,
       hover,
@@ -462,7 +427,18 @@ export class Scatter {
         targets: [
           {
             format: canvasFormat,
-            blend: defaultAlphaBlend(),
+            blend: {
+              color: {
+                srcFactor: 'src-alpha',
+                dstFactor: 'zero',
+                operation: 'add',
+              },
+              alpha: {
+                srcFactor: 'one',
+                dstFactor: 'one',
+                operation: 'max',
+              },
+            },
           },
         ],
       },
@@ -483,10 +459,6 @@ export class Scatter {
           binding: 1,
           resource: { buffer: this.buffers.uniform },
         },
-        {
-          binding: 2,
-          resource: { buffer: this.buffers.color._buffer }
-        }
       ],
     });
   }
@@ -511,8 +483,6 @@ export class Scatter {
       this.engine.compute(encoder, settings.delta / 1000000, settings.radiusScaling)
     }
 
-    // this.engine.copyBuffer(encoder, this.buffers.targetPosition);
-
     let pass = encoder.beginRenderPass({
       colorAttachments: [
         {
@@ -521,6 +491,7 @@ export class Scatter {
           clearValue: [0, 0, 0, 0],
           loadOp: 'clear',
           storeOp: this.multisample === 1 ? 'store' : 'store',
+
         },
       ],
     });
@@ -529,7 +500,7 @@ export class Scatter {
       pass.setPipeline(this.lineRenderPipeline);
 
       this.lineBufferGroup.bind(pass);
-      pass.setVertexBuffer(2, this.buffers.color._buffer);
+      // pass.setVertexBuffer(2, this.buffers.color._buffer);
       pass.setBindGroup(0, this.lineBindGroup);
 
       pass.draw(6, this.lineBuffer._buffer.size / 8);
@@ -552,12 +523,12 @@ export class Scatter {
     pass.setPipeline(cellPipeline);
 
     this.pointBufferGroup.bind(pass);
-    pass.setVertexBuffer(6, this.engine.particlesBuffer.gpuBuffer);
+    pass.setVertexBuffer(5, this.engine.particlesBuffer.gpuBuffer);
     //pass.setIndexBuffer(this.indexBuffer, "uint16");
 
     pass.setBindGroup(0, this.pointBindGroup);
 
-    pass.draw(6, this.N);
+    pass.draw(6, this.N + this.engine.dynamicSize);
     //pass.drawIndexed(6, 10)
 
     pass.end();

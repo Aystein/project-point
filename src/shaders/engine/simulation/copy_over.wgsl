@@ -1,4 +1,4 @@
-@group(0) @binding(0) var<storage,read> initialPositions: array<ForcePosition>;
+@group(0) @binding(0) var<storage,read> instructions: array<Instruction>;
 @group(0) @binding(1) var<storage,read_write> particlesBuffer: array<Particle>;
 @group(0) @binding(2) var<uniform> uniforms: Uniforms;
 
@@ -10,14 +10,11 @@ struct ComputeIn {
 
 @compute @workgroup_size(workgroupSize)
 fn main(in: ComputeIn) {
-    let particleId = in.globalInvocationId.x;
-    if (particleId >= uniforms.particlesCount) {
+    let instructionId = in.globalInvocationId.x;
+    if (instructionId >= uniforms.instructionsCount) {
         return;
     }
 
-    var particle = particlesBuffer[particleId];
-
-    particle.force = initialPositions[particleId].force;
-
-    particlesBuffer[particleId] = particle;
+    var instruction = instructions[instructionId];
+    particlesBuffer[instruction.target] = particlesBuffer[instruction.source];
 }

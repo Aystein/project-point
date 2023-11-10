@@ -1,5 +1,3 @@
-import * as MemoryMetrics from "./helpers/memory-metrics";
-
 type Descriptor = {
     size: GPUSize64;
     usage: GPUBufferUsageFlags;
@@ -65,22 +63,11 @@ class WebGPUBuffer {
         if (this.buffer) {
             this.buffer.destroy();
             this.buffer = null;
-
-            MemoryMetrics.registerDestruction({
-                objectType: WebGPUBuffer.objectType,
-                objectSizeInBytes: this.size,
-            });
         }
     }
 
     private createBuffer(descriptor: GPUBufferDescriptor): GPUBuffer {
         const buffer = this.device.createBuffer(descriptor);
-
-        MemoryMetrics.registerAllocation({
-            objectType: WebGPUBuffer.objectType,
-            objectSizeInBytes: this.size,
-        });
-
         return buffer;
     }
 }

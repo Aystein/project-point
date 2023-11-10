@@ -11,9 +11,8 @@ import { fillOperation, runCondenseLayout, runForceLayout, runGroupLayout, runSp
 import { getMinMax, scaleInto } from '../Util';
 import { IRectangle, Rectangle } from '../WebGL/Math/Rectangle';
 import { RootState } from './Store';
-import { LabelContainer, LayoutConfiguration, LineFilter, Model, SpatialModel, layoutAdapter } from './interfaces';
-import { Root } from 'react-dom/client';
 import { createAppAsyncThunk } from './hooks';
+import { LabelContainer, LayoutConfiguration, LineFilter, Shadow, SpatialModel, layoutAdapter } from './interfaces';
 
 export type Selection = {
   global: number[];
@@ -46,6 +45,8 @@ export interface ViewsState {
   filter: number[];
   filterLookup: Record<number, number>
 
+  shadows: Shadow[]
+
   lineWidth: number;
   activeHistory: number;
 
@@ -70,6 +71,8 @@ const initialState: ViewsState = {
 
   filter: [],
   filterLookup: {},
+
+  shadows: [],
 
   history: [],
   activeHistory: -1,
@@ -207,6 +210,8 @@ export const viewslice = createSlice({
         x: normalizedPositions.map((value) => value.x),
         y: normalizedPositions.map((value) => value.y),
         layoutConfigurations: layoutAdapter.getInitialState(),
+        filterToShadow: {},
+        shadows: [],
       });
     },
     translateArea: (
@@ -359,6 +364,29 @@ export const viewslice = createSlice({
       }
 
       layoutAdapter.removeOne(activeModel.layoutConfigurations, action.payload.channel);
+    },
+    syncShadows: (state) => {
+      let i = 0;
+      const shadows = new Array<Shadow>();
+      const lines = new Array<number>();
+      Object.values(state.models.entities).forEach((model) => {
+        shadows.push(...model.shadows);
+
+        const modelLines = model.line.map((lineIndex) => {
+          const idx = model.shadows.findIndex((e) => e.copyOf === lineIndex);
+          if (idx >= 0) {
+            return state.filter.length + idx + i;
+          }
+          return lineIndex;
+        })
+        lines.push(...modelLines)
+
+        i += model.shadows.length;
+      })
+      
+
+      state.shadows = shadows;
+      state.lines = lines;
     }
   },
 });
@@ -440,6 +468,8 @@ export const addSubEmbeddingAsync = createAsyncThunk('layouts/addsubembedding',
       children: [],
       layoutConfigurations: layoutAdapter.getInitialState(),
       line: [],
+      filterToShadow: {},
+      shadows: [],
     };
 
     dispatch(addSubEmbedding(subModel))
@@ -450,34 +480,55 @@ export const addSubEmbeddingAsync = createAsyncThunk('layouts/addsubembedding',
   })
 
 
+/**
+ * Transfers points from one container to another container.
+ */
 export const transfer = createAsyncThunk(
   'layouts/transfer',
-  async ({ target, globalIds }: { target?: EntityId, globalIds: number[] }, { getState, dispatch }) => {
+  async ({ target, globalIds, focusAndContext }: { target?: EntityId, globalIds: number[], focusAndContext?: boolean }, { getState, dispatch }) => {
     let state = getState() as RootState;
 
     const targetModel = state.views.models.entities[target];
 
     const globalIdsSet = new Set(globalIds);
 
-    Object.values(state.views.models.entities).forEach((model) => {
-      if (model.id !== target && model.filter.some((value) => globalIdsSet.has(value))) {
-        const newSourceFilter = model.filter.filter((value) => !globalIdsSet.has(value));
 
-        dispatch(setFilter({ id: model.id, filter: newSourceFilter }))
-        dispatch(rerunLayouts({ id: model.id }))
+    Object.values(state.views.models.entities).forEach((model) => {
+      if (true && model.filter.some((value) => globalIdsSet.has(value))) {
+        const shadowSet = new Set(model.shadows.map((shadow) => shadow.copyOf));
+        const ids = model.filter.filter((value) => globalIdsSet.has(value) && !shadowSet.has(value));
+        // get xy
+        const shadows = ids.map((id) => {
+          return {
+            copyOf: id,
+            position: state.views.positions[id],
+            color: state.views.color[id],
+          }
+        })
+
+        dispatch(updateModel({ id: model.id, changes: { shadows: [...shadows, ...model.shadows] } }))
+      } else {
+        if (model.id !== target && model.filter.some((value) => globalIdsSet.has(value))) {
+          const newSourceFilter = model.filter.filter((value) => !globalIdsSet.has(value));
+
+          dispatch(updateModel({ id: model.id, changes: { filter: newSourceFilter } }))
+          dispatch(rerunLayouts({ id: model.id }))
+        }
       }
     })
 
     state = getState() as RootState;
+    console.log(state);
 
     if (target) {
-      console.log({ id: target, filter: Array.from(new Set([...globalIds, ...targetModel.filter])).sort((a, b) => a - b) })
-      dispatch(setFilter({ id: target, filter: Array.from(new Set([...globalIds, ...targetModel.filter])).sort() }))
+      dispatch(updateModel({ id: target, changes: { filter: Array.from(new Set([...globalIds, ...targetModel.filter])).sort() } }))
       dispatch(setBounds({ id: target }))
       dispatch(rerunLayouts({ id: target }))
     } else {
       dispatch(deleteBounds(globalIds))
     }
+
+    dispatch(syncShadows())
   }
 )
 
@@ -671,9 +722,9 @@ export const rerunLayouts = createAppAsyncThunk(
 
             Object.keys(grouped).forEach((group) => {
               const values = grouped[group];
-              
+
               lineFilter.push({ value: group, indices: values.map((v) => v.index) })
-              
+
               values.forEach((row, i) => {
                 if (i < values.length - 1) {
                   line.push(values[i].index, values[i + 1].index);
@@ -681,11 +732,11 @@ export const rerunLayouts = createAppAsyncThunk(
               });
             });
 
-            
+
 
             dispatch(updateModel({ id: model.id, changes: { line, lineFilter } }));
             console.log({ line, lineFilter })
-          
+
             break;
           }
         }
@@ -693,11 +744,7 @@ export const rerunLayouts = createAppAsyncThunk(
     })
 
 
-    const lineBuffer = [];
-    Object.values(getState().views.models.entities).forEach((e) => {
-      lineBuffer.push(...e.line)
-    })
-    dispatch(setLines(lineBuffer))
+    dispatch(syncShadows());
   }
 )
 
@@ -733,7 +780,8 @@ export const {
   setTool,
   setBounds,
   setFilter,
-  updateModel
+  updateModel,
+  syncShadows
 } = viewslice.actions;
 
 export default viewslice.reducer;

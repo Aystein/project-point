@@ -90,7 +90,7 @@ export function ZoomBehavior() {
       let x = event.clientX - bounds.left;
       let y = event.clientY - bounds.top;
 
-      const newScale = Math.max(0.25, Math.min(10.0, zoomFactor * zoom.s));
+      const newScale = Math.max(0.25, Math.min(30.0, zoomFactor * zoom.s));
 
       // downscaled coordinates relative to anchor
       const zoomPointX = (x - zoom.tx) / zoom.s;

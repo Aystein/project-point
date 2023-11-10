@@ -1,16 +1,11 @@
-import * as glMatrix from "gl-matrix";
 import * as ShaderSources from "../../shader-sources";
+import { WebGPUBuffer } from "../../webgpu-utils/webgpu-buffer";
 import * as WebGPU from "../../webgpu-utils/webgpu-utils";
 import { ParticlesBufferData } from "../engine";
 
-interface Instruction {
-    source: number;
-    target: number;
-}
-
 type Data = {
     particlesBufferData: ParticlesBufferData;
-    instructions: GPUBuffer;
+    colorBuffer: WebGPUBuffer;
 };
 
 type ResetResult = {
@@ -18,8 +13,12 @@ type ResetResult = {
     bindgroup: GPUBindGroup;
 };
 
-export class Copy {
+export class SetColor {
     private static readonly WORKGROUP_SIZE: number = 256;
+
+    private static readonly setColorStructType: WebGPU.Types.StructType = new WebGPU.Types.StructType("ColorValue", [
+        { name: "color", type: WebGPU.Types.u32 },
+    ]);
 
     private readonly device: GPUDevice;
 
@@ -29,13 +28,10 @@ export class Copy {
 
     private workgroupsCount: number;
 
-    private positionsBuffer: GPUBuffer;
-
     private bindgroup: GPUBindGroup;
 
     public constructor(device: GPUDevice, data: Data) {
         this.device = device;
-        this.positionsBuffer = data.positionsBuffer;
 
         this.uniforms = new WebGPU.Uniforms(device, [
             { name: "particlesCount", type: WebGPU.Types.u32 },
@@ -45,19 +41,18 @@ export class Copy {
             layout: "auto",
             compute: {
                 module: WebGPU.ShaderModule.create(device, {
-                    code: ShaderSources.Engine.Util.Copy,
-                    structs: [data.particlesBufferData.particlesStructType, this.uniforms],
+                    code: ShaderSources.Engine.Simulation.SetColor,
+                    structs: [data.particlesBufferData.particlesStructType, this.uniforms, SetColor.setColorStructType],
                 }),
                 entryPoint: "main",
                 constants: {
-                    workgroupSize: Copy.WORKGROUP_SIZE,
+                    workgroupSize: SetColor.WORKGROUP_SIZE,
                 },
             },
         });
 
         const resetResult = this.applyReset(data);
         this.workgroupsCount = resetResult.workgroupsCount;
-        
         this.bindgroup = resetResult.bindgroup;
     }
 
@@ -70,9 +65,9 @@ export class Copy {
     }
 
     private applyReset(data: Data): ResetResult {
-        const workgroupsCount = Math.ceil(data.particlesBufferData.particlesCount / Copy.WORKGROUP_SIZE);
+        const workgroupsCount = Math.ceil(data.particlesBufferData.particlesCount / SetColor.WORKGROUP_SIZE);
 
-        this.uniforms.setValueFromName("instructionsCount", data.particlesBufferData.particlesCount);
+        this.uniforms.setValueFromName("particlesCount", data.particlesBufferData.particlesCount);
         this.uniforms.uploadToGPU();
 
         const bindgroup = this.device.createBindGroup({
@@ -80,7 +75,7 @@ export class Copy {
             entries: [
                 {
                     binding: 0,
-                    resource: { buffer: this.positionsBuffer },
+                    resource: data.colorBuffer.bindingResource,
                 },
                 {
                     binding: 1,

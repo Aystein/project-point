@@ -1,4 +1,4 @@
-@group(0) @binding(0) var<storage,read> bounds: array<BoundsPosition>;
+@group(0) @binding(0) var<storage,read> hover: array<HoverValue>;
 @group(0) @binding(1) var<storage,read_write> particlesBuffer: array<Particle>;
 @group(0) @binding(2) var<uniform> uniforms: Uniforms;
 
@@ -16,9 +16,8 @@ fn main(in: ComputeIn) {
     }
 
     var particle = particlesBuffer[particleId];
-    var initialParticle = bounds[particleId];
 
-    particle.bounds = initialParticle.bounds;
+    particle.hover = hover[particleId].hover;
 
     particlesBuffer[particleId] = particle;
 }
