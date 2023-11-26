@@ -12,7 +12,7 @@ import { getMinMax, scaleInto } from '../Util';
 import { IRectangle, Rectangle } from '../WebGL/Math/Rectangle';
 import { RootState } from './Store';
 import { createAppAsyncThunk } from './hooks';
-import { LabelContainer, LayoutConfiguration, LineFilter, Shadow, SpatialModel, layoutAdapter } from './interfaces';
+import { LabelContainer, LayoutConfiguration, LineFilter, Sequence, Shadow, SpatialModel, layoutAdapter, sequenceAdapter } from './interfaces';
 
 export type Selection = {
   global: number[];
@@ -45,7 +45,7 @@ export interface ViewsState {
   filter: number[];
   filterLookup: Record<number, number>
 
-  shadows: Shadow[]
+  shadows: Shadow[];
 
   lineWidth: number;
   activeHistory: number;
@@ -212,6 +212,7 @@ export const viewslice = createSlice({
         layoutConfigurations: layoutAdapter.getInitialState(),
         filterToShadow: {},
         shadows: [],
+        sequences: sequenceAdapter.getInitialState(),
       });
     },
     translateArea: (
@@ -369,21 +370,25 @@ export const viewslice = createSlice({
       let i = 0;
       const shadows = new Array<Shadow>();
       const lines = new Array<number>();
+
       Object.values(state.models.entities).forEach((model) => {
         shadows.push(...model.shadows);
 
         const modelLines = model.line.map((lineIndex) => {
           const idx = model.shadows.findIndex((e) => e.copyOf === lineIndex);
+
           if (idx >= 0) {
             return state.filter.length + idx + i;
           }
+
           return lineIndex;
         })
+
         lines.push(...modelLines)
 
         i += model.shadows.length;
       })
-      
+
 
       state.shadows = shadows;
       state.lines = lines;
@@ -470,6 +475,7 @@ export const addSubEmbeddingAsync = createAsyncThunk('layouts/addsubembedding',
       line: [],
       filterToShadow: {},
       shadows: [],
+      sequences: sequenceAdapter.getInitialState(),
     };
 
     dispatch(addSubEmbedding(subModel))
@@ -715,7 +721,6 @@ export const rerunLayouts = createAppAsyncThunk(
       } else if (layoutConfig.channel === 'line') {
         switch (layoutConfig.type) {
           case 'setline': {
-            console.log(layoutConfig);
             const grouped = groupBy(modelRows, (value) => value[layoutConfig.column]);
             const line = new Array<number>();
             const lineFilter: LineFilter = [];
@@ -727,15 +732,12 @@ export const rerunLayouts = createAppAsyncThunk(
 
               values.forEach((row, i) => {
                 if (i < values.length - 1) {
-                  line.push(values[i].index, values[i + 1].index);
+                  line.push(values[i - 1]?.index ?? 1000000, values[i].index, values[i + 1].index, values[i + 2]?.index ?? 1000000);
                 }
               });
             });
 
-
-
             dispatch(updateModel({ id: model.id, changes: { line, lineFilter } }));
-            console.log({ line, lineFilter })
 
             break;
           }

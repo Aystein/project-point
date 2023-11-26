@@ -107,6 +107,14 @@ export type LineFilter = {
   indices: number[]
 }[]
 
+// Defines a sequence using a set of indices
+export type Sequence = {
+  // Indices from the dataset
+  indices: number[];
+}
+
+export const sequenceAdapter = createEntityAdapter<Sequence>();
+
 export interface SpatialModel extends BaseModel {
   id: EntityId;
 
@@ -136,6 +144,8 @@ export interface SpatialModel extends BaseModel {
   lineFilter?: LineFilter
 
   layoutConfigurations: EntityState<LayoutConfiguration>;
+
+  sequences: EntityState<Sequence>;
 }
 
 
@@ -143,3 +153,6 @@ export interface SpatialModel extends BaseModel {
 
 
 export type Model = SpatialModel;
+
+
+

@@ -395,6 +395,8 @@ export class Scatter {
       layout: {
         0: 'uint32',
         1: 'uint32',
+        2: 'uint32',
+        3: 'uint32'
       },
       device,
       stepMode: 'instance',
@@ -503,7 +505,7 @@ export class Scatter {
       // pass.setVertexBuffer(2, this.buffers.color._buffer);
       pass.setBindGroup(0, this.lineBindGroup);
 
-      pass.draw(6, this.lineBuffer._buffer.size / 8);
+      pass.draw(6 * 40, this.lineBuffer._buffer.size / 16);
     }
 
     pass.end();
