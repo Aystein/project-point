@@ -76,8 +76,8 @@ function HistoryView({ view, active, index }: { view: SpatialModel, active: bool
       }}
     >
       <Card.Section px={rem(4)} p={rem(4)}>
-        <Group position="apart">
-          <Text weight={500} size="sm">Review pictures</Text>
+        <Group justify="space-between">
+          <Text fw={500} size="sm">Review pictures</Text>
 
           <CloseButton onClick={() => dispatch(deleteHistory({ historyIndex: index }))} />
         </Group>
@@ -99,7 +99,7 @@ function HistoryView({ view, active, index }: { view: SpatialModel, active: bool
       </Card.Section>
 
       <Card.Section p={rem(4)}>
-        <Group position="apart">
+        <Group justify="space-between">
           <Text size="sm">{view.filter.length} items</Text>
         </Group>
       </Card.Section>

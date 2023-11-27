@@ -8,7 +8,6 @@ import { Acceleration } from "./simulation/acceleration";
 import { Initialization } from "./simulation/initialization";
 import { Integration } from "./simulation/integration";
 import { SetBounds } from "./simulation/SetBounds";
-import { Copy } from "./simulation/copy";
 import { SetColor } from "./simulation/SetColor";
 import { Shadow } from "../../Store/interfaces";
 import { SetHover } from "./simulation/SetHover";
@@ -92,8 +91,6 @@ class Engine {
     private needsMapXY = false;
 
     public hover: Hover;
-
-    public copy: Copy;
 
     private bounds?: Float32Array;
 

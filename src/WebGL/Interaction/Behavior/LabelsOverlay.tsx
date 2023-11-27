@@ -86,7 +86,7 @@ export function ScaleLabels({
           width: '100%',
           height: 40,
           pointerEvents: 'none',
-        };
+        } as React.CSSProperties;
       }
       case 'y': {
         return {
@@ -95,7 +95,7 @@ export function ScaleLabels({
           height: '100%',
           width: 40,
           pointerEvents: 'none',
-        };
+        } as React.CSSProperties;
       }
     }
   };

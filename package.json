@@ -1,5 +1,5 @@
 {
-  "name": "my-sample-typescript-app",
+  "name": "liqvis",
   "version": "1.0.0",
   "description": "",
   "homepage": ".",
@@ -121,6 +121,9 @@
     "tsne-js": "^1.0.3",
     "umap-js": "^1.3.3",
     "web-vitals": "^2.1.4"
+  },
+  "exports": {
+    ".": "./dist/main.js"
   },
   "eslintConfig": {
     "overrides": [

@@ -37,27 +37,7 @@ function RootApplication() {
   return <JotaiProvider>
     <Provider store={store}>
 
-      <MantineProvider
-        theme={{
-          globalStyles: (theme) => ({
-            body: {
-              ...theme.fn.fontStyles(),
-              backgroundColor:
-                theme.colorScheme === 'dark'
-                  ? theme.colors.dark[7]
-                  : theme.white,
-              color:
-                theme.colorScheme === 'dark'
-                  ? theme.colors.dark[0]
-                  : theme.black,
-              lineHeight: theme.lineHeight,
-              padding: 0,
-              margin: 0,
-              overflow: 'hidden'
-            },
-          }),
-        }}
-      >
+      <MantineProvider>
         <ModalsProvider modals={modals}>
           <Notifications />
           <AntApp />

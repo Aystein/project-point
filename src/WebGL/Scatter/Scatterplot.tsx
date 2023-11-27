@@ -8,6 +8,7 @@ import { Engine } from '../../ts/engine/engine';
 import { useVisContext } from '../VisualizationContext';
 import { Card } from '@mantine/core';
 import { Shadow } from '../../Store/interfaces';
+import { useDevice } from './useDevice';
 
 type ColumnTemp = {
   values: number[];
@@ -17,31 +18,6 @@ type ColumnTemp = {
 interface GlobalConfig {
   pointSize: number;
 }
-
-function useDevice() {
-  const [value, setValue] = React.useState<[GPUDevice, GPUAdapter]>(null);
-
-  React.useEffect(() => {
-    (async () => {
-      if (!navigator.gpu) {
-        throw new Error('WebGPU not supported on this browser.');
-      }
-      const adapter = await navigator.gpu.requestAdapter();
-
-      if (!adapter) {
-        throw new Error('No appropriate GPUAdapter found.');
-      }
-
-      const device = await adapter.requestDevice();
-
-      setValue([device, adapter]);
-    })();
-  }, []);
-
-  return value ?? [null, null];
-}
-
-
 
 export function Scatterplot({
   n,

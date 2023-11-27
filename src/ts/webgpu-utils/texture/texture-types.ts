@@ -33,18 +33,19 @@ const textureTypes: Record<GPUTextureFormat, TextureType> = {
     "rg32uint": { texelSize: 8 },
     "rg32sint": { texelSize: 8 },
     "rg32float": { texelSize: 8 },
+    "rgb10a2uint": { texelSize: 5 },
     "rgba16uint": { texelSize: 8 },
     "rgba16sint": { texelSize: 8 },
     "rgba16float": { texelSize: 8 },
     "rgba32uint": { texelSize: 16 },
     "rgba32sint": { texelSize: 16 },
     "rgba32float": { texelSize: 16 },
-    "stencil8": { texelSize: 1 }, // 1-4
+    "stencil8": { texelSize: 1 },
     "depth16unorm": { texelSize: 2 },
     "depth24plus": { texelSize: 4 },
-    "depth24plus-stencil8": { texelSize: 4 }, // 4-8
+    "depth24plus-stencil8": { texelSize: 4 },
     "depth32float": { texelSize: 4 },
-    "depth32float-stencil8": { texelSize: 5 }, // 5-8
+    "depth32float-stencil8": { texelSize: 5 },
     "bc1-rgba-unorm": { texelSize: 8 },
     "bc1-rgba-unorm-srgb": { texelSize: 8 },
     "bc2-rgba-unorm": { texelSize: 16 },

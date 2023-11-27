@@ -90,6 +90,7 @@ export function TSNEModal({
         })}
       >
         <DataGrid
+          // @ts-ignore
           groupBy={['group']}
           rowGrouper={rowGrouper}
           expandedGroupIds={expandedGroupIds}

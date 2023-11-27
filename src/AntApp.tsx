@@ -68,6 +68,7 @@ export function AntApp() {
   const [active, setActive] = React.useState("dataset");
   const dispatch = useAppDispatch();
   const dataId = useAppSelector((state) => state.data.id);
+  const scheme = useMantineColorScheme();
 
   React.useEffect(() => {
     dispatch(initializeDatasets());
@@ -83,7 +84,7 @@ export function AntApp() {
           maxHeight: '100vh',
 
           backgroundColor:
-            theme.colorScheme === 'dark'
+            scheme.colorScheme === 'dark'
               ? theme.colors.dark[8]
               : theme.colors.gray[1],
         },
