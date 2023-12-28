@@ -15,7 +15,7 @@ import {
 } from '@mantine/core';
 import * as React from 'react';
 import { selectDatasets, useAppDispatch, useAppSelector } from '../Store/hooks';
-import { loadDataset, loadDatasetGlobal } from '../Store/Store';
+import { loadDataset, loadDatasetGlobal, loadDatasetUrl } from '../Store/Store';
 import { deleteDataset, storeDataset } from '../Store/FilesSlice';
 import { parseCSV } from '../DataLoading/CSVLoader';
 import {
@@ -25,6 +25,15 @@ import {
   IconFileZip,
   IconTrash,
 } from '@tabler/icons-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faFolder } from '@fortawesome/free-solid-svg-icons';
+
+// @ts-ignore
+import index from '../../public/datasets/index.json';
+
+const datasetEntries = JSON.parse(index) as string[];
+
+console.log(datasetEntries);
 
 export function DataTab() {
   const dispatch = useAppDispatch();
@@ -49,8 +58,10 @@ export function DataTab() {
   return (
     <Flex direction={'column'} p="sm" gap="md" style={{ overflowY: 'auto' }} mah={600} maw={400}>
       <FileInput
-        placeholder="Pick file"
+        miw={300}
+        leftSection={<FontAwesomeIcon icon={faFolder} />}
         label="CSV Upload"
+        placeholder="file.csv"
         radius="xs"
         withAsterisk
         onChange={handleChange}
@@ -91,9 +102,25 @@ function DatasetList() {
     dispatch(loadDataset(name));
   };
 
+  const handleLoadURL = (name: string) => {
+    dispatch(loadDatasetUrl(name));
+  }
+
   return (
     <Input.Wrapper label="Files">
       <Stack gap={'sm'}>
+        {datasetEntries.map((entry) => {
+          return <Card shadow="sm" radius="md" key={entry} withBorder>
+            <Card.Section withBorder inheritPadding py="xs">
+              <Group justify="space-between">
+                <Anchor onClick={() => handleLoadURL(entry)}>
+                  {entry}
+                </Anchor>
+              </Group>
+            </Card.Section>
+          </Card>
+        })}
+
         {datasets.map((entry) => {
           return (
             <Card shadow="sm" radius="md" key={entry.name} withBorder>

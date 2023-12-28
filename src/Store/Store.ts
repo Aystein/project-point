@@ -147,6 +147,16 @@ export const store = configureStore({
     }),
 });
 
+export const loadDatasetUrl = createAsyncThunk(
+  'users/loadDataset',
+  async (name: string, { dispatch }) => {
+    const file = `datasets/${name}/chunk.csv`;
+    const response = await fetch(file);
+    const rows = await parseCSV(await response.text());
+
+    dispatch(loadDatasetGlobal(rows));
+  }
+);
 
 export const loadDataset = createAsyncThunk(
   'users/loadDataset',
