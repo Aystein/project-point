@@ -79,7 +79,6 @@ self.onmessage = ({
   const maxGroupLengths = features.map((feature) => {
     return new Set(X.map((value) => value[feature])).size
   })
-  console.log(maxGroupLengths);
 
   const Y = new Array<VectorLike>(N);
 
@@ -90,7 +89,6 @@ self.onmessage = ({
 
   const maxGroupLength = Math.max(...keys(groups).map((key) => groups[key].length))
 
-  console.log(hierarchy);
   let totalHeight = 0;
 
   const linearScale = scaleLinear().domain(getMinMax(X.map((value) => value[secondary] as number))).range(axis === 'y' ? [area.x, area.x + area.width] : [area.y, area.y + area.height])
@@ -104,7 +102,7 @@ self.onmessage = ({
 
       if (Array.isArray(set)) {
         // one line
-        console.log(set, len);
+
         y += POINT_RADIUS * 2;
         set.forEach((item) => {
           const secAxis = linearScale(item.value[secondary]);

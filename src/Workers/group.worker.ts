@@ -1,18 +1,16 @@
 /* eslint-disable @typescript-eslint/no-loop-func */
 /* eslint-disable no-restricted-globals */
+import { nanoid } from '@reduxjs/toolkit';
+import { stratify, treemap, treemapSlice, treemapSquarify } from 'd3-hierarchy';
 import groupBy from 'lodash/groupBy';
 import keys from 'lodash/keys';
 import { VectorLike } from '../Interfaces';
-import {
-  forceNormalizationNew
-} from '../Layouts/ForceUtil';
+import { POINT_RADIUS } from '../Layouts/Globals';
 import { LabelContainer } from '../Store/interfaces';
 import { IRectangle, Rectangle } from '../WebGL/Math/Rectangle';
-import { RatioSquarifyTilingFactory, stratify, treemap, treemapSlice, treemapSquarify } from 'd3-hierarchy';
-import { nanoid } from '@reduxjs/toolkit';
 import { fillRect } from './util';
-import { POINT_RADIUS } from '../Layouts/Globals';
-import { Stream } from 'stream';
+import { bin } from 'd3';
+import { filter, isNumber } from 'lodash';
 
 interface Props {
   data: {
@@ -23,7 +21,6 @@ interface Props {
     strategy: 'slice' | 'treemap';
   };
 }
-
 
 self.onmessage = ({
   data: { X, area, type, feature, strategy },
@@ -50,14 +47,31 @@ self.onmessage = ({
     value,
   }));
 
+  const valueArray = relativeIndices.map((entry) => entry.value[feature] as number);
+
   const N = X.length;
-  const groups = groupBy(relativeIndices, (value) => {
-    return value.value[feature];
-  });
+
+  let groups;
+  if (isNumber(valueArray[0])) {
+    const filteredNulls = relativeIndices.filter((ri) => !isNumber(ri.value[feature]))
+    const bins = bin().value((d) => d.value[feature])(relativeIndices);
+    groups = bins.reduce((initial, current) => {
+      initial[`${current.x0} - ${current.x1}`] = current;
+      return initial;
+    }, {});
+    if (filteredNulls.length > 0) {
+      groups['missing'] = filteredNulls;
+    }
+  } else {
+    groups = groupBy(relativeIndices, (value) => {
+      return value.value[feature];
+    });
+  }
+
 
   const Y = new Array<VectorLike>(N);
 
-  const data: { id, parent? }[] = [{ id: 'root' }];
+  const data: { id, parent?}[] = [{ id: 'root' }];
 
   for (const key of keys(groups)) {
     data.push({ id: key, parent: 'root' })
@@ -69,8 +83,8 @@ self.onmessage = ({
   }
 
   let algorithm = strategy === 'slice' ? treemapSlice : treemapSquarify;
-  
-  const root = stratify<{ id, parent? }>().id((d) => d.id).parentId((d) => d.parent)(data).count();
+
+  const root = stratify<{ id, parent?}>().id((d) => d.id).parentId((d) => d.parent)(data).count();
   const map = treemap().tile(algorithm).paddingTop(POINT_RADIUS * 3).size([area.width, area.height])(root);
 
   for (const key of keys(groups)) {
@@ -83,12 +97,14 @@ self.onmessage = ({
 
     const normalizedW = area_rect.percentY(POINT_RADIUS * 12) - area_rect.percentY(0);
 
-    labels.labels.push({ position: {
-      x: area_rect.percentX(realBounds.x),
-      y: area_rect.percentY(realBounds.y) - normalizedW,
-      width: area_rect.percentX(realBounds.x + realBounds.width) - area_rect.percentX(realBounds.x),
-      height: normalizedW,
-    }, content: key })
+    labels.labels.push({
+      position: {
+        x: area_rect.percentX(realBounds.x),
+        y: area_rect.percentY(realBounds.y) - normalizedW,
+        width: area_rect.percentX(realBounds.x + realBounds.width) - area_rect.percentX(realBounds.x),
+        height: normalizedW,
+      }, content: key
+    })
 
     group.forEach((item, i) => {
       Y[item.relativeIndex] = Y_group[i];

@@ -9,8 +9,8 @@ module.exports = {
     copy: {
       patterns: [
         {
-          from: './public/favicon.jpg',
-        },
+          from: './public'
+        }
       ],
     }
   },

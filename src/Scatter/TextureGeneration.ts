@@ -1,4 +1,4 @@
-const RESOLUTION = 512;
+const RESOLUTION = 1024;
 const STROKE_RADIUS = 32;
 
 const GRID = RESOLUTION / 4;

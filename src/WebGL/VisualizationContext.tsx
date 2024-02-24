@@ -52,7 +52,7 @@ export const VisProvider = ({ children, defaultZoom, defaultXDomain }: { default
 
   const [renderFunctions, setRenderFunctions] = React.useState([]);
 
-  const [xDomain, setXDomain] = React.useState(defaultXDomain ?? [Engine.board_size / 2 - 5, Engine.board_size / 2 + 5]);
+  const [xDomain, setXDomain] = React.useState(defaultXDomain ?? [Engine.board_size / 2 - 2.5, Engine.board_size / 2 + 2.5]);
 
   const yDomain = React.useMemo(() => {
     const halfExtent = ((xDomain[1] - xDomain[0]) * (height / width)) / 2;

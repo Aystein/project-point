@@ -1,7 +1,6 @@
 import { MantineProvider } from '@mantine/core';
 import { ModalsProvider } from '@mantine/modals';
 import { Notifications } from '@mantine/notifications';
-import { Provider as JotaiProvider } from 'jotai';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { Provider } from 'react-redux';
@@ -34,17 +33,14 @@ function RootApplication() {
   const toggleColorScheme = (value?) =>
     setColorScheme(value || (colorScheme === 'dark' ? 'light' : 'dark'));
 
-  return <JotaiProvider>
-    <Provider store={store}>
-
-      <MantineProvider>
-        <ModalsProvider modals={modals}>
-          <Notifications />
-          <AntApp />
-        </ModalsProvider>
-      </MantineProvider>
-    </Provider>
-  </JotaiProvider>
+  return <Provider store={store}>
+    <MantineProvider>
+      <ModalsProvider modals={modals}>
+        <Notifications />
+        <AntApp />
+      </ModalsProvider>
+    </MantineProvider>
+  </Provider>
 }
 
 createRoot(document.getElementById('root')).render(
