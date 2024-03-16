@@ -27,3 +27,9 @@ export interface Boundaries {
   extentX: number;
   extentY: number;
 }
+
+
+export interface Pattern {
+  modifier: string;
+  expression: string;
+}

@@ -6,13 +6,14 @@ import { schemeCategory10 } from 'd3-scale-chromatic';
 import groupBy from 'lodash/groupBy';
 import isEqual from 'lodash/isEqual';
 import { encode } from '../DataLoading/Encode';
-import { VectorLike } from '../Interfaces';
+import { Pattern, VectorLike } from '../Interfaces';
 import { fillOperation, runCondenseLayout, runForceLayout, runGroupLayout, runSpaghettiLayout, runUMAPLayout } from '../Layouts/Layouts';
 import { getMinMax, scaleInto } from '../Util';
 import { IRectangle, Rectangle } from '../WebGL/Math/Rectangle';
 import { RootState } from './Store';
 import { createAppAsyncThunk } from './hooks';
 import { LabelContainer, LayoutConfiguration, LineFilter, Sequence, Shadow, SpatialModel, layoutAdapter, sequenceAdapter } from './interfaces';
+import { RegexMatcher } from '../regexEngine';
 
 export type Selection = {
   global: number[];
@@ -451,6 +452,44 @@ export const viewslice = createSlice({
     });
   };
  */
+
+
+
+
+  export const selectByRegex = createAsyncThunk('layouts/selectbyregex',
+  async ({ pattern }: {
+    pattern: Pattern[];
+  }, { dispatch, getState }) => {
+    console.log("start");
+    const state = getState() as RootState;
+
+    const activeModel = state.views.models.entities[state.views.activeModel];
+
+    console.log({...activeModel.lineFilter});
+    const totalSelection = [];
+    try {
+
+      Object.values(activeModel.lineFilter).forEach((filter) => {
+        const rows = filter.indices.map((index) => state.data.rows[index])
+        const matcher = new RegexMatcher(pattern, rows as any);
+  
+        const path = matcher.match();
+        if (path) {
+          totalSelection.push(...path.map((index) => rows[index]).map((value) => value.index))
+        }
+      })
+    } catch (e) {
+      console.log(e);
+    }
+
+    console.log(totalSelection);
+
+    dispatch(setSelection(totalSelection))
+  })
+
+
+
+
 
 export const removeLayoutConfigAsync = createAsyncThunk('layouts/addsubembedding',
   async ({ channel }: { channel: string }, { dispatch, getState }) => {

@@ -1,6 +1,7 @@
 import {
   ActionIcon,
   Box,
+  Divider,
   Group,
   Menu,
   Paper,
@@ -15,12 +16,14 @@ import {
   IconMenu2,
   IconPointer,
   IconBoxMultiple,
+  IconRegex,
 } from '@tabler/icons-react';
 import { useAppDispatch, useAppSelector } from '../Store/hooks';
 import classes from './TopMenu.module.css';
-import { Tool, setTool } from '../Store/ViewSlice';
+import { Tool, selectByRegex, setTool } from '../Store/ViewSlice';
 import { getGlobalEngine } from './HistoryTab';
 import { Engine } from '../ts/engine/engine';
+import { openContextModal } from '@mantine/modals';
 
 const tools = [
   {
@@ -132,8 +135,38 @@ export function TopMenu() {
                   </ActionIcon>
                 );
               })}
+
+
+              <Divider orientation='vertical' mx="xs" my="xs" />
+
+              <ActionIcon
+                onClick={() => {
+                  const onFinish = (pattern) => {
+                    console.log(pattern);
+
+                    dispatch(selectByRegex({ pattern }))
+                  }
+
+                  openContextModal({
+                    modal: 'muregex',
+                    title: 'Multivariate Regular Expression',
+                    innerProps: {
+                      onFinish,
+                    },
+                  });
+                }}
+                variant="subtle"
+                size={rem(40)}
+                radius="md"
+                color="dark"
+              >
+                <IconRegex style={{ width: '50%', height: '50%' }} stroke={1} />
+              </ActionIcon>
             </Group>
+
           </Paper>
+
+
         </Group>
         <Group justify="center">
           <Text size="xs" c="gray">

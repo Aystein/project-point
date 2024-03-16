@@ -12,6 +12,7 @@ import { SpaghettiModal } from './Modals/SpaghettiModal';
 import '@mantine/core/styles.css'
 import './globals.module.css';
 import { UMAPModal } from './Modals/UMAPModal';
+import { MuRegexModal } from './Modals/MuRegexModal';
 
 // document.addEventListener('contextmenu', event => event.preventDefault());
 
@@ -19,7 +20,8 @@ const modals = {
   demonstration: TSNEModal,
   colorby: ColorByModal,
   spaghetti: SpaghettiModal,
-  umap: UMAPModal
+  umap: UMAPModal,
+  muregex: MuRegexModal,
 };
 
 declare module '@mantine/modals' {
