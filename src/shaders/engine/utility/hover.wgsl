@@ -15,8 +15,8 @@ fn main(in: ComputeIn) {
         var particle = particlesBuffer[particleId];
         let worldDistance = distance(particle.position, uniforms.mousePosition);
     
-        if (worldDistance < 1) {
-            dist = u32(worldDistance * 10000000);
+        if (worldDistance < 1f) {
+            dist = u32(worldDistance * 10000000f);
 
             atomicMin(&hoverBuffer[0], dist);
         }

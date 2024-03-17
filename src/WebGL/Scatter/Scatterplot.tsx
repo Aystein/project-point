@@ -7,6 +7,8 @@ import { useAppSelector } from '../../Store/hooks';
 import { Engine } from '../../ts/engine/engine';
 import { useVisContext } from '../VisualizationContext';
 import { Card } from '@mantine/core';
+import { Shadow } from '../../Store/interfaces';
+import { useDevice } from './useDevice';
 
 type ColumnTemp = {
   values: number[];
@@ -17,31 +19,6 @@ interface GlobalConfig {
   pointSize: number;
 }
 
-function useDevice() {
-  const [value, setValue] = React.useState<[GPUDevice, GPUAdapter]>(null);
-
-  React.useEffect(() => {
-    (async () => {
-      if (!navigator.gpu) {
-        throw new Error('WebGPU not supported on this browser.');
-      }
-      const adapter = await navigator.gpu.requestAdapter();
-
-      if (!adapter) {
-        throw new Error('No appropriate GPUAdapter found.');
-      }
-
-      const device = await adapter.requestDevice();
-
-      setValue([device, adapter]);
-    })();
-  }, []);
-
-  return value ?? [null, null];
-}
-
-
-
 export function Scatterplot({
   n,
   x,
@@ -49,12 +26,14 @@ export function Scatterplot({
   color,
   size,
   opacity,
+  bounds,
   globalConfig = { pointSize: 16 },
   hover,
   selection,
   shape,
   line,
   interpolate,
+  shadows,
 }: {
   n: number;
   x: number[];
@@ -67,7 +46,9 @@ export function Scatterplot({
   selection?: number[];
   shape?: number[];
   line?: number[];
+  bounds?: number[];
   interpolate?: boolean;
+  shadows?: Shadow[];
 }) {
   const [myRenderer, setRenderer] = useState<{ scatter: Scatter, engine: Engine }>();
 
@@ -90,14 +71,16 @@ export function Scatterplot({
   }
 
   useEffect(() => {
-    if (myRenderer) {
-      myRenderer.scatter.interpolateBetweenFrames = interpolate;
-    }
-  }, [interpolate, myRenderer]);
+    myRenderer?.scatter.setColor(new Uint32Array(color));
+  }, [color, myRenderer]);
 
   useEffect(() => {
-    myRenderer?.scatter.setColor(new Float32Array(color));
-  }, [color, myRenderer]);
+    if (bounds) {
+      myRenderer?.scatter.setBounds(new Float32Array(bounds));
+    } else {
+      myRenderer?.scatter.setBounds(new Float32Array(Array.from({ length: n }).map(() => [5, 5, 20, 20]).flat()));
+    }
+  }, [bounds, myRenderer, n]);
 
   useEffect(() => {
     myRenderer?.scatter.setLine(line);
@@ -121,7 +104,12 @@ export function Scatterplot({
 
   useEffect(() => {
     myRenderer?.scatter.setHover(hover ?? []);
+    // myRenderer?.engine.setHover(hover ?? []);
   }, [hover, myRenderer]);
+
+  useEffect(() => {
+    myRenderer?.engine.addShadowPoints(shadows ?? []);
+  }, [shadows, myRenderer])
 
   useEffect(() => {
     if (!myRenderer) return;

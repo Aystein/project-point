@@ -1,0 +1,19 @@
+.button {
+    position: absolute;
+    display: grid;
+    z-index: 200;
+    left: 12px;
+    right: 0px;
+    top: 12px;
+    grid-template-columns: 1fr 1fr 1fr;
+}
+
+.toolicon {
+    border-radius: 0.5rem;
+}
+
+.text {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+}

@@ -9,6 +9,8 @@ struct Uniforms {
 @group(0) @binding(1) var ourTexture: texture_2d<f32>;
 @group(0) @binding(2) var<uniform> uniforms: Uniforms;
 
+@group(0) @binding(3) var<storage, read> particleBuffer: array<Particle>;
+
 
 fn map(x: f32, in_min: f32, in_max: f32, out_min: f32, out_max: f32) -> f32
 {
@@ -19,16 +21,7 @@ struct VertexInput {
     @location(0) vertexPosition: vec2f,
     @location(1) texCoord: vec2f,
 
-    @location(2) position: vec2f,
-    @location(3) color: vec4f,
-    @location(4) shape: f32,
-    @location(5) hover: f32,
-    @location(6) selection: u32,
-    @location(7) center: vec2f,
-    @location(8) selected: u32,
-    
-    @builtin(instance_index) instance: u32,
-    @builtin(vertex_index) vert: u32,
+    @builtin(instance_index) vertexIndex: u32,
 };
   
 struct VertexOutput {
@@ -42,24 +35,55 @@ struct VertexOutput {
 fn vertexMain(input: VertexInput) -> VertexOutput  {
     var output: VertexOutput;
 
-    let dim = vec2f(2, 2);
+    var particle = particleBuffer[input.vertexIndex];
+    var copy: Particle;
 
-    output.pos = vec4f(map(input.center.x, uniforms.xdomain.x, uniforms.xdomain.y, -1, 1) + input.vertexPosition.x * uniforms.sizeX, map(input.center.y, uniforms.ydomain.x, uniforms.ydomain.y, 1, -1) + input.vertexPosition.y * uniforms.sizeY, 0, 1);
-    
-    if (input.selection > 0) {
-        output.color = vec4(0.8, 0.0, 0.0, 1.0);
-    } else {
-        output.color = input.color;
+    var isShadow = particle.copyOf < 1000000;
+
+    if (isShadow) {
+        copy = particleBuffer[particle.copyOf];
     }
 
-    if (input.hover > 0.0) {
+    let dim = vec2f(2, 4);
+
+    output.pos = vec4f(map(particle.position.x, uniforms.xdomain.x, uniforms.xdomain.y, -1, 1) + input.vertexPosition.x * uniforms.sizeX, map(particle.position.y, uniforms.ydomain.x, uniforms.ydomain.y, 1, -1) + input.vertexPosition.y * uniforms.sizeY, 0, 1);
+    
+    var uintc: u32 = particle.color;
+    if (isShadow) {
+        uintc = copy.color;
+    }
+    let r = (uintc >> 24) & 0xff;
+    let g = (uintc >> 16) & 0xff;
+    let b = (uintc >> 8) & 0xff;
+    let a = uintc & 0xff;
+    output.color.x = f32(r) / 255;
+    output.color.y = f32(g) / 255;
+    output.color.z = f32(b) / 255;
+    output.color.a = f32(a) / 255;
+
+    if (particle.selected > 0 || (isShadow && copy.selected > 0)) {
+        output.color = vec4(0.8, 0.0, 0.0, 1.0);
+    } else {
+        //output.color = input.color;
+    }
+
+    var shape = particle.shape;
+    shape = 0;
+    if (particle.hover > 0 || (isShadow && copy.hover > 0)) {
         output.color = output.color * 1.5;
+        shape = shape + 4;
     } else {
         output.color = output.color;
     }
-    
 
-    output.texCoord = (input.texCoord / dim) + vec2f(input.shape % dim.x, floor(input.shape / dim.y)) / dim;
+    if (isShadow) {
+        shape = 1;
+        // output.color = output.color * 0.9;
+    }
+
+    output.texCoord =
+        (input.texCoord / dim) +
+        vec2f(shape % dim.x, floor(shape / dim.y)) / dim;
 
     return output;
 }
@@ -68,6 +92,18 @@ struct FragInput {
     @location(0) texCoord: vec2f,
     @location(1) color: vec4f,
 };
+
+fn PixelShaderFunction(texCoord : vec2f) -> vec4f
+{
+    let dist = texCoord.x * texCoord.x
+               + texCoord.y * texCoord.y;
+    if(dist < 1.0) {
+        return vec4f(0, 0, 0, 1);
+    }
+    else {
+        return vec4f(1, 1, 1, 1);
+    }
+}
 
 @fragment
 fn fragmentMain(input: FragInput) -> @location(0) vec4f {

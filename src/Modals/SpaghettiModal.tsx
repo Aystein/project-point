@@ -46,7 +46,7 @@ export function SpaghettiModal({
             >
                 <Timeline active={1} bulletSize={24} lineWidth={2}>
                     {groups.map((group, gi) => {
-                        return <Timeline.Item key={group} title={<><Text italic component='span'>{group}</Text></>} bullet={<IconMessageDots size={12} />} lineVariant={gi === groups.length - 1 ? 'dashed' : 'solid'} >
+                        return <Timeline.Item key={group} title={<><Text component='span'>{group}</Text></>} bullet={<IconMessageDots size={12} />} lineVariant={gi === groups.length - 1 ? 'dashed' : 'solid'} >
                             <Text color="dimmed" size="sm">{`This is the ${prefix[gi]} group to group after`}</Text>
                         </Timeline.Item>
                     })}
@@ -56,8 +56,7 @@ export function SpaghettiModal({
                             label="Categorical column"
                             placeholder="ID, name, ..."
                             searchable
-                            withinPortal
-                            nothingFound="No columns"
+                            nothingFoundMessage="No columns"
                             data={options}
                             onChange={(value) => {
                                 groupsHandlers.append(value);
@@ -71,8 +70,7 @@ export function SpaghettiModal({
                             label="Secondary axis (time)"
                             placeholder="ID, name, ..."
                             searchable
-                            withinPortal
-                            nothingFound="No columns"
+                            nothingFoundMessage="No columns"
                             data={options}
                             {...form.getInputProps('secondary')}
                         />

@@ -137,7 +137,7 @@ export function normalizeVectors01(positions: VectorLike[]) {
 export function pointInPolygon(testx, testy, polygon) {
   let intersections = 0;
 
-  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i, i += 1) {
     const [prevX, prevY] = polygon[j];
     const [x, y] = polygon[i];
 
@@ -146,7 +146,7 @@ export function pointInPolygon(testx, testy, polygon) {
       y > testy != prevY > testy &&
       testx < ((prevX - x) * (testy - y)) / (prevY - y) + x
     ) {
-      intersections++;
+      intersections += 1;
     }
   }
 

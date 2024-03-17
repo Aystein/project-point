@@ -41,6 +41,19 @@ export class Rectangle {
     };
   }
 
+  percent(xp: number, yp: number) {
+    return { x: this.x + this.width * xp,
+      y: this.y + this.height * yp }
+  }
+
+  percentX(x: number) {
+    return (x - this.x) / this.width
+  }
+
+  percentY(y: number) {
+    return (y - this.y) / this.height
+  }
+
   get centerX() {
     return this.x + this.width / 2;
   }

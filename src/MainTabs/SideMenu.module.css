@@ -1,0 +1,17 @@
+.sidemenu {
+    position: absolute;
+    z-index: 200;
+    top: 64px;
+    left: 12px;
+    min-height: 400px;
+    width: 16rem;
+}
+
+.legends {
+    position: absolute;
+    z-index: 200;
+    top: 64px;
+    right: 12px;
+    width: 16rem;
+    max-height: calc(100dvh - 256px);
+}

@@ -15,8 +15,8 @@ import {
 } from '@mantine/core';
 import * as React from 'react';
 import { selectDatasets, useAppDispatch, useAppSelector } from '../Store/hooks';
-import { loadDatasetGlobal } from '../Store/Store';
-import { deleteDataset, loadDataset, storeDataset } from '../Store/FilesSlice';
+import { loadDataset, loadDatasetGlobal, loadDatasetUrl } from '../Store/Store';
+import { deleteDataset, storeDataset } from '../Store/FilesSlice';
 import { parseCSV } from '../DataLoading/CSVLoader';
 import {
   IconDatabase,
@@ -25,6 +25,15 @@ import {
   IconFileZip,
   IconTrash,
 } from '@tabler/icons-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faFolder } from '@fortawesome/free-solid-svg-icons';
+
+// @ts-ignore
+import index from '../../public/datasets/index.json';
+
+const datasetEntries = JSON.parse(index) as string[];
+
+console.log(datasetEntries);
 
 export function DataTab() {
   const dispatch = useAppDispatch();
@@ -47,12 +56,12 @@ export function DataTab() {
   };
 
   return (
-    <Flex direction={'column'} p="sm" gap="md" style={{ overflowY: 'auto' }}>
-      <Statistics />
-
+    <Flex direction={'column'} p="sm" gap="md" style={{ overflowY: 'auto' }} mah={600} maw={400}>
       <FileInput
-        placeholder="Pick file"
+        miw={300}
+        leftSection={<FontAwesomeIcon icon={faFolder} />}
         label="CSV Upload"
+        placeholder="file.csv"
         radius="xs"
         withAsterisk
         onChange={handleChange}
@@ -60,10 +69,10 @@ export function DataTab() {
 
       {pickerFile ? (
         <Button
-          leftIcon={<IconDatabase size="1rem" />}
+          leftSection={<IconDatabase size="1rem" />}
           onClick={() => {
             dispatch(
-              storeDataset({ pickerFile, meta: { rows: 100, columns: 100 } })
+              storeDataset({ pickerFile })
             );
           }}
         >
@@ -93,33 +102,49 @@ function DatasetList() {
     dispatch(loadDataset(name));
   };
 
+  const handleLoadURL = (name: string) => {
+    dispatch(loadDatasetUrl(name));
+  }
+
   return (
     <Input.Wrapper label="Files">
-      <Stack spacing={'sm'}>
+      <Stack gap={'sm'}>
+        {datasetEntries.map((entry) => {
+          return <Card shadow="sm" radius="md" key={entry} withBorder>
+            <Card.Section withBorder inheritPadding py="xs">
+              <Group justify="space-between">
+                <Anchor onClick={() => handleLoadURL(entry)}>
+                  {entry}
+                </Anchor>
+              </Group>
+            </Card.Section>
+          </Card>
+        })}
+
         {datasets.map((entry) => {
           return (
             <Card shadow="sm" radius="md" key={entry.name} withBorder>
               <Card.Section withBorder inheritPadding py="xs">
-                <Group position="apart">
-                  <Anchor weight={500} onClick={() => handleLoad(entry.name)}>
+                <Group justify="space-between">
+                  <Anchor onClick={() => handleLoad(entry.name)}>
                     {entry.name}
                   </Anchor>
                   <Menu withinPortal position="bottom-end" shadow="sm">
                     <Menu.Target>
-                      <ActionIcon>
+                      <ActionIcon variant='subtle'>
                         <IconDots size="1rem" />
                       </ActionIcon>
                     </Menu.Target>
 
                     <Menu.Dropdown>
-                      <Menu.Item icon={<IconFileZip size={rem(14)} />}>
+                      <Menu.Item leftSection={<IconFileZip />}>
                         Download zip (not implemented)
                       </Menu.Item>
-                      <Menu.Item icon={<IconEye size={rem(14)} />}>
+                      <Menu.Item leftSection={<IconEye />}>
                         Preview all (not implemented)
                       </Menu.Item>
                       <Menu.Item
-                        icon={<IconTrash size={rem(14)} />}
+                        leftSection={<IconTrash />}
                         color="red"
                         onClick={() => {
                           dispatch(deleteDataset(entry.name));

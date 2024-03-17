@@ -12,7 +12,7 @@ import { VectorLike } from '../Interfaces';
 import { runUMAPLayout } from '../Layouts/Layouts';
 import { Selectors } from '../Store/Selectors';
 import { useAppSelector } from '../Store/hooks';
-import { LabelContainer } from '../Store/ModelSlice';
+import { LabelContainer } from '../Store/interfaces';
 
 export function TSNEModal({
   context,
@@ -31,8 +31,9 @@ export function TSNEModal({
 }>) {
   const data = useSelector(Selectors.data);
   const model = useAppSelector((state) =>
-    state.views.workspace.children?.find((e) => e.id === innerProps.id)
+    state.views.models.entities[innerProps.id]
   );
+
   const positions = useAppSelector((state) => state.views.positions);
 
   const form = useForm({
@@ -89,6 +90,7 @@ export function TSNEModal({
         })}
       >
         <DataGrid
+          // @ts-ignore
           groupBy={['group']}
           rowGrouper={rowGrouper}
           expandedGroupIds={expandedGroupIds}

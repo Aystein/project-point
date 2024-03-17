@@ -1,7 +1,7 @@
 import { showNotification, updateNotification } from '@mantine/notifications';
 import { IRectangle } from '../WebGL/Math/Rectangle';
 import { VectorLike } from '../Interfaces';
-import { LabelContainer } from '../Store/ModelSlice';
+import { LabelContainer } from '../Store/interfaces';
 import { Vector } from 'umap-js/dist/umap';
 
 export function runLayout<T>(params: T, worker: Worker) {
@@ -71,12 +71,10 @@ export function runGroupLayout(
   X,
   area: IRectangle,
   feature: string,
-  axis: 'x' | 'y',
-  xLayout: number[],
-  yLayout: number[]
+  strategy,
 ) {
   return runLayout(
-    { X, area, feature, axis, xLayout, yLayout },
+    { X, area, feature, strategy },
     new Worker(new URL('../Workers/group.worker.ts', import.meta.url), {
       type: 'module',
     })

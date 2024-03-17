@@ -9,8 +9,8 @@ module.exports = {
     copy: {
       patterns: [
         {
-          from: './public/favicon.jpg',
-        },
+          from: './public'
+        }
       ],
     }
   },
@@ -27,7 +27,12 @@ module.exports = {
       {
         test: /\.png/,
         type: 'asset/resource'
-      }
+      },
+      {
+        test: /\.json/,
+        type: 'asset/source'
+      },
+      
     ]
   },
 };

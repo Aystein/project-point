@@ -7,16 +7,18 @@ import { SetPositions } from "./simulation/SetPositions";
 import { Acceleration } from "./simulation/acceleration";
 import { Initialization } from "./simulation/initialization";
 import { Integration } from "./simulation/integration";
+import { SetBounds } from "./simulation/SetBounds";
+import { SetColor } from "./simulation/SetColor";
+import { Shadow } from "../../Store/interfaces";
+import { SetHover } from "./simulation/SetHover";
+import { SetSelected } from "./simulation/SetSelected";
+
+// Make room for 20k extra particles if needed (shadows)
+const DYNAMIC_SIZE = 10000;
 
 type Data = {
     spheresRadius: number;
     particlesPositions: ReadonlyArray<glMatrix.ReadonlyVec2>
-};
-
-type SpheresBuffer = {
-    readonly gpuBuffer: GPUBuffer;
-    readonly instancesCount: number;
-    readonly sphereRadius: number;
 };
 
 type ParticlesBufferData = {
@@ -35,13 +37,17 @@ type ResetResult = {
 class Engine {
     public static readonly particleStructType = new WebGPU.Types.StructType("Particle", [
         { name: "position", type: WebGPU.Types.vec2F32 },
-        { name: "weight", type: WebGPU.Types.f32 },
         { name: "velocity", type: WebGPU.Types.vec2F32 },
         { name: "acceleration", type: WebGPU.Types.vec2F32 },
         { name: "indexInCell", type: WebGPU.Types.u32 },
         { name: "index", type: WebGPU.Types.u32 },
         { name: "force", type: WebGPU.Types.vec2F32 },
         { name: "selected", type: WebGPU.Types.u32 },
+        { name: "bounds", type: WebGPU.Types.vec4F32 },
+        { name: "color", type: WebGPU.Types.u32 },
+        { name: "shape", type: WebGPU.Types.f32 },
+        { name: "copyOf", type: WebGPU.Types.u32 },
+        { name: "hover", type: WebGPU.Types.u32 }
     ]);
 
     private readonly device: GPUDevice;
@@ -86,6 +92,16 @@ class Engine {
 
     public hover: Hover;
 
+    private bounds?: Float32Array;
+
+    private color?: WebGPUBuffer;
+
+    private selectedBuffer?: WebGPUBuffer;
+
+    private hoverBuffer?: WebGPUBuffer;
+
+    public dynamicSize = 2;
+
     public constructor(device: GPUDevice, public N: number, data: Data) {
         this.device = device;
         this.particlesPositions = data.particlesPositions;
@@ -123,14 +139,12 @@ class Engine {
             cellsBufferData: this.indexing.cellsBufferData,
             particlesBufferData,
             particleRadius: this.spheresRadius,
-            weightThreshold: Engine.getMaxWeight(),
             indexBuffer: this.indexBuffer
         });
 
         this.integration = new Integration(this.device, {
             particlesBufferData,
             particleRadius: this.spheresRadius,
-            weightThreshold: Engine.getMaxWeight(),
         });
 
         const encoder = device.createCommandEncoder();
@@ -154,11 +168,34 @@ class Engine {
         await this.device.queue.onSubmittedWorkDone();
 
         await this.mapXYBuffer.gpuBuffer.mapAsync(GPUMapMode.READ, 0, this.mapXYBuffer.gpuBuffer.size);
-        
+
         const range = new Float32Array(this.mapXYBuffer.gpuBuffer.getMappedRange(0, this.mapXYBuffer.gpuBuffer.size).slice(0));
         this.mapXYBuffer.gpuBuffer.unmap();
 
-        return range; 
+        return range;
+    }
+
+    public addShadowPoints(shadows: Shadow[]) {
+        const shadowBuffer = new ArrayBuffer(Engine.particleStructType.size * shadows.length);
+
+        shadows.forEach((shadow, i) => {
+            Engine.particleStructType.setValue(shadowBuffer, Engine.particleStructType.size * i, {
+                position: [shadow.position.x, shadow.position.y],
+                velocity: [0, 0],
+                acceleration: [0, 0],
+                indexInCell: 10000,
+                index: 0,
+                force: [11, 10],
+                selected: 0,
+                bounds: [5, 5, 15, 15],
+                color: shadow.color,
+                shape: 0.0,
+                copyOf: shadow.copyOf
+            })
+        })
+
+        this.dynamicSize = shadows.length;
+        this.device.queue.writeBuffer(this.particlesBuffer.gpuBuffer, Engine.particleStructType.size * this.N, shadowBuffer, 0, Engine.particleStructType.size * shadows.length);
     }
 
     public compute(commandEncoder: GPUCommandEncoder, dt: number, radiusScaling: number): void {
@@ -169,7 +206,6 @@ class Engine {
         }
 
         if (this.needsForceUpdate) {
-            const t0 = performance.now()
             new SetPositions(this.device, {
                 particlesPositions: Array.from({ length: this.N }).map((_, i) => ([this.x[i], this.y[i]])),
                 particlesBufferData: {
@@ -178,9 +214,60 @@ class Engine {
                     particlesStructType: Engine.particleStructType,
                 },
             }).compute(commandEncoder);
-            const t1 = performance.now()
 
             this.needsForceUpdate = false;
+        }
+
+        if (this.bounds) {
+            new SetBounds(this.device, {
+                bounds: this.bounds,
+                particlesBufferData: {
+                    particlesBuffer: this.particlesBuffer,
+                    particlesCount: this.N,
+                    particlesStructType: Engine.particleStructType,
+                },
+            }).compute(commandEncoder);
+
+            this.bounds = undefined;
+        }
+
+        if (this.color) {
+            new SetColor(this.device, {
+                particlesBufferData: {
+                    particlesBuffer: this.particlesBuffer,
+                    particlesCount: this.N,
+                    particlesStructType: Engine.particleStructType
+                },
+                colorBuffer: this.color
+            }).compute(commandEncoder);
+
+            this.color = null;
+        }
+
+        if (this.hoverBuffer) {
+            new SetHover(this.device, {
+                particlesBufferData: {
+                    particlesBuffer: this.particlesBuffer,
+                    particlesCount: this.N,
+                    particlesStructType: Engine.particleStructType
+                },
+                hoverBuffer: this.hoverBuffer
+            }).compute(commandEncoder);
+
+            this.hoverBuffer = null;
+        }
+
+        if (this.selectedBuffer) {
+            new SetSelected(this.device, {
+                particlesBufferData: {
+                    particlesBuffer: this.particlesBuffer,
+                    particlesCount: this.N,
+                    particlesStructType: Engine.particleStructType
+                },
+                selectedBuffer: this.selectedBuffer
+            }).compute(commandEncoder);
+
+            this.selectedBuffer = null;
         }
 
         this.indexIfNeeded(commandEncoder);
@@ -191,16 +278,32 @@ class Engine {
 
             this.needsIndexing = true;
 
-           this.indexIfNeeded(commandEncoder);
+            this.indexIfNeeded(commandEncoder);
         }
 
-       this.hover.compute(commandEncoder, [Math.random(), Math.random()]);
+        this.hover.compute(commandEncoder, [Math.random(), Math.random()]);
+    }
+
+    public setHover(hover: WebGPUBuffer) {
+        this.hoverBuffer = hover;
+    }
+
+    public setSelected(selected: WebGPUBuffer) {
+        this.selectedBuffer = selected;
     }
 
     public setForces(x: number[], y: number[]) {
         this.x = x;
         this.y = y;
         this.needsForceUpdate = true;
+    }
+
+    public setBounds(bounds: Float32Array) {
+        this.bounds = bounds;
+    }
+
+    public setColor(color: WebGPUBuffer) {
+        this.color = color;
     }
 
     public reinitialize(): void {
@@ -241,13 +344,11 @@ class Engine {
             cellsBufferData: this.indexing.cellsBufferData,
             particlesBufferData,
             particleRadius: this.spheresRadius,
-            weightThreshold: Engine.getMaxWeight(),
             indexBuffer: this.indexBuffer
         });
         this.integration.reset({
             particlesBufferData,
             particleRadius: this.spheresRadius,
-            weightThreshold: Engine.getMaxWeight(),
         });
 
         this.needsInitialization = true;
@@ -256,9 +357,11 @@ class Engine {
 
     private applyReset(data: Data): ResetResult {
         const particlesBuffer = new WebGPU.Buffer(this.device, {
-            size: Engine.particleStructType.size * this.N,
-            usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
+            size: Engine.particleStructType.size * (this.N + DYNAMIC_SIZE),
+            usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST,
         });
+
+
 
         //const cellSize = Math.max(0.01, 2.05 * data.spheresRadius);
         const cellSize = Math.max(2.15 * data.spheresRadius, 2.05 * data.spheresRadius);
@@ -278,10 +381,6 @@ class Engine {
         return { particlesBuffer, cellSize, gridSize };
     }
 
-    public static getMaxWeight(): number {
-        return Initialization.PARTICLE_WEIGHT_THRESHOLD;
-    }
-
     public static get cellBufferDescriptor(): CellsBufferDescriptor {
         return Indexing.cellsBufferDescriptor;
     }
@@ -296,14 +395,6 @@ class Engine {
 
     public get gridData(): GridData {
         return this.indexing.gridData;
-    }
-
-    public get spheresBuffer(): SpheresBuffer {
-        return {
-            gpuBuffer: this.particlesBuffer.gpuBuffer,
-            instancesCount: this.N,
-            sphereRadius: this.spheresRadius,
-        };
     }
 
     private indexIfNeeded(commandEncoder: GPUCommandEncoder): void {
@@ -321,5 +412,5 @@ export type {
     CellsBufferData,
     CellsBufferDescriptor,
     GridData,
-    NonEmptyCellsBuffers, ParticlesBufferData, SpheresBuffer
+    NonEmptyCellsBuffers, ParticlesBufferData,
 };

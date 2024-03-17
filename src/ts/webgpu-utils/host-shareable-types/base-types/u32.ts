@@ -10,7 +10,7 @@ class U32 implements Type {
     public readonly size: number = 4;
 
     public setValue(arrayBuffer: ArrayBuffer, offset: number, value: unknown): void {
-        if (typeof value !== "number" || !Number.isInteger(value) || value < 0) {
+        if (typeof value !== "number" || !Number.isInteger(value)) {
             throw new Error(`Invalid value '${value}'.`);
         }
         new Uint32Array(arrayBuffer, offset, 1).set([value]);

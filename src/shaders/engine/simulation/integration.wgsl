@@ -15,9 +15,6 @@ fn main(in: ComputeIn) {
     }
 
     var particle = particlesBuffer[particleId];
-    if (particle.weight >= uniforms.weightThreshold) {
-        return;
-    }
 
     let dtAcceleration: vec2<f32> = uniforms.dt * particle.acceleration;
     particle.velocity = particle.velocity + dtAcceleration;

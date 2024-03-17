@@ -1,7 +1,6 @@
-import { ColorScheme, ColorSchemeProvider, MantineProvider } from '@mantine/core';
+import { MantineProvider } from '@mantine/core';
 import { ModalsProvider } from '@mantine/modals';
 import { Notifications } from '@mantine/notifications';
-import { Provider as JotaiProvider } from 'jotai';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { Provider } from 'react-redux';
@@ -10,13 +9,19 @@ import { ColorByModal } from './Modals/ColorByModal';
 import { TSNEModal } from './Modals/tSNEModal';
 import { store } from './Store/Store';
 import { SpaghettiModal } from './Modals/SpaghettiModal';
+import '@mantine/core/styles.css'
+import './globals.module.css';
+import { UMAPModal } from './Modals/UMAPModal';
+import { MuRegexModal } from './Modals/MuRegexModal';
 
-
+// document.addEventListener('contextmenu', event => event.preventDefault());
 
 const modals = {
   demonstration: TSNEModal,
   colorby: ColorByModal,
-  spaghetti: SpaghettiModal
+  spaghetti: SpaghettiModal,
+  umap: UMAPModal,
+  muregex: MuRegexModal,
 };
 
 declare module '@mantine/modals' {
@@ -26,44 +31,18 @@ declare module '@mantine/modals' {
 }
 
 function RootApplication() {
-  const [colorScheme, setColorScheme] = React.useState<ColorScheme>('light');
-  const toggleColorScheme = (value?: ColorScheme) =>
+  const [colorScheme, setColorScheme] = React.useState('light');
+  const toggleColorScheme = (value?) =>
     setColorScheme(value || (colorScheme === 'dark' ? 'light' : 'dark'));
 
-  return <JotaiProvider>
-    <Provider store={store}>
-
-      <MantineProvider
-        theme={{
-          colorScheme: colorScheme,
-          globalStyles: (theme) => ({
-            body: {
-              ...theme.fn.fontStyles(),
-              backgroundColor:
-                theme.colorScheme === 'dark'
-                  ? theme.colors.dark[7]
-                  : theme.white,
-              color:
-                theme.colorScheme === 'dark'
-                  ? theme.colors.dark[0]
-                  : theme.black,
-              lineHeight: theme.lineHeight,
-              padding: 0,
-              margin: 0,
-              overflow: 'hidden'
-            },
-          }),
-        }}
-      >
-        <ColorSchemeProvider colorScheme={colorScheme} toggleColorScheme={toggleColorScheme}>
-          <ModalsProvider modals={modals}>
-            <Notifications />
-            <AntApp />
-          </ModalsProvider>
-        </ColorSchemeProvider>
-      </MantineProvider>
-    </Provider>
-  </JotaiProvider>
+  return <Provider store={store}>
+    <MantineProvider>
+      <ModalsProvider modals={modals}>
+        <Notifications />
+        <AntApp />
+      </ModalsProvider>
+    </MantineProvider>
+  </Provider>
 }
 
 createRoot(document.getElementById('root')).render(

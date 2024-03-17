@@ -2,11 +2,12 @@ import {
   combineReducers,
   configureStore,
   createAction,
+  createAsyncThunk,
   createReducer,
   nanoid,
 } from '@reduxjs/toolkit';
 import { Column, Row, dataReducer } from './DataSlice.';
-import viewReducer from './ViewSlice';
+import viewReducer, { modelAdapter } from './ViewSlice';
 import { datasetReducer } from './FilesSlice';
 import { DataType } from '../Interfaces';
 import isNumber from 'lodash/isNumber';
@@ -15,13 +16,15 @@ import { settingsReducer } from './SettingsSlice';
 import { POINT_RADIUS } from '../Layouts/Globals';
 import { spread } from '../Util';
 import { Engine } from '../ts/engine/engine';
+import { parseCSV } from '../DataLoading/CSVLoader';
+import { DEFAULT_COLOR, hexToInt } from '../Utility/ColorScheme';
 
 const combined = combineReducers({
   data: dataReducer,
   views: viewReducer,
   datasets: datasetReducer,
   clusters: clusterReducer,
-  settings: settingsReducer
+  settings: settingsReducer,
 });
 
 export type RootState = ReturnType<typeof combined>;
@@ -128,18 +131,10 @@ const reducer = createReducer<RootState>(undefined, (builder) => {
 
     state.views.lines = null;
 
-    state.views.workspace = {
-      id: nanoid(),
-      children: [],
-      filter: Array.from({ length: rows.length }).map((_, i) => {
-        return i;
-      }),
-      area: null,
-      color: rows.map(() => [0.5, 0.5, 0.5, 1]).flat(),
-      shape: rows.map(() => 0),
-      x: state.views.positions.map((value) => spread(0.5, 0.5)),
-      y: state.views.positions.map((value) => spread(0.5, 0.5)),
-    };
+    state.views.bounds = rows.map(() => [5, 5, 15, 15]).flat()
+    state.views.models = modelAdapter.getInitialState();
+    state.views.color = rows.map(() => hexToInt(DEFAULT_COLOR));
+    state.views.shape = rows.map(() => 0);
   });
 
   builder.addDefaultCase(combined);
@@ -152,6 +147,34 @@ export const store = configureStore({
       serializableCheck: false,
     }),
 });
+
+export const loadDatasetUrl = createAsyncThunk(
+  'users/loadDataset',
+  async (name: string, { dispatch }) => {
+    const file = `datasets/${name}/chunk.csv`;
+    const response = await fetch(file);
+    const rows = await parseCSV(await response.text());
+
+    dispatch(loadDatasetGlobal(rows));
+  }
+);
+
+export const loadDataset = createAsyncThunk(
+  'users/loadDataset',
+  async (name: string, { dispatch }) => {
+    const opfsRoot = await navigator.storage.getDirectory();
+    const fileHandle = await opfsRoot.getFileHandle(name);
+    const file = await fileHandle.getFile();
+    const reader = new FileReader();
+
+    reader.onload = async () => {
+      const rows = await parseCSV(reader.result.toString());
+      dispatch(loadDatasetGlobal(rows));
+    };
+
+    reader.readAsBinaryString(file.slice(100));
+  }
+);
 
 // Inferred type: {posts: PostsState, comments: CommentsState, users: UsersState}
 export type AppDispatch = typeof store.dispatch;

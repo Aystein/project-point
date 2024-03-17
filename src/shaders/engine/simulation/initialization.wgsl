@@ -20,12 +20,15 @@ fn main(in: ComputeIn) {
 
     var particle: Particle;
     particle.position = initialParticle.position;
-    particle.weight = initialParticle.weight;
     particle.velocity = vec2<f32>(0);
     particle.acceleration = vec2<f32>(0);
     particle.force = vec2f(2.5, 2.5);
-    particle.index = particleId;
     particle.selected = 0;
+    particle.bounds = vec4f(0, 0, 20, 20);
+    particle.color = 0xa6cee3ff;
+    particle.shape = 0;
+    particle.copyOf = 1000000;
+    particle.hover = 1;
 
     indexBuffer[particleId] = particleId;
 

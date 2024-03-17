@@ -1,19 +1,34 @@
-import type { PayloadAction } from '@reduxjs/toolkit';
-import { createAsyncThunk, createSlice, EntityId, nanoid } from '@reduxjs/toolkit';
+import type { EntityState, PayloadAction } from '@reduxjs/toolkit';
+import { EntityId, createAsyncThunk, createEntityAdapter, createSlice, nanoid } from '@reduxjs/toolkit';
+import { RGBColor, color } from 'd3-color';
+import { scaleLinear, scaleOrdinal } from 'd3-scale';
+import { schemeCategory10 } from 'd3-scale-chromatic';
+import groupBy from 'lodash/groupBy';
 import isEqual from 'lodash/isEqual';
-import { VectorLike } from '../Interfaces';
-import { scaleInto } from '../Util';
-import { Rectangle } from '../WebGL/Math/Rectangle';
-import { LabelContainer, SpatialModel } from './ModelSlice';
+import { encode } from '../DataLoading/Encode';
+import { Pattern, VectorLike } from '../Interfaces';
+import { fillOperation, runCondenseLayout, runForceLayout, runGroupLayout, runSpaghettiLayout, runUMAPLayout } from '../Layouts/Layouts';
+import { getMinMax, scaleInto } from '../Util';
+import { IRectangle, Rectangle } from '../WebGL/Math/Rectangle';
+import { RootState } from './Store';
+import { createAppAsyncThunk } from './hooks';
+import { LabelContainer, LayoutConfiguration, LineFilter, Sequence, Shadow, SpatialModel, layoutAdapter, sequenceAdapter } from './interfaces';
+import { RegexMatcher } from '../regexEngine';
+import { DEFAULT_SCALE } from '../Utility/ColorScheme';
 
 export type Selection = {
   global: number[];
   local: number[];
 }
 
+export const modelAdapter = createEntityAdapter<SpatialModel>();
+
+export type Tool = 'pan' | 'select' | 'box';
+
+export type ToolbarType = typeof initialState;
+
 export interface ViewsState {
   history: SpatialModel[];
-  workspace: SpatialModel;
 
   hover: number[];
   localHover: number[];
@@ -24,15 +39,27 @@ export interface ViewsState {
   lines: number[];
   positions: VectorLike[];
 
+  color?: number[];
+  shape?: number[];
+
+  bounds: number[];
+
   filter: number[];
   filterLookup: Record<number, number>
 
+  shadows: Shadow[];
+
   lineWidth: number;
   activeHistory: number;
+
+  activeModel: EntityId;
+
+  models: EntityState<SpatialModel>,
+
+  selectedTool: Tool
 }
 
 const initialState: ViewsState = {
-  workspace: undefined,
 
   hover: undefined,
   localHover: undefined,
@@ -47,36 +74,76 @@ const initialState: ViewsState = {
   filter: [],
   filterLookup: {},
 
+  shadows: [],
+
   history: [],
-  activeHistory: -1
+  activeHistory: -1,
+
+  activeModel: undefined,
+
+  models: modelAdapter.getInitialState(),
+
+  shape: undefined,
+  color: undefined,
+
+  bounds: undefined,
+
+  selectedTool: 'select' as Tool
 };
 
 export const viewslice = createSlice({
   name: 'views',
   initialState,
   reducers: {
+    clearModel: (state, action: PayloadAction<{ id: EntityId }>) => {
+      const model = state.models.entities[state.activeModel];
+
+      model.labels = [];
+      model.line = [];
+      model.colorFilter = null;
+      model.lineFilter = null;
+    },
+    setTool: (state, action: PayloadAction<Tool>) => {
+      state.selectedTool = action.payload;
+
+      if (action.payload === 'pan') {
+        state.activeModel = null;
+      }
+    },
     updatePositionByFilter: (
       state,
-      action: PayloadAction<{ position: VectorLike[]; filter: number[] }>
+      action: PayloadAction<{ position: VectorLike[]; filter: number[]; axis?: 'x' | 'y' }>
     ) => {
-      const { filter, position } = action.payload;
+      const { filter, position, axis } = action.payload;
 
       filter.forEach((globalIndex, localIndex) => {
-        state.positions[globalIndex] = position[localIndex];
+        if (axis === 'x') {
+          state.positions[globalIndex].x = position[localIndex].x;
+        }
+        if (axis === 'y') {
+          state.positions[globalIndex].y = position[localIndex].y;
+        }
+        if (!axis) {
+          state.positions[globalIndex] = position[localIndex];
+        }
       });
     },
+    activateModel: (state, action: PayloadAction<{ id: EntityId }>) => {
+      const { id } = action.payload;
+      state.activeModel = id;
+    },
     swapView: (state, action: PayloadAction<{ id: EntityId }>) => {
-      const children = state.workspace.children;
+      const children = state.models;
       const swap = state.history.find((value) => value.id === action.payload.id);
-      state.workspace = { ...swap };
+
       state.activeHistory = state.history.indexOf(swap);
-      state.workspace.children = children;
+      state.models = children;
       state.selection = null;
       state.localSelection = null;
       state.hover = null;
       state.localHover = null;
 
-      state.positions = state.workspace.x.map((x, i) => ({ x, y: state.workspace.y[i] }))
+      state.positions = swap.x.map((x, i) => ({ x, y: swap.y[i] }))
 
       state.filter = swap.filter;
 
@@ -93,12 +160,18 @@ export const viewslice = createSlice({
         state.activeHistory = -1;
       }
     },
+    setFilter: (state, action: PayloadAction<{ id: EntityId; filter: number[] }>) => {
+      const { id, filter } = action.payload;
+      const model = state.models.entities[id];
+
+      model.filter = filter;
+    },
     updateLabels: (
       state,
       action: PayloadAction<{ id: EntityId; labels: LabelContainer[] }>
     ) => {
       const { id, labels } = action.payload;
-      const model = state.workspace.children.find((value) => value.id === id);
+      const model = state.models.entities[id];
 
       (labels ?? []).forEach((labelContainer) => {
         model.labels =
@@ -106,54 +179,42 @@ export const viewslice = createSlice({
         model.labels.push(labelContainer);
       })
     },
-    updateTrueEmbedding: (
-      state,
-      action: PayloadAction<{
-        id: EntityId;
-        x?: number[];
-        y?: number[];
-      }>
-    ) => {
-      const { id, x, y } = action.payload;
-      const model = state.workspace.children.find((value) => value.id === id);
-
-      if (x) {
-        model.filter.forEach((index, local) => {
-          state.workspace.x[index] = x[local];
-        });
-      }
-
-      if (y) {
-        model.filter.forEach((index, local) => {
-          state.workspace.y[index] = y[local];
-        });
-      }
-    },
     removeEmbedding: (state, action: PayloadAction<{ id: EntityId }>) => {
-      state.workspace.children.splice(
-        state.workspace.children.findIndex(
-          (value) => value.id === action.payload.id
-        ),
-        1
-      );
+      const model = state.models.entities[action.payload.id];
+
+      model.filter.forEach((globalIndex) => {
+        state.bounds[globalIndex * 4 + 0] = 0;
+        state.bounds[globalIndex * 4 + 1] = 0;
+        state.bounds[globalIndex * 4 + 2] = 20;
+        state.bounds[globalIndex * 4 + 3] = 20;
+      })
+
+      modelAdapter.removeOne(state.models, action.payload.id)
     },
-    addView: (state, action: PayloadAction<{ filter: number[], localSelection: number[], positions: VectorLike[] }>) => {
+    pushHistoryView: (state, action: PayloadAction<{ filter: number[], localSelection: number[], positions: VectorLike[] }>) => {
       const { filter, localSelection, positions } = action.payload;
 
       const [normalizedPositions, extent] = scaleInto(positions);
+
+      const area = {
+        x: 10 - extent / 2,
+        y: 10 - extent / 2,
+        width: extent,
+        height: extent
+      };
 
       state.history.push({
         id: nanoid(),
         filter,
         children: [],
-        area: {
-          x: 10 - extent / 2,
-          y: 10 - extent / 2,
-          width: extent,
-          height: extent
-        },
+        area,
+        line: [],
         x: normalizedPositions.map((value) => value.x),
         y: normalizedPositions.map((value) => value.y),
+        layoutConfigurations: layoutAdapter.getInitialState(),
+        filterToShadow: {},
+        shadows: [],
+        sequences: sequenceAdapter.getInitialState(),
       });
     },
     translateArea: (
@@ -161,7 +222,7 @@ export const viewslice = createSlice({
       action: PayloadAction<{ id: EntityId; x: number; y: number }>
     ) => {
       const { id, x, y } = action.payload;
-      const model = state.workspace.children.find((value) => value.id === id);
+      const model = state.models.entities[id];
 
       model.area.x += x;
       model.area.y += y;
@@ -170,16 +231,33 @@ export const viewslice = createSlice({
         state.positions[globalIndex].x += x;
         state.positions[globalIndex].y += y;
       });
+
+      model.filter.forEach((globalIndex) => {
+        state.bounds[globalIndex * 4 + 0] = model.area.x;
+        state.bounds[globalIndex * 4 + 1] = model.area.y;
+        state.bounds[globalIndex * 4 + 2] = model.area.x + model.area.width;
+        state.bounds[globalIndex * 4 + 3] = model.area.y + model.area.height;
+      })
+    },
+    setBounds: (state, action: PayloadAction<{ id: EntityId }>) => {
+      const { id } = action.payload;
+      const model = state.models.entities[id];
+
+      model.filter.forEach((globalIndex) => {
+        state.bounds[globalIndex * 4 + 0] = model.area.x;
+        state.bounds[globalIndex * 4 + 1] = model.area.y;
+        state.bounds[globalIndex * 4 + 2] = model.area.x + model.area.width;
+        state.bounds[globalIndex * 4 + 3] = model.area.y + model.area.height;
+      })
     },
     changeSize: (
       state,
-      action: PayloadAction<{ id: EntityId; width: number; height: number }>
+      action: PayloadAction<{ id: EntityId; newArea: IRectangle }>
     ) => {
-      const { id, width, height } = action.payload;
-      const model = state.workspace.children.find((value) => value.id === id);
+      const { id, newArea } = action.payload;
+      const model = state.models.entities[id];
 
-      model.area.width = width;
-      model.area.height = height;
+      model.area = newArea;
     },
     setHover: (state, action: PayloadAction<number[]>) => {
       const globalHover = action.payload;
@@ -221,64 +299,509 @@ export const viewslice = createSlice({
     },
     setColor: (
       state,
-      action: PayloadAction<{ id: EntityId; colors: number[] }>
+      action: PayloadAction<{ id: EntityId; colors: number[], colorFilter?: { column: string, color: string, active: boolean, indices: number[] }[] }>
     ) => {
       const { colors, id } = action.payload;
 
-      const model = state.workspace.children.find((value) => value.id === id);
-      model.color = Array.from({ length: model.filter.length })
-        .map(() => [1, 0, 0, 1])
-        .flat();
+      const model = state.models.entities[id];
+      const colorArr = state.color.slice(0);
 
       model.filter.forEach((index, j) => {
-        state.workspace.color[index * 4] = colors[j * 4 + 0];
-        state.workspace.color[index * 4 + 1] = colors[j * 4 + 1];
-        state.workspace.color[index * 4 + 2] = colors[j * 4 + 2];
-        state.workspace.color[index * 4 + 3] = colors[j * 4 + 3];
+        colorArr[index] = colors[j];
       });
+
+      model.colorFilter = action.payload.colorFilter;
+
+      state.color = colorArr;
     },
     setShape: (
       state,
       action: PayloadAction<{ id: EntityId; shape: number[] }>
     ) => {
-      const { shape, id } = action.payload;
+      const { id } = action.payload;
 
-      const model = state.workspace.children.find((value) => value.id === id);
+      const model = state.models.entities[id];
+      const shape = state.shape.slice(0);
 
       model.filter.forEach((i, local) => {
-        state.workspace.shape[i] = shape[local];
+        shape[i] = action.payload.shape[local];
       });
+
+      state.shape = shape;
     },
     setLines: (state, action: PayloadAction<number[]>) => {
       state.lines = action.payload;
     },
+    updateModel: (state, action: PayloadAction<{ id: EntityId, changes: Partial<SpatialModel> }>) => {
+      const { id, changes } = action.payload;
+      modelAdapter.updateOne(state.models, { id, changes })
+    },
+    deleteBounds: (state, action: PayloadAction<number[]>) => {
+      const area = new Rectangle(0, 0, 20, 20);
+
+      action.payload.forEach((globalIndex) => {
+        state.bounds[globalIndex * 4 + 0] = area.x;
+        state.bounds[globalIndex * 4 + 1] = area.y;
+        state.bounds[globalIndex * 4 + 2] = area.x + area.width;
+        state.bounds[globalIndex * 4 + 3] = area.y + area.height;
+      })
+    },
     addSubEmbedding: (
       state,
-      action: PayloadAction<{
-        filter: number[];
-        Y: VectorLike[];
-        area: Rectangle;
-      }>
+      action: PayloadAction<SpatialModel>
     ) => {
-      const { filter, area } = action.payload;
-
-      const Y = filter.map((i) => state.positions[i]);
-
-      const subModel: SpatialModel = {
-        id: nanoid(),
-        filter,
-        area: area.serialize(),
-        children: [],
-      };
-
-      state.workspace.children.push(subModel);
+      modelAdapter.addOne(state.models, action.payload);
     },
+    upsertLayoutConfig: (state, action: PayloadAction<{ id: EntityId, layoutConfig: LayoutConfiguration }>) => {
+      const { id, layoutConfig } = action.payload;
+
+      const model = state.models.entities[id];
+      layoutAdapter.upsertOne(model.layoutConfigurations, layoutConfig)
+    },
+    removeLayoutConfig: (state, action: PayloadAction<{ channel: string }>) => {
+      const activeModel = state.models.entities[state.activeModel];
+
+      switch (action.payload.channel) {
+        case 'line':
+          break;
+      }
+
+      layoutAdapter.removeOne(activeModel.layoutConfigurations, action.payload.channel);
+    },
+    syncShadows: (state) => {
+      let i = 0;
+      const shadows = new Array<Shadow>();
+      const lines = new Array<number>();
+
+      Object.values(state.models.entities).forEach((model) => {
+        shadows.push(...model.shadows);
+
+        const modelLines = model.line.map((lineIndex) => {
+          const idx = model.shadows.findIndex((e) => e.copyOf === lineIndex);
+
+          if (idx >= 0) {
+            return state.filter.length + idx + i;
+          }
+
+          return lineIndex;
+        })
+
+        lines.push(...modelLines)
+
+        i += model.shadows.length;
+      })
+
+
+      state.shadows = shadows;
+      state.lines = lines;
+    }
   },
 });
 
-export const loadDataset = createAsyncThunk(
-  'views/readxy',
-  async (engine, { dispatch }) => {
+
+/**
+   const handleShape = () => {
+    const onFinish = (feature: string) => {
+      const filteredRows = model.filter.map((i) => data[i]);
+
+      let shape = scaleOrdinal([0, 1, 2, 3]).domain(
+        filteredRows.map((row) => row[feature])
+      );
+
+      const mappedColors = filteredRows.map((row) => shape(row[feature]));
+
+      dispatch(
+        setShape({
+          id: model.id,
+          shape: mappedColors,
+        })
+      );
+    };
+
+    openContextModal({
+      modal: 'colorby',
+      title: 'Shape by',
+      innerProps: {
+        onFinish,
+      },
+    });
+  };
+
+  const handleSpaghettiBy = async (axis: 'x' | 'y') => {
+    const onFinish = async (groups: string[], secondary: string) => {
+      const X = model.filter.map((i) => data[i]);
+
+      const { Y, x, y, labels } = await runSpaghettiLayout(
+        X,
+        area,
+        groups,
+        secondary,
+        axis,
+        model.filter.map((i) => positions[i])
+      );
+
+      dispatch(updateLabels({ id: model.id, labels }));
+      dispatch(updatePositionByFilter({ position: Y, filter: model.filter }));
+    };
+
+    openContextModal({
+      modal: 'spaghetti',
+      title: 'Spaghetti',
+      innerProps: {
+        onFinish,
+      },
+    });
+  };
+ */
+
+
+
+
+export const selectByRegex = createAsyncThunk('layouts/selectbyregex',
+  async ({ pattern }: {
+    pattern: Pattern[];
+  }, { dispatch, getState }) => {
+    console.log("start");
+    const state = getState() as RootState;
+
+    const activeModel = state.views.models.entities[state.views.activeModel];
+
+    console.log({ ...activeModel.lineFilter });
+    const totalSelection = [];
+    try {
+
+      Object.values(activeModel.lineFilter).forEach((filter) => {
+        const rows = filter.indices.map((index) => state.data.rows[index])
+        const matcher = new RegexMatcher(pattern, rows as any);
+
+        const path = matcher.match();
+        if (path) {
+          totalSelection.push(...path.map((index) => rows[index]).map((value) => value.index))
+        }
+      })
+    } catch (e) {
+      console.log(e);
+    }
+
+    console.log(totalSelection);
+
+    dispatch(setSelection(totalSelection))
+  })
+
+
+
+
+
+export const removeLayoutConfigAsync = createAsyncThunk('layouts/addsubembedding',
+  async ({ channel }: { channel: string }, { dispatch, getState }) => {
+    dispatch(removeLayoutConfig({ channel }))
+    dispatch(rerunLayouts({ id: (getState() as RootState).views.activeModel }))
+  })
+
+export const addSubEmbeddingAsync = createAsyncThunk('layouts/addsubembedding',
+  async ({ filter, Y, area }: {
+    filter: number[];
+    Y: VectorLike[];
+    area: Rectangle;
+  }, { dispatch }) => {
+    const modelId = nanoid();
+
+    const subModel: SpatialModel = {
+      id: modelId,
+      filter,
+      area: area.serialize(),
+      children: [],
+      layoutConfigurations: layoutAdapter.getInitialState(),
+      line: [],
+      filterToShadow: {},
+      shadows: [],
+      sequences: sequenceAdapter.getInitialState(),
+    };
+
+    dispatch(addSubEmbedding(subModel))
+    dispatch(setBounds({ id: modelId }))
+    dispatch(setTool('select'))
+    dispatch(activateModel({ id: modelId }))
+    dispatch(rerunLayouts({ id: modelId }))
+  })
+
+
+/**
+ * Transfers points from one container to another container.
+ */
+export const transfer = createAsyncThunk(
+  'layouts/transfer',
+  async ({ target, globalIds, focusAndContext }: { target?: EntityId, globalIds: number[], focusAndContext?: boolean }, { getState, dispatch }) => {
+    let state = getState() as RootState;
+
+    const targetModel = state.views.models.entities[target];
+
+    const globalIdsSet = new Set(globalIds);
+
+
+    Object.values(state.views.models.entities).forEach((model) => {
+      if (true && model.filter.some((value) => globalIdsSet.has(value))) {
+        const shadowSet = new Set(model.shadows.map((shadow) => shadow.copyOf));
+        const ids = model.filter.filter((value) => globalIdsSet.has(value) && !shadowSet.has(value));
+        // get xy
+        const shadows = ids.map((id) => {
+          return {
+            copyOf: id,
+            position: state.views.positions[id],
+            color: state.views.color[id],
+          }
+        })
+
+        dispatch(updateModel({ id: model.id, changes: { shadows: [...shadows, ...model.shadows] } }))
+      } else {
+        if (model.id !== target && model.filter.some((value) => globalIdsSet.has(value))) {
+          const newSourceFilter = model.filter.filter((value) => !globalIdsSet.has(value));
+
+          dispatch(updateModel({ id: model.id, changes: { filter: newSourceFilter } }))
+          dispatch(rerunLayouts({ id: model.id }))
+        }
+      }
+    })
+
+    state = getState() as RootState;
+    console.log(state);
+
+    if (target) {
+      dispatch(updateModel({ id: target, changes: { filter: Array.from(new Set([...globalIds, ...targetModel.filter])).sort() } }))
+      dispatch(setBounds({ id: target }))
+      dispatch(rerunLayouts({ id: target }))
+    } else {
+      dispatch(deleteBounds(globalIds))
+    }
+
+    dispatch(syncShadows())
+  }
+)
+
+
+export const rerunLayouts = createAppAsyncThunk(
+  'layouts/rerun',
+  async ({ id }: { id: EntityId }, { dispatch, getState }) => {
+    const state = getState() as RootState;
+    const model = state.views.models.entities[id];
+    const modelRows = model.filter
+      .map((i) => state.data.rows[i]);
+
+    dispatch(setBounds({ id }))
+    dispatch(clearModel({ id }))
+    dispatch(setLines([]))
+
+
+    const layoutIds = model.layoutConfigurations.ids;
+    const layouts = Object.values(model.layoutConfigurations.entities);
+
+    if (!layoutIds.includes('xy')) {
+      if (!layoutIds.includes('x') && layoutIds.includes('y')) {
+        layouts.push({
+          type: 'condense',
+          channel: 'x'
+        })
+      } else if (!layoutIds.includes('y') && layoutIds.includes('x')) {
+        layouts.push({
+          type: 'condense',
+          channel: 'y'
+        })
+      } else {
+        layouts.push({
+          channel: 'xy',
+          type: 'fillrect'
+        })
+      }
+    }
+
+    layouts.map(async (layoutConfig) => {
+      if (layoutConfig.channel === 'x' || layoutConfig.channel === 'y') {
+        switch (layoutConfig.type) {
+          case 'numericalscale': {
+            const X = model.filter
+              .map((i) => state.data.rows[i])
+              .map((row) => row[layoutConfig.column]);
+
+            const domain = getMinMax(X);
+
+            let scale = scaleLinear().domain(domain).range([0, 1]);
+
+            const mapped = X.map((value) => scale(value));
+
+            const labels: LabelContainer = {
+              discriminator: 'scalelabels',
+              type: layoutConfig.channel,
+              labels: {
+                domain,
+                range: [0, 1],
+              },
+            };
+
+            const { Y } = await runForceLayout({
+              N: model.filter.length,
+              area: model.area,
+              axis: layoutConfig.channel,
+              Y_in: model.filter.map((i) => state.views.positions[i]),
+              X: mapped
+            });
+
+            dispatch(updateLabels({ id: model.id, labels: [labels] }));
+
+            dispatch(
+              updatePositionByFilter({ position: Y, filter: model.filter })
+            );
+            break;
+          }
+          case 'condense': {
+            const { Y, labels } = await runCondenseLayout(
+              model.filter.length,
+              model.area,
+              layoutConfig.channel,
+              model.filter.map((i) => state.views.positions[i])
+            );
+
+            dispatch(updateLabels({
+              id: model.id, labels
+            }));
+            dispatch(
+              updatePositionByFilter({ position: Y, filter: model.filter, axis: layoutConfig.channel })
+            );
+            break;
+          }
+        }
+      } else if (layoutConfig.channel === 'color') {
+        switch (layoutConfig.type) {
+          case 'setcolor': {
+            const filteredRows = modelRows
+              .map((row) => row[layoutConfig.column]);
+
+            const extent = getMinMax(filteredRows);
+
+            let colorScale =
+              layoutConfig.featureType === 'categorical'
+                ? scaleOrdinal(DEFAULT_SCALE).domain(filteredRows)
+                : scaleLinear<string>().domain(extent).range(['red', 'green']);
+
+            const mappedColors = filteredRows.map((row) => {
+              const value = color(colorScale(row)) as RGBColor
+              return (value.r << 24) | (value.g << 16) | (value.b << 8) | Math.floor(value.opacity * 255)
+            });
+
+            dispatch(
+              setColor({
+                id: model.id,
+                colors: mappedColors,
+                colorFilter: layoutConfig.featureType === 'categorical' ? colorScale.domain().map((value) => {
+                  const indices = modelRows.filter((row) => row[layoutConfig.column] === value).map((row) => row.index);
+
+                  return {
+                    column: value,
+                    color: colorScale(value),
+                    active: true,
+                    indices,
+                  }
+                }) : null
+              })
+            );
+            break;
+          }
+        }
+      } else if (layoutConfig.channel === 'xy') {
+        switch (layoutConfig.type) {
+          case 'fillrect': {
+            const { Y } = await fillOperation({ N: modelRows.length, area: model.area });
+            dispatch(updatePositionByFilter({ position: Y, filter: model.filter }));
+            break;
+          }
+          case 'spaghetti': {
+            const { Y, x, y, labels } = await runSpaghettiLayout(
+              modelRows,
+              model.area,
+              layoutConfig.columns,
+              layoutConfig.timeColumn,
+              'y',
+              model.filter.map((i) => state.views.positions[i])
+            );
+            dispatch(updateLabels({ id: model.id, labels }));
+            dispatch(updatePositionByFilter({ position: Y, filter: model.filter }));
+            break;
+          }
+          case 'group': {
+            const { Y, x, y, labels } = await runGroupLayout(
+              modelRows,
+              model.area,
+              layoutConfig.column,
+              layoutConfig.strategy,
+            );
+
+            dispatch(updateLabels({ id: model.id, labels }));
+            dispatch(
+              updatePositionByFilter({ position: Y, filter: model.filter })
+            );
+
+            break;
+          }
+          case 'umap': {
+            const { X, N, D } = encode(state.data, model.filter, layoutConfig.columns);
+
+            const { Y, labels } = await runUMAPLayout({
+              X,
+              N,
+              D,
+              area: model.area,
+              axis: 'xy',
+              Y_in: model.filter.map((i) => state.views.positions[i]),
+            });
+
+            dispatch(
+              updatePositionByFilter({ position: Y, filter: model.filter })
+            );
+          }
+        }
+      } else if (layoutConfig.channel === 'line') {
+        switch (layoutConfig.type) {
+          case 'setline': {
+            const grouped = groupBy(modelRows, (value) => value[layoutConfig.column]);
+            const line = new Array<number>();
+            const lineFilter: LineFilter = [];
+
+            Object.keys(grouped).forEach((group) => {
+              const values = grouped[group];
+
+              const indices = values.map((v) => v.index);
+              const reverseIndices = indices.reduce((acc, val, idx) => {
+                acc[val] = idx;
+
+                return acc;
+              }, {});
+
+              lineFilter.push({ value: group, indices, reverseIndices })
+
+              values.forEach((row, i) => {
+                if (i < values.length - 1) {
+                  line.push(values[i - 1]?.index ?? 1000000, values[i].index, values[i + 1].index, values[i + 2]?.index ?? 1000000);
+                }
+              });
+            });
+
+            dispatch(updateModel({ id: model.id, changes: { line, lineFilter } }));
+
+            break;
+          }
+        }
+      }
+    })
+
+
+    dispatch(syncShadows());
+  }
+)
+
+export const setLayoutConfig = createAsyncThunk(
+  'layouts/set',
+  async ({ id, layoutConfig }: { id: EntityId; layoutConfig: LayoutConfiguration }, { dispatch, getState, requestId }) => {
+    dispatch(upsertLayoutConfig({ id, layoutConfig }))
+    dispatch(rerunLayouts({ id }))
   }
 );
 
@@ -286,19 +809,28 @@ export const loadDataset = createAsyncThunk(
 export const {
   updatePositionByFilter,
   addSubEmbedding,
+  clearModel,
   removeEmbedding,
   translateArea,
   setColor,
+  deleteBounds,
   setShape,
   setHover,
   setSelection,
   setLines,
-  addView,
-  updateTrueEmbedding,
+  pushHistoryView,
   updateLabels,
   changeSize,
   swapView,
-  deleteHistory
+  deleteHistory,
+  activateModel,
+  upsertLayoutConfig,
+  removeLayoutConfig,
+  setTool,
+  setBounds,
+  setFilter,
+  updateModel,
+  syncShadows
 } = viewslice.actions;
 
 export default viewslice.reducer;

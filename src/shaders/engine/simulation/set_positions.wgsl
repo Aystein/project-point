@@ -16,9 +16,8 @@ fn main(in: ComputeIn) {
     }
 
     var particle = particlesBuffer[particleId];
-    var initialParticle = initialPositions[particle.index];
 
-    particle.force = initialParticle.force;
+    particle.force = initialPositions[particleId].force;
 
     particlesBuffer[particleId] = particle;
 }

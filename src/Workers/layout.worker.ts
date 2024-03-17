@@ -20,7 +20,7 @@ self.onmessage = ({
 }: Props) => {
     /** Generate N points in a rectangle that has the same aspect ratio as the area */
     if (type === 'fill_rect') {
-        const Y = fillRect(area, N, radius);
+        const { Y } = fillRect(area, N, radius);
 
         self.postMessage({
             type: 'finish',

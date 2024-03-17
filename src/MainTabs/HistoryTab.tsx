@@ -1,8 +1,8 @@
 import { AspectRatio, Button, Card, CloseButton, Group, ScrollArea, Stack, Text, rem, useMantineTheme } from '@mantine/core';
 import { EntityId } from '@reduxjs/toolkit';
 import * as React from 'react';
-import { SpatialModel } from '../Store/ModelSlice';
-import { addView, deleteHistory, swapView } from '../Store/ViewSlice';
+import { SpatialModel } from '../Store/interfaces';
+import { pushHistoryView, deleteHistory, swapView } from '../Store/ViewSlice';
 import { useAppDispatch, useAppSelector } from '../Store/hooks';
 import { Scatterplot } from '../WebGL/Scatter/Scatterplot';
 import { VisProvider } from '../WebGL/VisualizationContext';
@@ -62,20 +62,22 @@ function HistoryView({ view, active, index }: { view: SpatialModel, active: bool
     dispatch(swapView({ id }));
   };
 
-  const outlineColor = theme.colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[3];
-  const activeColor = theme.fn.variant({ color: theme.primaryColor, variant: 'outline' });
+  //const outlineColor = theme.colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[3];
+  //const activeColor = theme.fn.variant({ color: theme.primaryColor, variant: 'outline' });
+  const outlineColor = '#ff0000';
+  const activeColor = '#00ff00';
 
   return (
     <Card
       style={{
-        outlineColor: active ? activeColor.border : outlineColor,
+        outlineColor: active ? activeColor : outlineColor,
         outlineWidth: active ? 2 : 1,
         outlineStyle: 'solid'
       }}
     >
       <Card.Section px={rem(4)} p={rem(4)}>
-        <Group position="apart">
-          <Text weight={500} size="sm">Review pictures</Text>
+        <Group justify="space-between">
+          <Text fw={500} size="sm">Review pictures</Text>
 
           <CloseButton onClick={() => dispatch(deleteHistory({ historyIndex: index }))} />
         </Group>
@@ -97,7 +99,7 @@ function HistoryView({ view, active, index }: { view: SpatialModel, active: bool
       </Card.Section>
 
       <Card.Section p={rem(4)}>
-        <Group position="apart">
+        <Group justify="space-between">
           <Text size="sm">{view.filter.length} items</Text>
         </Group>
       </Card.Section>
@@ -120,7 +122,7 @@ export function HistoryTab() {
         return { x: data[(Engine.particleStructType.size / 4) * i], y: data[(Engine.particleStructType.size / 4) * i + 1] }
       });
 
-      dispatch(addView({
+      dispatch(pushHistoryView({
         filter: selection,
         localSelection,
         positions

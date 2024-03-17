@@ -5,7 +5,6 @@ import { ParticlesBufferData } from "../engine";
 type Data = {
     particlesBufferData: ParticlesBufferData;
     particleRadius: number;
-    weightThreshold: number;
 };
 
 type ResetResult = {
@@ -33,7 +32,6 @@ class Integration {
             { name: "dt", type: WebGPU.Types.f32 },
             { name: "particlesCount", type: WebGPU.Types.u32 },
             { name: "particleRadius", type: WebGPU.Types.f32 },
-            { name: "weightThreshold", type: WebGPU.Types.f32 },
             { name: "velocityDamping", type: WebGPU.Types.f32 },
         ]);
 
@@ -77,7 +75,6 @@ class Integration {
     private applyReset(data: Data): ResetResult {
         this.uniforms.setValueFromName("particlesCount", data.particlesBufferData.particlesCount);
         this.uniforms.setValueFromName("particleRadius", data.particleRadius);
-        this.uniforms.setValueFromName("weightThreshold", data.weightThreshold);
 
         const workgroupsCount = Math.ceil(data.particlesBufferData.particlesCount / Integration.WORKGROUP_SIZE);
         const bindgroup = this.device.createBindGroup({

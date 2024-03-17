@@ -1,28 +1,23 @@
 import {
-  ActionIcon,
   AppShell,
-  Group,
-  Header,
-  Kbd,
-  Navbar,
-  Stack,
+  Box,
+  Center,
   Tabs,
-  Tooltip,
-  UnstyledButton,
-  createStyles,
   useMantineColorScheme
 } from '@mantine/core';
-import { IconFile, IconLasso, IconMoon, IconSettings, IconClock } from '@tabler/icons-react';
 import * as React from 'react';
 import { Main } from './Main';
 import { ClusterTab } from './MainTabs/ClusterTab';
 import { DataTab } from './MainTabs/DataTab';
 import { HistoryTab } from './MainTabs/HistoryTab';
-import { initializeDatasets } from './Store/FilesSlice';
-import { useAppDispatch } from './Store/hooks';
 import { SettingsTab } from './MainTabs/SettingsTab';
+import { initializeDatasets } from './Store/FilesSlice';
+import { useAppDispatch, useAppSelector } from './Store/hooks';
+import { TopMenu } from './MainTabs/TopMenu';
+import { SideMenu } from './MainTabs/SideMenu';
+import { Legends } from './MainTabs/Legends';
 
-const useStyles = createStyles((theme) => ({
+/**const useStyles = createStyles((theme) => ({
   wrapper: {
     display: 'flex',
   },
@@ -65,110 +60,77 @@ const useStyles = createStyles((theme) => ({
         .color,
     },
   },
-}));
+}));**/
 
-const mainLinksMockdata = [
-  { icon: IconFile, label: 'Dataset', index: 0 },
-  { icon: IconLasso, label: 'Cluster', index: 1 },
-  { icon: IconClock, label: 'History', index: 2 },
-  { icon: IconSettings, label: 'Settings', index: 3 },
-];
 
 
 export function AntApp() {
-  const { classes, cx } = useStyles();
-  const [active, setActive] = React.useState(mainLinksMockdata[0].label);
+  const [active, setActive] = React.useState("dataset");
   const dispatch = useAppDispatch();
-  const colorScheme = useMantineColorScheme();
+  const dataId = useAppSelector((state) => state.data.id);
+  const scheme = useMantineColorScheme();
 
   React.useEffect(() => {
     dispatch(initializeDatasets());
   }, []);
 
-  const mainLinks = mainLinksMockdata.map((link) => (
-    <Tooltip label={link.label} position="right" withArrow key={link.index}>
-      <UnstyledButton
-        onClick={() => setActive(link.label)}
-        className={cx(classes.mainLink, {
-          [classes.mainLinkActive]: link.label === active,
-        })}
-      >
-        <link.icon />
-      </UnstyledButton>
-    </Tooltip>
-  ));
-
   return (
     <AppShell
+      navbar={{ width: 300, breakpoint: 'sm' }}
       padding={0}
       layout="alt"
-      header={
-        <Header height={60}>
-          <Group position='apart' style={{ width: '100%', height: '100%' }} p='xs'>
-            <Group>
-              <Kbd mr={5}>Ctrl</Kbd>
-              <span>+</span>
-              <Kbd ml={5}>S</Kbd>
-            </Group>
-
-            <ActionIcon variant="default" size="lg" onClick={() => {
-              colorScheme.toggleColorScheme()
-            }}><IconMoon stroke={1} /></ActionIcon>
-          </Group>
-        </Header>
-      }
-      navbar={
-        <Navbar width={{ sm: 360 }}>
-          <Navbar.Section grow className={classes.wrapper}>
-            <Stack className={classes.aside} pt="xs" spacing="xs">
-              {mainLinks}
-            </Stack>
-            <Tabs
-              defaultValue={mainLinksMockdata[0].label}
-              value={active}
-              style={{ flexDirection: 'column', display: 'flex', flex: 1 }}
-              sx={{
-                '> div': {
-                  overflowY: 'auto',
-                  flexGrow: 1,
-                  height: 0,
-                  flexDirection: 'column'
-                }
-              }}
-            >
-              <Tabs.Panel value={mainLinksMockdata[0].label} style={{ display: active === mainLinksMockdata[0].label ? 'flex' : 'none' }}>
-                <DataTab />
-              </Tabs.Panel>
-
-              <Tabs.Panel value={mainLinksMockdata[1].label} style={{ display: active === mainLinksMockdata[1].label ? 'flex' : 'none' }}>
-                <ClusterTab />
-              </Tabs.Panel>
-
-              <Tabs.Panel value={mainLinksMockdata[2].label} style={{ display: active === mainLinksMockdata[2].label ? 'flex' : 'none' }}>
-                <HistoryTab />
-              </Tabs.Panel>
-
-              <Tabs.Panel value={mainLinksMockdata[3].label} style={{ display: active === mainLinksMockdata[3].label ? 'flex' : 'none' }}>
-                <SettingsTab />
-              </Tabs.Panel>
-            </Tabs>
-          </Navbar.Section>
-        </Navbar>
-      }
       styles={(theme) => ({
         main: {
           maxHeight: '100vh',
 
           backgroundColor:
-            theme.colorScheme === 'dark'
+            scheme.colorScheme === 'dark'
               ? theme.colors.dark[8]
               : theme.colors.gray[1],
         },
       })}
     >
-      <div style={{ width: '100%', height: '100%', position: 'relative' }}>
-        <Main />
-      </div>
+      <AppShell.Main>
+        <Box style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+          <TopMenu />
+          <SideMenu />
+          <Legends />
+          {
+            dataId ? <Main /> : <Center style={{ width: '100%', height: '100%' }}><DataTab /></Center>
+          }
+          
+        </Box>
+      </AppShell.Main>
+      {/**<AppShell.Navbar>
+        <Tabs
+          value={active}
+          onChange={setActive}
+          style={{ flexDirection: 'column', display: 'flex', flex: 1 }}
+        >
+          <Tabs.List>
+            <Tabs.Tab value="dataset">Data</Tabs.Tab>
+            <Tabs.Tab value="cluster">Cluster</Tabs.Tab>
+            <Tabs.Tab value="history">History</Tabs.Tab>
+            <Tabs.Tab value="settings">Settings</Tabs.Tab>
+          </Tabs.List>
+
+          <Tabs.Panel value="dataset">
+            <DataTab />
+          </Tabs.Panel>
+
+          <Tabs.Panel value="cluster">
+            <ClusterTab />
+          </Tabs.Panel>
+
+          <Tabs.Panel value="history">
+            <HistoryTab />
+          </Tabs.Panel>
+
+          <Tabs.Panel value="settings">
+            <SettingsTab />
+          </Tabs.Panel>
+        </Tabs>
+        </AppShell.Navbar>**/}
     </AppShell>
   );
 }

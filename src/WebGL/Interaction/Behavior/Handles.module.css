@@ -1,0 +1,134 @@
+.leftHandle {
+    cursor: move;
+    position: absolute;
+    width: 10px;
+    top: 0px;
+    bottom: 0px;
+    left: -5px;
+}
+
+.rightHandle {
+    cursor: move;
+    position: absolute;
+    width: 10px;
+    top: 0px;
+    bottom: 0px;
+    right: -5px;
+}
+
+.topHandle {
+    cursor: move;
+    position: absolute;
+    height: 10px;
+    left: 0px;
+    right: 0px;
+    top: -5px;
+}
+
+.bottomHandle {
+    cursor: move;
+    position: absolute;
+    height: 10px;
+    left: 0px;
+    right: 0px;
+    bottom: -5px;
+}
+
+.topLeftHandle {
+    cursor: nwse-resize;
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    left: -6px;
+    top: -6px;
+    background: var(--mantine-color-blue-1);
+    border: 1px solid var(--mantine-color-white);
+    border-radius: 2px;
+}
+
+.bottomRightHandle {
+    cursor: nwse-resize;
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    right: -6px;
+    bottom: -6px;
+    background: var(--mantine-color-blue-1);
+    border: 1px solid var(--mantine-color-white);
+    border-radius: 2px;
+}
+
+.topRightHandle {
+    cursor: nesw-resize;
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    right: -6px;
+    top: -6px;
+    background: var(--mantine-color-blue-1);
+    border: 1px solid var(--mantine-color-white);
+    border-radius: 2px;
+}
+
+
+.bottomLeftHandle {
+    cursor: nesw-resize;
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    left: -6px;
+    bottom: -6px;
+    background: var(--mantine-color-blue-1);
+    border: 1px solid var(--mantine-color-white);
+    border-radius: 2px;
+}
+
+.middleLeftHandle {
+    cursor: ew-resize;
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    left: -6px;
+    bottom: calc(50% - 5px);
+    background: var(--mantine-color-blue-1);
+    border: 1px solid var(--mantine-color-white);
+    border-radius: 2px;
+}
+
+.middleRightHandle {
+    cursor: ew-resize;
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    right: -6px;
+    bottom: calc(50% - 5px);
+    background: var(--mantine-color-blue-1);
+    border: 1px solid var(--mantine-color-white);
+    border-radius: 2px;
+}
+
+
+.middleTopHandle {
+    cursor: ns-resize;
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    top: -6px;
+    left: calc(50% - 5px);
+    background: var(--mantine-color-blue-1);
+    border: 1px solid var(--mantine-color-white);
+    border-radius: 2px;
+}
+
+
+.middleBottomHandle {
+    cursor: ns-resize;
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    bottom: -6px;
+    left: calc(50% - 5px);
+    background: var(--mantine-color-blue-1);
+    border: 1px solid var(--mantine-color-white);
+    border-radius: 2px;
+}

@@ -9,8 +9,13 @@ import ResetCells from "../shaders/engine/indexing/reset-cells.wgsl?raw";
 import Acceleration from "../shaders/engine/simulation/acceleration.wgsl?raw";
 import Initialization from "../shaders/engine/simulation/initialization.wgsl?raw";
 import SetPositions from "../shaders/engine/simulation/set_positions.wgsl?raw";
+import SetBounds from "../shaders/engine/simulation/set_bounds.wgsl?raw";
+import SetColor from "../shaders/engine/simulation/set_color.wgsl?raw";
+import SetHover from "../shaders/engine/simulation/set_hover.wgsl?raw";
+import SetSelected from "../shaders/engine/simulation/set_selected.wgsl";
 import Integration from "../shaders/engine/simulation/integration.wgsl?raw";
 
+import Copy from "../shaders/engine/utility/copy.wgsl?raw";
 
 const engine = {
     Indexing: {
@@ -29,7 +34,14 @@ const engine = {
         Initialization,
         Integration,
         SetPositions,
+        SetBounds,
+        SetColor,
+        SetHover,
+        SetSelected,
     },
+    Util: {
+        Copy,
+    }
 };
 
 export {

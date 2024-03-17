@@ -6,7 +6,7 @@ import { VectorLike } from '../Interfaces';
 import {
   scaleToWorld,
 } from '../Layouts/ForceUtil';
-import { LabelContainer } from '../Store/ModelSlice';
+import { LabelContainer } from '../Store/interfaces';
 
 interface UMAPWorkerProps {
   data: {

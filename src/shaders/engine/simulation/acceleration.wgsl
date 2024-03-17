@@ -28,9 +28,6 @@ fn main(in: ComputeIn) {
 
     let particleIndex = indexBuffer[particleId];
     var particle = particlesBuffer[particleIndex];
-    if (particle.weight >= uniforms.weightThreshold) {
-        return;
-    }
 
     particle.acceleration = vec2<f32>(0);
 
@@ -60,22 +57,32 @@ fn main(in: ComputeIn) {
                     let penetration = 2.0 * particleRadius - distance;
 
                     if (penetration > 0.0) {
-                        particle.acceleration += (0.96 * neighbour.weight / (particle.weight + neighbour.weight)) * penetration * normalize(fromVector) / uniforms.dt;
+                        particle.acceleration += (0.96 / 2) * penetration * normalize(fromVector) / uniforms.dt;
                     }
                 }
             }
         }
     }
 
+    let maxBoundForce = 20.0;
+
     // upper bound
-    let upperBoundPenetration = particle.position - uniforms.upperBound;
+    let upperBoundPenetration = particle.position - particle.bounds.zw;
     let upperBoundCheck = step(vec2<f32>(0), upperBoundPenetration); // 1 if out of bounds, 0 if in bounds
-    particle.acceleration -= upperBoundCheck * (2.0 * upperBoundPenetration) / uniforms.dt;
+    var upperAcceleration = upperBoundCheck * (2.0 * upperBoundPenetration) / uniforms.dt;
+    if (length(upperAcceleration) > maxBoundForce) {
+        upperAcceleration = normalize(upperAcceleration) * maxBoundForce;
+    }
+    //particle.acceleration -= upperAcceleration;
 
     // lower bound
-    let lowerBoundPenetration = uniforms.lowerBound - particle.position;
+    let lowerBoundPenetration = particle.bounds.xy - particle.position;
     let lowerBoundCheck = step(vec2<f32>(0), lowerBoundPenetration); // 1 if out of bounds, 0 if in bounds
-    particle.acceleration += lowerBoundCheck * (2.0 * lowerBoundPenetration) / uniforms.dt;
+    var lowerAcceleration = lowerBoundCheck * (2.0 * lowerBoundPenetration) / uniforms.dt;
+    if (length(lowerAcceleration) > maxBoundForce) {
+        lowerAcceleration = normalize(lowerAcceleration) * maxBoundForce;
+    }
+    //particle.acceleration += lowerAcceleration;
 
     particlesBuffer[particleIndex] = particle;
 }

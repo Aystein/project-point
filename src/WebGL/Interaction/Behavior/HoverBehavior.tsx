@@ -26,29 +26,30 @@ export function HoverBehavior({
   const data = useAppSelector((state) => state.data);
   const dispatch = useAppDispatch();
   const hover = useAppSelector((state) => state.views.hover);
+  const activeTool = useAppSelector((state) => state.views.selectedTool);
 
   useMouseEvent(
     MOUSE_HOVER,
     (event) => {
-      getGlobalEngine()?.hover.setMousePosition([scaledXDomain.invert(event.x), scaledYDomain.invert(event.y)]);
-      getGlobalEngine()?.hover.read().then((x) => {
-        if (!x) {
-          return;
-        }
-        
-        if (x[1] === Number.MAX_SAFE_INTEGER) {
-          dispatch(setHover(undefined));
-        } else {
-          dispatch(setHover([x[1]]));
-        }
-
-        
-      });
+      if (activeTool === 'select') {
+        getGlobalEngine()?.hover.setMousePosition([scaledXDomain.invert(event.x), scaledYDomain.invert(event.y)]);
+        getGlobalEngine()?.hover.read().then((x) => {
+          if (!x) {
+            return;
+          }
+          
+          if (x[1] === Number.MAX_SAFE_INTEGER) {
+            dispatch(setHover(undefined));
+          } else {
+            dispatch(setHover([x[1]]));
+          }
+        });
+      }
 
       return true;
     },
     COMMAND_PRIORITY_NORMAL,
-    [scaledXDomain, scaledYDomain, onHover]
+    [scaledXDomain, scaledYDomain, onHover, activeTool]
   );
 
   return (
@@ -88,7 +89,7 @@ function HoverComponent({ row }: { row: Row }) {
         overflowY: 'auto',
       }}
     >
-      <Table withBorder withColumnBorders>
+      <Table withTableBorder>
         <tbody>{rows}</tbody>
       </Table>
     </div>

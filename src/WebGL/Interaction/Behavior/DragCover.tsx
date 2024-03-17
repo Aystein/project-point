@@ -4,21 +4,17 @@ import { ActionIcon, Affix } from '@mantine/core';
 import { distanceXY } from './LassoBehavior';
 
 export function SimpleDragCover({
-  onMove,
+  onDrag,
   onClick,
   boxRef,
   drag,
-  setDrag,
-  icon,
-  style,
+  onDragEnd,
 }: {
-  onMove: (amount: VectorLike, event: MouseEvent) => void;
+  onDrag: (amount: VectorLike, event: MouseEvent) => void;
   onClick?: (position: VectorLike) => void;
   boxRef?: React.RefObject<HTMLElement>;
   drag: VectorLike;
-  setDrag: (value: VectorLike) => void;
-  icon?: JSX.Element;
-  style?;
+  onDragEnd: (value: VectorLike, modifier?: boolean) => void;
 }) {
   const dragRef = React.useRef(false);
 
@@ -49,7 +45,7 @@ export function SimpleDragCover({
             }
 
             if (dragRef.current) {
-              onMove(
+              onDrag(
                 { x: event.movementX, y: event.movementY },
                 event.nativeEvent
               );
@@ -62,7 +58,7 @@ export function SimpleDragCover({
             const pos = translate(event);
 
             if (dragRef.current) {
-              setDrag(null);
+              onDragEnd(null, event.ctrlKey || event.altKey);
             }
 
             if (!dragRef.current) {
@@ -74,24 +70,78 @@ export function SimpleDragCover({
           }}
         />
       ) : null}
+    </>
+  );
+}
 
-      {icon ? (
-        <ActionIcon
-          size="sm"
-          style={style}
-          onMouseDown={(event) => {
-            //event.preventDefault();
-            //event.stopPropagation();
 
-            setDrag({ x: event.screenX, y: event.screenY });
-          }}
-          onContextMenu={(event) => {
+export function IconDragCover({
+  icon,
+  onClick,
+  onMouseMove,
+  onMouseDown,
+  onMouseUp,
+  cursor,
+}: {
+  icon?: JSX.Element;
+  onClick?: () => void;
+  onMouseMove?: (event: { movementX: number, movementY: number }) => void;
+  onMouseDown?: () => void;
+  onMouseUp?: () => void;
+  cursor?: string,
+}) {
+  const dragRef = React.useRef<{ x: number; y: number }>();
+  const [drag, setDrag] = React.useState(false);
+  const [isClick, setIsClick] = React.useState(true);
+
+  return (
+    <>
+      {drag ? (
+        <Affix
+          style={{ pointerEvents: 'initial', width: '100%', height: '100%', cursor }}
+          data-interaction
+          onMouseMove={(event) => {
+            event.stopPropagation();
             event.preventDefault();
+
+            const { screenX, screenY } = event.nativeEvent;
+
+            if (isClick && distanceXY(dragRef.current, { x: screenX, y: screenY }) > 4) {
+              setIsClick(false);
+              onMouseMove({ movementX: screenX - dragRef.current.x, movementY: screenY - dragRef.current.y });
+              dragRef.current = { x: screenX, y: screenY };
+            }
+
+            if (!isClick) {
+              onMouseMove({ movementX: screenX - dragRef.current.x, movementY: screenY - dragRef.current.y });
+              dragRef.current = { x: screenX, y: screenY };
+            }
           }}
-        >
-          {icon}
-        </ActionIcon>
+          onMouseUp={(event) => {
+            event.stopPropagation();
+            event.preventDefault();
+
+            if (isClick && onClick) {
+              onClick();
+            }
+
+            if (!isClick && onMouseUp) {
+              onMouseUp();
+            }
+
+            dragRef.current = null;
+            setDrag(false);
+            setIsClick(true);
+          }}
+        />
       ) : null}
+
+      { React.cloneElement(icon, { onMouseDown: (event) => {
+        dragRef.current = { x: event.screenX, y: event.screenY };
+        setDrag(true);
+        
+        if (onMouseDown) onMouseDown();
+      } }) }
     </>
   );
 }
