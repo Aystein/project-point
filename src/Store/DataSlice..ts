@@ -37,13 +37,14 @@ export type Column = NumberColumn | OrdinalColumn | DateColumn | UnknownColumn;
 
 export interface DataState {
   id: string;
+  type?: string;
   rows: Row[];
   columns: Column[];
 }
 
 const initialState: DataState = {
   id: null,
-  rows: [],
+  rows: [], 
   columns: [],
 };
 
