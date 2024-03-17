@@ -4,21 +4,25 @@ import {
   CheckIcon,
   ColorSwatch,
   Combobox,
+  Divider,
   Group,
   Paper,
   ScrollArea,
   Stack,
   Text,
   Title,
+  Tooltip,
   rem,
 } from '@mantine/core';
 import { useDispatch } from 'react-redux';
 import {
+  Selectors,
   selectActiveModel,
   selectChannelTypes,
   selectConfigByChannel,
 } from '../Store/Selectors';
 import { useAppDispatch, useAppSelector } from '../Store/hooks';
+import cloneDeep from 'lodash/cloneDeep'
 import classes from './SideMenu.module.css';
 import { ColorConfiguration, LineConfiguration } from '../Store/interfaces';
 import { setHover, setSelection } from '../Store/ViewSlice';
@@ -32,6 +36,7 @@ export function LineLegend() {
 
   const selection = useAppSelector((state) => state.views.selection);
   const rows = useAppSelector((state) => state.data.rows);
+  const activeModel = useAppSelector(selectActiveModel);
 
   const handleMouseEnter = (value) => {
     dispatch(setHover(value.indices));
@@ -44,6 +49,37 @@ export function LineLegend() {
   const handleExpand = () => {
     const lineSet = new Set(selection.map((i) => rows[i]).map((v) => v[config.column]));
     const newSelection = rows.filter((row) => lineSet.has(row[config.column])).map((row) => row.index);
+
+    dispatch(setSelection(newSelection));
+  }
+
+  const handleCombine = () => {
+    console.log(cloneDeep(activeModel.lineFilter));
+    const lineFilter = activeModel.lineFilter;
+
+    const minMax: Record<string, { min: number, max: number }> = {};
+    Object.keys(lineFilter).forEach((key) => {
+      minMax[key] = { min: Number.MAX_SAFE_INTEGER, max: Number.MIN_SAFE_INTEGER };
+    })
+
+    selection.forEach((index) => {
+      const lineValue = rows[index][config.column];
+
+      const indexInLine = lineFilter[lineValue].reverseIndices[index];
+      minMax[lineValue].min = Math.min(minMax[lineValue].min, indexInLine);
+      minMax[lineValue].max = Math.max(minMax[lineValue].max, indexInLine);
+    })
+
+    const selectionSet = new Set(selection);
+
+
+    const lineSet = new Set(selection.map((i) => rows[i]).map((v) => v[config.column]));
+    const newSelection = rows.filter((row) => {
+      const lineValue = row[config.column];
+      return lineSet.has(row[config.column]) && lineFilter[lineValue].reverseIndices[row.index] >= minMax[lineValue].min
+        && lineFilter[lineValue].reverseIndices[row.index] <= minMax[lineValue].max
+    }).map((row) => row.index);
+
     dispatch(setSelection(newSelection));
   }
 
@@ -56,9 +92,39 @@ export function LineLegend() {
         </Text>
       </Text>
 
-      <Button variant="light" onClick={handleExpand}>Expand selection</Button>
+      <Divider orientation='vertical' mx="xs" my="xs" />
 
-      <Combobox styles={{ option: { paddingLeft: 0, paddingRight: 0 } }}>
+      <Group gap={rem(4)} wrap="nowrap">
+        <Tooltip label="Expands the selection to their full sequences.">
+          <Button
+            style={{ textTransform: 'uppercase' }}
+            onClick={() => {
+              handleExpand();
+            }}
+            variant="subtle"
+            radius="md"
+            color="dark"
+          >
+            Expand
+          </Button>
+        </Tooltip>
+
+        <Tooltip label="Adds the inbetween states of the selected items.">
+          <Button
+            style={{ textTransform: 'uppercase' }}
+            onClick={() => {
+              handleCombine();
+            }}
+            variant="subtle"
+            radius="md"
+            color="dark"
+          >
+            Combine
+          </Button>
+        </Tooltip>
+      </Group>
+
+      <Combobox>
         <Combobox.Options mt="sm">
           <ScrollArea.Autosize type="scroll" mah={200}>
             {model.lineFilter.map((value) => {
@@ -104,7 +170,7 @@ export function ColorLegend() {
             by {config.column}
           </Text>
         </Text>
-        <Combobox styles={{ option: { paddingLeft: 0, paddingRight: 0 } }}>
+        <Combobox>
           <Combobox.Options mt="sm">
             <ScrollArea.Autosize type="scroll" mah={200}>
               {model.colorFilter.map((value) => {
@@ -156,7 +222,7 @@ export function Legends() {
       withBorder
       radius="md"
       shadow="md"
-      p="xs"
+      p={0}
       key={activeModel.id}
     >
       {color}

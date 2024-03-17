@@ -14,6 +14,7 @@ import { RootState } from './Store';
 import { createAppAsyncThunk } from './hooks';
 import { LabelContainer, LayoutConfiguration, LineFilter, Sequence, Shadow, SpatialModel, layoutAdapter, sequenceAdapter } from './interfaces';
 import { RegexMatcher } from '../regexEngine';
+import { DEFAULT_SCALE } from '../Utility/ColorScheme';
 
 export type Selection = {
   global: number[];
@@ -456,7 +457,7 @@ export const viewslice = createSlice({
 
 
 
-  export const selectByRegex = createAsyncThunk('layouts/selectbyregex',
+export const selectByRegex = createAsyncThunk('layouts/selectbyregex',
   async ({ pattern }: {
     pattern: Pattern[];
   }, { dispatch, getState }) => {
@@ -465,14 +466,14 @@ export const viewslice = createSlice({
 
     const activeModel = state.views.models.entities[state.views.activeModel];
 
-    console.log({...activeModel.lineFilter});
+    console.log({ ...activeModel.lineFilter });
     const totalSelection = [];
     try {
 
       Object.values(activeModel.lineFilter).forEach((filter) => {
         const rows = filter.indices.map((index) => state.data.rows[index])
         const matcher = new RegexMatcher(pattern, rows as any);
-  
+
         const path = matcher.match();
         if (path) {
           totalSelection.push(...path.map((index) => rows[index]).map((value) => value.index))
@@ -678,7 +679,7 @@ export const rerunLayouts = createAppAsyncThunk(
 
             let colorScale =
               layoutConfig.featureType === 'categorical'
-                ? scaleOrdinal(schemeCategory10).domain(filteredRows)
+                ? scaleOrdinal(DEFAULT_SCALE).domain(filteredRows)
                 : scaleLinear<string>().domain(extent).range(['red', 'green']);
 
             const mappedColors = filteredRows.map((row) => {
@@ -767,7 +768,14 @@ export const rerunLayouts = createAppAsyncThunk(
             Object.keys(grouped).forEach((group) => {
               const values = grouped[group];
 
-              lineFilter.push({ value: group, indices: values.map((v) => v.index) })
+              const indices = values.map((v) => v.index);
+              const reverseIndices = indices.reduce((acc, val, idx) => {
+                acc[val] = idx;
+
+                return acc;
+              }, {});
+
+              lineFilter.push({ value: group, indices, reverseIndices })
 
               values.forEach((row, i) => {
                 if (i < values.length - 1) {

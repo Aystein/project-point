@@ -104,7 +104,8 @@ export type ColorFilter = {
 
 export type LineFilter = {
   value: string,
-  indices: number[]
+  indices: number[],
+  reverseIndices: { [index: number]: number }
 }[]
 
 // Defines a sequence using a set of indices

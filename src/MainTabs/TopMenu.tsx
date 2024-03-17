@@ -1,6 +1,7 @@
 import {
   ActionIcon,
   Box,
+  Button,
   Divider,
   Group,
   Menu,
@@ -8,22 +9,23 @@ import {
   rem,
   Stack,
   Text,
+  Tooltip,
   useMantineTheme,
 } from '@mantine/core';
 import { useHotkeys } from '@mantine/hooks';
+import { openContextModal } from '@mantine/modals';
 import {
+  IconBoxMultiple,
   IconHandStop,
   IconMenu2,
   IconPointer,
-  IconBoxMultiple,
   IconRegex,
 } from '@tabler/icons-react';
 import { useAppDispatch, useAppSelector } from '../Store/hooks';
-import classes from './TopMenu.module.css';
-import { Tool, selectByRegex, setTool } from '../Store/ViewSlice';
-import { getGlobalEngine } from './HistoryTab';
+import { selectByRegex, setTool, Tool } from '../Store/ViewSlice';
 import { Engine } from '../ts/engine/engine';
-import { openContextModal } from '@mantine/modals';
+import { getGlobalEngine } from './HistoryTab';
+import classes from './TopMenu.module.css';
 
 const tools = [
   {
@@ -105,7 +107,7 @@ export function TopMenu() {
             withBorder
             style={{ pointerEvents: 'initial' }}
           >
-            <Group gap={rem(4)}>
+            <Group gap={rem(4)} wrap="nowrap">
               {tools.map((tool, i) => {
                 return (
                   <ActionIcon

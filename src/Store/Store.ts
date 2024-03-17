@@ -17,6 +17,7 @@ import { POINT_RADIUS } from '../Layouts/Globals';
 import { spread } from '../Util';
 import { Engine } from '../ts/engine/engine';
 import { parseCSV } from '../DataLoading/CSVLoader';
+import { DEFAULT_COLOR, hexToInt } from '../Utility/ColorScheme';
 
 const combined = combineReducers({
   data: dataReducer,
@@ -132,7 +133,7 @@ const reducer = createReducer<RootState>(undefined, (builder) => {
 
     state.views.bounds = rows.map(() => [5, 5, 15, 15]).flat()
     state.views.models = modelAdapter.getInitialState();
-    state.views.color = rows.map(() => 0x888888ff);
+    state.views.color = rows.map(() => hexToInt(DEFAULT_COLOR));
     state.views.shape = rows.map(() => 0);
   });
 

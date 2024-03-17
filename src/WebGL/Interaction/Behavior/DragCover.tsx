@@ -14,7 +14,7 @@ export function SimpleDragCover({
   onClick?: (position: VectorLike) => void;
   boxRef?: React.RefObject<HTMLElement>;
   drag: VectorLike;
-  onDragEnd: (value: VectorLike) => void;
+  onDragEnd: (value: VectorLike, modifier?: boolean) => void;
 }) {
   const dragRef = React.useRef(false);
 
@@ -58,7 +58,7 @@ export function SimpleDragCover({
             const pos = translate(event);
 
             if (dragRef.current) {
-              onDragEnd(null);
+              onDragEnd(null, event.ctrlKey || event.altKey);
             }
 
             if (!dragRef.current) {

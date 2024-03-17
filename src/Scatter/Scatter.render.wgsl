@@ -68,6 +68,7 @@ fn vertexMain(input: VertexInput) -> VertexOutput  {
     }
 
     var shape = particle.shape;
+    shape = 0;
     if (particle.hover > 0 || (isShadow && copy.hover > 0)) {
         output.color = output.color * 1.5;
         shape = shape + 4;
@@ -76,7 +77,8 @@ fn vertexMain(input: VertexInput) -> VertexOutput  {
     }
 
     if (isShadow) {
-        output.color = output.color * 0.5;
+        shape = 1;
+        // output.color = output.color * 0.9;
     }
 
     output.texCoord =

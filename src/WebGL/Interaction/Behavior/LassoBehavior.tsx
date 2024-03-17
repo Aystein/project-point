@@ -172,7 +172,7 @@ export function LassoSelectionPlugin() {
 
             if (Rectangle.deserialize(model.area).within({ x, y })) {
               dispatch(activateModel({ id: model.id }));
-              
+
               target = model.id;
               break;
             }
@@ -193,7 +193,7 @@ export function LassoSelectionPlugin() {
           }
         }}
         drag={drag}
-        onDragEnd={(val) => {
+        onDragEnd={(val, modifier) => {
           const worldPoints = points.map((point) => [
             scaledXDomain.invert(point[0]),
             scaledYDomain.invert(point[1]),
@@ -218,10 +218,14 @@ export function LassoSelectionPlugin() {
             }
           });
 
-          dispatch(setSelection(indices.length === 0 ? undefined : indices));
+          if (modifier) {
+            const mergedSelection = new Set([...selection, ...indices]);
+            dispatch(setSelection(Array.from(mergedSelection)))
+          } else {
+            dispatch(setSelection(indices.length === 0 ? undefined : indices));
+          }
 
           setDrag(null);
-
           setPoints([]);
         }}
       />
