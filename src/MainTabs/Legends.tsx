@@ -86,62 +86,68 @@ export function LineLegend() {
   return (
     <Stack p="xs">
       <Text truncate="end" maw="calc(16rem - 40px)">
-        <Text>Line</Text>
-        <Text span fw={500}>
-          by {config.column}
+        <Text>Line legend</Text>
+        <Text size="sm" c="dimmed">
+          by <strong>{config.column}</strong>
         </Text>
       </Text>
 
-      <Divider orientation='vertical' mx="xs" my="xs" />
 
-      <Group gap={rem(4)} wrap="nowrap">
-        <Tooltip label="Expands the selection to their full sequences.">
-          <Button
-            style={{ textTransform: 'uppercase' }}
-            onClick={() => {
-              handleExpand();
-            }}
-            variant="subtle"
-            radius="md"
-            color="dark"
-          >
-            Expand
-          </Button>
-        </Tooltip>
 
-        <Tooltip label="Adds the inbetween states of the selected items.">
-          <Button
-            style={{ textTransform: 'uppercase' }}
-            onClick={() => {
-              handleCombine();
-            }}
-            variant="subtle"
-            radius="md"
-            color="dark"
-          >
-            Combine
-          </Button>
-        </Tooltip>
-      </Group>
+      <Stack gap={0}>
+        <Text size="sm" c="dimmed">Selection functions</Text>
+        <Group gap={rem(4)} wrap="nowrap">
+          <Tooltip label="Expands the selection to their full sequences.">
+            <Button
+              style={{ textTransform: 'uppercase' }}
+              onClick={() => {
+                handleExpand();
+              }}
+              variant="outline"
+              radius="md"
+              size="compact-md"
+            >
+              Expand
+            </Button>
+          </Tooltip>
 
-      <Combobox>
-        <Combobox.Options mt="sm">
-          <ScrollArea.Autosize type="scroll" mah={200}>
-            {model.lineFilter.map((value) => {
-              return (
-                <Combobox.Option
-                  onMouseEnter={() => handleMouseEnter(value)}
-                  onClick={() => handleClick(value)}
-                  key={value.value}
-                  value={value.value}
-                >
-                  {value.value}
-                </Combobox.Option>
-              );
-            })}
-          </ScrollArea.Autosize>
-        </Combobox.Options>
-      </Combobox>
+          <Tooltip label="Adds the inbetween states of the selected items.">
+            <Button
+              style={{ textTransform: 'uppercase' }}
+              onClick={() => {
+                handleCombine();
+              }}
+              variant="outline"
+              radius="md"
+              size="compact-md"
+            >
+              Combine
+            </Button>
+          </Tooltip>
+        </Group>
+      </Stack>
+
+      <Stack gap={0}>
+        <Text size="sm" c="dimmed">Sequences</Text>
+        <Combobox>
+          <Combobox.Options mt="sm">
+            <ScrollArea.Autosize type="scroll" mah={200}>
+              {model.lineFilter.map((value) => {
+                return (
+                  <Combobox.Option
+                    onMouseEnter={() => handleMouseEnter(value)}
+                    onClick={() => handleClick(value)}
+                    key={value.value}
+                    value={value.value}
+                  >
+                    {value.value}
+                  </Combobox.Option>
+                );
+              })}
+            </ScrollArea.Autosize>
+          </Combobox.Options>
+        </Combobox>
+      </Stack>
     </Stack>
   );
 }
@@ -165,9 +171,9 @@ export function ColorLegend() {
     <ScrollArea.Autosize mah={400}>
       <Box p="xs">
         <Text truncate="end" maw="calc(16rem - 40px)">
-          <Text>Color</Text>
-          <Text span fw={500}>
-            by {config.column}
+          <Text>Color legend</Text>
+          <Text c="dimmed" size="sm">
+            by <strong>{config.column}</strong>
           </Text>
         </Text>
         <Combobox>
@@ -221,7 +227,7 @@ export function Legends() {
       className={classes.legends}
       withBorder
       radius="md"
-      shadow="md"
+      shadow="lg"
       p={0}
       key={activeModel.id}
     >

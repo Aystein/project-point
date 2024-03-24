@@ -5,7 +5,7 @@ import { useSelector } from 'react-redux';
 import { Pattern } from '../Interfaces';
 import { Selectors } from '../Store/Selectors';
 import { parsePatternText } from '../regexEngine';
-import { DBSCAN } from 'density-clustering';
+
 
 var clustering = require('density-clustering');
 
@@ -25,20 +25,6 @@ export function MuRegexModal({
 
         validate: {},
     });
-
-    const test = () => {
-        const positions = views.positions.map((value) => ([value.x, value.y]));
-
-        var dataset = [
-            [1,1],[0,1],[1,0],
-            [10,10],[10,13],[13,13],
-            [54,54],[55,55],[89,89],[57,55]
-        ];
-
-        console.log(positions);
-        console.log(new DBSCAN().run(positions, 0.1, 2));
-        console.log(new DBSCAN().run(dataset, 5, 2))
-    }
 
     return (
         <>

@@ -4,9 +4,11 @@ import {
   Button,
   Divider,
   Group,
+  Input,
   Menu,
   Paper,
   rem,
+  Slider,
   Stack,
   Text,
   Tooltip,
@@ -20,12 +22,17 @@ import {
   IconMenu2,
   IconPointer,
   IconRegex,
+  IconSettings
 } from '@tabler/icons-react';
 import { useAppDispatch, useAppSelector } from '../Store/hooks';
-import { selectByRegex, setTool, Tool } from '../Store/ViewSlice';
+import { ClusteringType, selectByRegex, setClustering, setTool, Tool, Trigger_DBSCAN, updatePositionByFilter } from '../Store/ViewSlice';
 import { Engine } from '../ts/engine/engine';
 import { getGlobalEngine } from './HistoryTab';
 import classes from './TopMenu.module.css';
+import { setSettings } from '../Store/SettingsSlice';
+import { DBSCAN } from 'density-clustering';
+import { VectorLike } from '../Interfaces';
+import { useVisContext } from '../WebGL/VisualizationContext';
 
 const tools = [
   {
@@ -48,6 +55,104 @@ const tools = [
   },
 ];
 
+function getCentroid(positions: VectorLike[]) {
+  
+}
+
+export function SettingsMenu() {
+  const dispatch = useAppDispatch();
+  const settings = useAppSelector((state) => state.settings);
+  const theme = useMantineTheme();
+  const rows = useAppSelector((state) => state.data.rows);
+  const positions = useAppSelector((state) => state.views.positions);
+  const filter = useAppSelector((state) => state.views.filter);
+  // 
+
+  const Trigger_DBSCAN = () => {
+    const newPositions = [...positions];
+    const input = positions.map((value, i) => ([value.x, value.y, i]));
+
+    const clusters = new DBSCAN().run(input, 0.02, 2, (a: number[], b: number[]) => {
+      const x = a[0] - b[0];
+      const y = a[1] - b[1];
+
+      const ai = a[2];
+      const bi = b[2];
+
+      const rowA = rows[ai];
+      const rowB = rows[bi];
+
+
+
+      return Math.sqrt(x * x + y * y);
+    });
+
+    const clustering = clusters.map((cluster: number[]) => {
+      let centroid = {
+        x: 0,
+        y: 0,
+      }
+
+      cluster.forEach((index) => {
+        centroid.x += positions[index].x;
+        centroid.y += positions[index].y;
+      })
+
+      centroid.x /= cluster.length;
+      centroid.y /= cluster.length;
+
+      cluster.forEach((index) => {
+        newPositions[index] = centroid;
+      })
+
+      return {
+        indices: cluster,
+        centroid: centroid,
+      }
+    }) as ClusteringType
+
+    dispatch(setClustering(clustering))
+  }
+
+  return <Menu shadow="md" width={200} position="bottom-start">
+    <Menu.Target>
+      <ActionIcon
+        style={{ pointerEvents: 'initial' }}
+        variant="default"
+        size={rem(40)}
+        radius="md"
+        color="dark"
+      >
+        <IconSettings style={{ width: '50%', height: '50%' }} stroke={1} />
+      </ActionIcon>
+    </Menu.Target>
+
+    <Menu.Dropdown>
+      <Menu.Label>Repulsion Force</Menu.Label>
+      <Input.Wrapper label="Radius scaling" description="Determines the relative radius of the marks">
+        <Slider
+          mt={`calc(${theme.spacing.xs} / 2)`}
+          defaultValue={1}
+          min={0}
+          max={1}
+          step={0.01}
+          precision={2}
+          value={settings.radiusScaling}
+          onChange={(newVal) => dispatch(setSettings({ radiusScaling: newVal }))}
+        />
+      </Input.Wrapper>
+
+      <Menu.Label>Semantic Zooming</Menu.Label>
+      <Button
+        mt={`calc(${theme.spacing.xs} / 2)`}
+        onClick={() => {
+          Trigger_DBSCAN()
+        }}
+      />
+    </Menu.Dropdown>
+  </Menu>
+}
+
 export function TopMenu() {
   const activeTool = useAppSelector((state) => state.views.selectedTool);
   const theme = useMantineTheme();
@@ -63,7 +168,7 @@ export function TopMenu() {
 
   return (
     <Box className={classes.button} style={{ pointerEvents: 'none' }}>
-      <Stack>
+      <Group align='start'>
         <Menu shadow="md" width={200} position="bottom-start">
           <Menu.Target>
             <ActionIcon
@@ -88,15 +193,15 @@ export function TopMenu() {
                     y: buf[(Engine.particleStructType.size / 4) * i + 1],
                   };
                 });
-                console.table(xy);
-                console.table(positions);
               }}
             >
               Debug positions
             </Menu.Item>
           </Menu.Dropdown>
         </Menu>
-      </Stack>
+
+        <SettingsMenu />
+      </Group>
 
       <Stack justify="center">
         <Group justify="center">
@@ -144,8 +249,6 @@ export function TopMenu() {
               <ActionIcon
                 onClick={() => {
                   const onFinish = (pattern) => {
-                    console.log(pattern);
-
                     dispatch(selectByRegex({ pattern }))
                   }
 
@@ -172,7 +275,7 @@ export function TopMenu() {
         </Group>
         <Group justify="center">
           <Text size="xs" c="gray">
-            {selection?.length} points selected.{' '}
+            {selection?.length > 0 ? <Text fw="bold" size="xs" c="gray" component='span'>{selection.length}</Text> : 'No'} points selected.{' '}
             {tools.find((e) => e.key === activeTool).description}
           </Text>
         </Group>

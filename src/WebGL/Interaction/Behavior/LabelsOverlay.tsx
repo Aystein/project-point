@@ -2,6 +2,7 @@ import { scaleLinear } from 'd3-scale';
 import {
   AnnotationLabelContainer,
   LabelContainer,
+  PositionLabelContainer,
 } from '../../../Store/interfaces';
 import { useVisContext } from '../../VisualizationContext';
 import { IRectangle, Rectangle } from '../../Math/Rectangle';
@@ -118,6 +119,57 @@ export function ScaleLabels({
   );
 }
 
+
+
+export function PositionedLabels({
+  container,
+}: {
+  container: PositionLabelContainer;
+}) {
+  const getStyle = () => {
+    switch (container.type) {
+      case 'x': {
+        return {
+          position: 'absolute',
+          top: 'calc(100% + 3px)',
+          width: '100%',
+          height: 40,
+          pointerEvents: 'none',
+        } as React.CSSProperties;
+      }
+      case 'y': {
+        return {
+          position: 'absolute',
+          right: 'calc(100% + 3px)',
+          height: '100%',
+          width: 40,
+          pointerEvents: 'none',
+        } as React.CSSProperties;
+      }
+    }
+  };
+
+  return (
+    <>
+      <svg style={getStyle()}>
+        {container.labels.map((label) => {
+          return (
+            <LabelTick
+              key={label.position}
+              content={label.content}
+              value={label.position}
+              axis={container.type}
+            />
+          );
+        })
+        }
+      </svg>
+    </>
+  );
+}
+
+
+
 function SemanticLabels({
   container,
   area,
@@ -167,16 +219,8 @@ export function LabelsOverlay({
     <>
       {labels.map((container) => {
         if (container.discriminator === 'positionedlabels') {
-          return container.labels.map((label) => {
-            return (
-              <LabelTick
-                key={label.position}
-                content={label.content}
-                value={label.position}
-                axis={container.type}
-              />
-            );
-          });
+          return <PositionedLabels key={container.type}
+            container={container} />
         }
 
         if (container.discriminator === 'scalelabels') {

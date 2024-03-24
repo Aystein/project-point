@@ -176,7 +176,6 @@ export const VisProvider = ({ children, defaultZoom, defaultXDomain }: { default
           mcontroller.mouseUp(event.nativeEvent);
         }}
         onMouseMove={(event) => {
-
           if (!checkTarget(event.target as HTMLElement)) {
             return;
           }
@@ -184,6 +183,10 @@ export const VisProvider = ({ children, defaultZoom, defaultXDomain }: { default
           mcontroller.mouseMove(ref.current, event.nativeEvent);
         }}
         onWheel={(event) => {
+          if (!checkTarget(event.target as HTMLElement)) {
+            return;
+          }
+
           mcontroller.mouseWheel(event.nativeEvent);
         }}
       >

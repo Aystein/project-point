@@ -75,6 +75,13 @@ export type SpaghettiConfiguration = {
   timeColumn: string,
 }
 
+export type DualAxisConfiguration = {
+  channel: 'xy',
+  type: 'dual_axis',
+  xColumn: string,
+  yColumn: string,
+}
+
 export type UmapConfiguration = {
   channel: 'xy' | 'x' | 'y',
   type: 'umap',
@@ -83,7 +90,7 @@ export type UmapConfiguration = {
   neighbors: number,
 }
 
-export type LayoutConfiguration = LinearScaleConfiguration | CondenseConfiguration | ColorConfiguration | GroupConfiguration | UmapConfiguration | LineConfiguration | SpaghettiConfiguration | FillRectConfiguration;
+export type LayoutConfiguration = DualAxisConfiguration | LinearScaleConfiguration | CondenseConfiguration | ColorConfiguration | GroupConfiguration | UmapConfiguration | LineConfiguration | SpaghettiConfiguration | FillRectConfiguration;
 
 export const layoutAdapter = createEntityAdapter<LayoutConfiguration>({
   selectId: (model) => model.channel
@@ -106,6 +113,7 @@ export type LineFilter = {
   value: string,
   indices: number[],
   reverseIndices: { [index: number]: number }
+  neighboorLookup: { [itemIndex: number]: { prev: number, next: number } }
 }[]
 
 // Defines a sequence using a set of indices

@@ -90,9 +90,11 @@ self.onmessage = ({
   const maxGroupLength = Math.max(...keys(groups).map((key) => groups[key].length))
 
   let totalHeight = 0;
-
-  const linearScale = scaleLinear().domain(getMinMax(X.map((value) => value[secondary] as number))).range(axis === 'y' ? [area.x, area.x + area.width] : [area.y, area.y + area.height])
-
+  console.log(secondary)
+  const linearScale = 
+  secondary ?
+  scaleLinear().domain(getMinMax(X.map((value) => value[secondary] as number))).range(axis === 'y' ? [area.x, area.x + area.width] : [area.y, area.y + area.height])
+ : scaleLinear().domain([0, maxGroupLength]).range(axis === 'y' ? [area.x, area.x + area.width] : [area.y, area.y + area.height])
   function traverse(group) {
     const len = keys(group).length;
     let y = 0;
@@ -104,8 +106,8 @@ self.onmessage = ({
         // one line
 
         y += POINT_RADIUS * 2;
-        set.forEach((item) => {
-          const secAxis = linearScale(item.value[secondary]);
+        set.forEach((item, i) => {
+          const secAxis = linearScale(secondary ? item.value[secondary] : i);
           const primary = totalHeight + y;
 
           Y[item.relativeIndex] = { x: axis === 'y' ? secAxis : primary, y: axis === 'y' ? primary : secAxis };
@@ -121,7 +123,6 @@ self.onmessage = ({
   }
 
   traverse(hierarchy);
-
 
   /**for (const key of keys(groups)) {
     const group = groups[key];

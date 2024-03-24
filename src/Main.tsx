@@ -12,6 +12,7 @@ import { PanBehavior } from './WebGL/Interaction/Behavior/PanBehavior';
 import { ZoomBehavior } from './WebGL/Interaction/Behavior/ZoomBehavior';
 import { Scatterplot } from './WebGL/Scatter/Scatterplot';
 import { VisProvider, useVisContext } from './WebGL/VisualizationContext';
+import { SemanticBehavior } from './WebGL/Interaction/Behavior/SemanticBehaviour';
 
 function MainView({ data }: { data: DataState; }) {
   const dispatch = useDispatch();
@@ -23,6 +24,7 @@ function MainView({ data }: { data: DataState; }) {
   const shape = useAppSelector((state) => state.views.shape);
   const bounds = useAppSelector((state) => state.views.bounds);
   const shadows = useAppSelector((state) => state.views.shadows);
+  const clustering = useAppSelector((state) => state.views.clustering);
 
   const { scaledXDomain, scaledYDomain } = useVisContext();
 
@@ -35,11 +37,18 @@ function MainView({ data }: { data: DataState; }) {
       return [null, null];
     }
 
+    const newPositions = [...positions];
+    clustering.forEach((cluster) => {
+      cluster.indices.forEach((index) => {
+        newPositions[index] = cluster.centroid;
+      })
+    })
+
     return [
-      positions.map((value) => value.x),
-      positions.map((value) => value.y),
+      newPositions.map((value) => value.x),
+      newPositions.map((value) => value.y),
     ];
-  }, [positions]);
+  }, [positions, clustering]);
 
   return (
     <>
@@ -53,6 +62,7 @@ function MainView({ data }: { data: DataState; }) {
       <LassoSelectionPlugin />
 
       <PanBehavior />
+      <SemanticBehavior />
 
       <Scatterplot
         n={data.rows.length}

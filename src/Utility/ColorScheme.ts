@@ -9,5 +9,3 @@ export function hexToInt(hex: string) {
     const value = color(hex).rgb();
     return (value.r << 24) | (value.g << 16) | (value.b << 8) | 255;
 }
-
-console.log(hexToInt(DEFAULT_COLOR));

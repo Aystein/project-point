@@ -7,7 +7,7 @@ import groupBy from 'lodash/groupBy';
 import isEqual from 'lodash/isEqual';
 import { encode } from '../DataLoading/Encode';
 import { Pattern, VectorLike } from '../Interfaces';
-import { fillOperation, runCondenseLayout, runForceLayout, runGroupLayout, runSpaghettiLayout, runUMAPLayout } from '../Layouts/Layouts';
+import { fillOperation, runAxisLayout, runCondenseLayout, runForceLayout, runGroupLayout, runSpaghettiLayout, runUMAPLayout } from '../Layouts/Layouts';
 import { getMinMax, scaleInto } from '../Util';
 import { IRectangle, Rectangle } from '../WebGL/Math/Rectangle';
 import { RootState } from './Store';
@@ -15,6 +15,7 @@ import { createAppAsyncThunk } from './hooks';
 import { LabelContainer, LayoutConfiguration, LineFilter, Sequence, Shadow, SpatialModel, layoutAdapter, sequenceAdapter } from './interfaces';
 import { RegexMatcher } from '../regexEngine';
 import { DEFAULT_SCALE } from '../Utility/ColorScheme';
+
 
 export type Selection = {
   global: number[];
@@ -26,6 +27,8 @@ export const modelAdapter = createEntityAdapter<SpatialModel>();
 export type Tool = 'pan' | 'select' | 'box';
 
 export type ToolbarType = typeof initialState;
+
+export type ClusteringType = { indices: number[], centroid: VectorLike }[]
 
 export interface ViewsState {
   history: SpatialModel[];
@@ -56,7 +59,9 @@ export interface ViewsState {
 
   models: EntityState<SpatialModel>,
 
-  selectedTool: Tool
+  selectedTool: Tool,
+
+  clustering: ClusteringType
 }
 
 const initialState: ViewsState = {
@@ -88,8 +93,38 @@ const initialState: ViewsState = {
 
   bounds: undefined,
 
+  clustering: [],
+
   selectedTool: 'select' as Tool
 };
+
+export const shadowSyncer = (state: ViewsState) => {
+  let i = 0;
+  const shadows = new Array<Shadow>();
+  const lines = new Array<number>();
+
+  Object.values(state.models.entities).forEach((model) => {
+    shadows.push(...model.shadows);
+
+    const modelLines = model.line.map((lineIndex) => {
+      const idx = model.shadows.findIndex((e) => e.copyOf === lineIndex);
+
+      if (idx >= 0) {
+        return state.filter.length + idx + i;
+      }
+
+      return lineIndex;
+    })
+
+    lines.push(...modelLines)
+
+    i += model.shadows.length;
+  })
+
+
+  state.shadows = shadows;
+  state.lines = lines;
+}
 
 export const viewslice = createSlice({
   name: 'views',
@@ -127,6 +162,9 @@ export const viewslice = createSlice({
           state.positions[globalIndex] = position[localIndex];
         }
       });
+    },
+    setClustering: (state, action: PayloadAction<ClusteringType>) => {
+      state.clustering = action.payload;
     },
     activateModel: (state, action: PayloadAction<{ id: EntityId }>) => {
       const { id } = action.payload;
@@ -190,6 +228,8 @@ export const viewslice = createSlice({
       })
 
       modelAdapter.removeOne(state.models, action.payload.id)
+
+      shadowSyncer(state)
     },
     pushHistoryView: (state, action: PayloadAction<{ filter: number[], localSelection: number[], positions: VectorLike[] }>) => {
       const { filter, localSelection, positions } = action.payload;
@@ -258,6 +298,9 @@ export const viewslice = createSlice({
       const model = state.models.entities[id];
 
       model.area = newArea;
+    },
+    Trigger_DBSCAN: (state) => {
+
     },
     setHover: (state, action: PayloadAction<number[]>) => {
       const globalHover = action.payload;
@@ -369,31 +412,7 @@ export const viewslice = createSlice({
       layoutAdapter.removeOne(activeModel.layoutConfigurations, action.payload.channel);
     },
     syncShadows: (state) => {
-      let i = 0;
-      const shadows = new Array<Shadow>();
-      const lines = new Array<number>();
-
-      Object.values(state.models.entities).forEach((model) => {
-        shadows.push(...model.shadows);
-
-        const modelLines = model.line.map((lineIndex) => {
-          const idx = model.shadows.findIndex((e) => e.copyOf === lineIndex);
-
-          if (idx >= 0) {
-            return state.filter.length + idx + i;
-          }
-
-          return lineIndex;
-        })
-
-        lines.push(...modelLines)
-
-        i += model.shadows.length;
-      })
-
-
-      state.shadows = shadows;
-      state.lines = lines;
+      shadowSyncer(state)
     }
   },
 });
@@ -483,8 +502,6 @@ export const selectByRegex = createAsyncThunk('layouts/selectbyregex',
       console.log(e);
     }
 
-    console.log(totalSelection);
-
     dispatch(setSelection(totalSelection))
   })
 
@@ -534,40 +551,39 @@ export const transfer = createAsyncThunk(
   async ({ target, globalIds, focusAndContext }: { target?: EntityId, globalIds: number[], focusAndContext?: boolean }, { getState, dispatch }) => {
     let state = getState() as RootState;
 
-    const targetModel = state.views.models.entities[target];
-
     const globalIdsSet = new Set(globalIds);
 
+    // Target model
+    const targetModel = state.views.models.entities[target];
 
-    Object.values(state.views.models.entities).forEach((model) => {
-      if (true && model.filter.some((value) => globalIdsSet.has(value))) {
-        const shadowSet = new Set(model.shadows.map((shadow) => shadow.copyOf));
-        const ids = model.filter.filter((value) => globalIdsSet.has(value) && !shadowSet.has(value));
-        // get xy
-        const shadows = ids.map((id) => {
-          return {
-            copyOf: id,
-            position: state.views.positions[id],
-            color: state.views.color[id],
-          }
-        })
+    // List of models where items are taken from
+    const sourceModels = Object.values(state.views.models.entities).filter((model) => model.filter.some((value) => globalIdsSet.has(value)) && model !== targetModel);
 
-        dispatch(updateModel({ id: model.id, changes: { shadows: [...shadows, ...model.shadows] } }))
-      } else {
-        if (model.id !== target && model.filter.some((value) => globalIdsSet.has(value))) {
-          const newSourceFilter = model.filter.filter((value) => !globalIdsSet.has(value));
+    // Update filter and shadows of source models
+    sourceModels.forEach((model) => {
+      const shadowSet = new Set(model.shadows.map((shadow) => shadow.copyOf));
+      const ids = model.filter.filter((value) => globalIdsSet.has(value));
 
-          dispatch(updateModel({ id: model.id, changes: { filter: newSourceFilter } }))
-          dispatch(rerunLayouts({ id: model.id }))
+      const shadows = ids.map((id) => {
+        return {
+          copyOf: id,
+          position: state.views.positions[id],
+          color: state.views.color[id],
         }
-      }
+      })
+
+      const newFilter = model.filter.filter((index) => !globalIdsSet.has(index))
+
+      dispatch(updateModel({ id: model.id, changes: { shadows: [...shadows, ...model.shadows], filter: newFilter } }))
     })
 
     state = getState() as RootState;
-    console.log(state);
 
     if (target) {
-      dispatch(updateModel({ id: target, changes: { filter: Array.from(new Set([...globalIds, ...targetModel.filter])).sort() } }))
+      // Delete shadows if points were moved back
+      const shadowsAfterRemove = targetModel.shadows.filter((shadow) => !globalIdsSet.has(shadow.copyOf))
+
+      dispatch(updateModel({ id: target, changes: { shadows: shadowsAfterRemove, filter: Array.from(new Set([...globalIds, ...targetModel.filter])).sort() } }))
       dispatch(setBounds({ id: target }))
       dispatch(rerunLayouts({ id: target }))
     } else {
@@ -713,6 +729,19 @@ export const rerunLayouts = createAppAsyncThunk(
             dispatch(updatePositionByFilter({ position: Y, filter: model.filter }));
             break;
           }
+          case 'dual_axis': {
+            const { Y, x, y, labels } = await runAxisLayout(
+              modelRows,
+              model.area,
+              state.data.columns.find((col) => col.key === layoutConfig.xColumn),
+              state.data.columns.find((col) => col.key === layoutConfig.yColumn),
+            );
+
+            dispatch(updateLabels({ id: model.id, labels }));
+            dispatch(updatePositionByFilter({ position: Y, filter: model.filter }));
+
+            break;
+          }
           case 'spaghetti': {
             const { Y, x, y, labels } = await runSpaghettiLayout(
               modelRows,
@@ -722,6 +751,7 @@ export const rerunLayouts = createAppAsyncThunk(
               'y',
               model.filter.map((i) => state.views.positions[i])
             );
+
             dispatch(updateLabels({ id: model.id, labels }));
             dispatch(updatePositionByFilter({ position: Y, filter: model.filter }));
             break;
@@ -774,8 +804,16 @@ export const rerunLayouts = createAppAsyncThunk(
 
                 return acc;
               }, {});
+              const neighboorLookup = {};
+              values.forEach((row, i) => {
+                const prev = values[i - 1]?.index;
+                const next = values[i + 1]?.index;
 
-              lineFilter.push({ value: group, indices, reverseIndices })
+                neighboorLookup[row.index] = { prev, next };
+              })
+              console.log({ value: group, indices, reverseIndices, neighboorLookup });
+
+              lineFilter.push({ value: group, indices, reverseIndices, neighboorLookup })
 
               values.forEach((row, i) => {
                 if (i < values.length - 1) {
@@ -810,6 +848,7 @@ export const {
   updatePositionByFilter,
   addSubEmbedding,
   clearModel,
+  setClustering,
   removeEmbedding,
   translateArea,
   setColor,
@@ -830,7 +869,8 @@ export const {
   setBounds,
   setFilter,
   updateModel,
-  syncShadows
+  syncShadows,
+  Trigger_DBSCAN,
 } = viewslice.actions;
 
 export default viewslice.reducer;

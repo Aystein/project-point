@@ -18,6 +18,7 @@ import { spread } from '../Util';
 import { Engine } from '../ts/engine/engine';
 import { parseCSV } from '../DataLoading/CSVLoader';
 import { DEFAULT_COLOR, hexToInt } from '../Utility/ColorScheme';
+import { getPlugins } from '../Plugins/Util';
 
 const combined = combineReducers({
   data: dataReducer,
@@ -38,6 +39,8 @@ const reducer = createReducer<RootState>(undefined, (builder) => {
     const id = nanoid();
 
     const header = Object.keys(rows[0]);
+
+    const datasetType = getPlugins().find((plugin) => plugin.hasLayout(header))?.type;
 
     const columns: Column[] = header.map((key) => {
       return {
@@ -104,6 +107,7 @@ const reducer = createReducer<RootState>(undefined, (builder) => {
     state.data.id = id;
     state.data.rows = rows;
     state.data.columns = columns;
+    state.data.type = datasetType;
 
     const A = Math.pow(POINT_RADIUS, 2) * rows.length;
     const r = Math.sqrt(A);

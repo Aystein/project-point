@@ -29,10 +29,10 @@ export function SpaghettiPanel({
     return columns.map((column) => ({ label: column.key, value: column.key }));
   }, [columns]);
 
-  const handleSecondaryChangle = (secondaryColumn: string) => {
+  const handleSecondaryChangle = (secondaryColumn: string, groups) => {
     setSecondary(secondaryColumn);
 
-    if (secondaryColumn && columns?.length > 0) {
+    if (columns?.length > 0) {
       const layoutConfig: SpaghettiConfiguration = {
         channel: 'xy',
         type: 'spaghetti',
@@ -80,6 +80,8 @@ export function SpaghettiPanel({
             searchable
             data={options}
             onChange={(value) => {
+              handleSecondaryChangle(secondary, [...groups, value]);
+
               groupsHandlers.append(value);
             }}
           />
@@ -91,7 +93,7 @@ export function SpaghettiPanel({
         placeholder="ID, name, ..."
         searchable
         data={options}
-        onChange={(newValue) => handleSecondaryChangle(newValue)}
+        onChange={(newValue) => handleSecondaryChangle(newValue, groups)}
       />
     </Stack>
   );

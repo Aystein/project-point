@@ -3,6 +3,7 @@ import { IRectangle } from '../WebGL/Math/Rectangle';
 import { VectorLike } from '../Interfaces';
 import { LabelContainer } from '../Store/interfaces';
 import { Vector } from 'umap-js/dist/umap';
+import { Column } from '../Store/DataSlice.';
 
 export function runLayout<T>(params: T, worker: Worker) {
   worker.postMessage({
@@ -92,6 +93,20 @@ export function runSpaghettiLayout(
   return runLayout(
     { X, area, features, secondary, axis, Y_in },
     new Worker(new URL('../Workers/spaghetti.worker.ts', import.meta.url), {
+      type: 'module',
+    })
+  );
+}
+
+export function runAxisLayout(
+  X,
+  area: IRectangle,
+  xColumn: Column,
+  yColumn: Column,
+) {
+  return runLayout(
+    { X, area, xColumn, yColumn },
+    new Worker(new URL('../Workers/dual_categories.worker.ts', import.meta.url), {
       type: 'module',
     })
   );
