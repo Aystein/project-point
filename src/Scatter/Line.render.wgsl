@@ -77,11 +77,9 @@ fn vertexMain(input: VertexInput) -> VertexOutput  {
     output.pos = vec4f(0.0, 0.0, 0.0, 1.0);
 
     var direction = ps - pe;
-    var norm = normalize(vec2f(direction.y, direction.x)) * 0.0022;
+    var norm = normalize(vec2f(direction.y, direction.x)) * 0.0016;
 
     var uintc = 0u;
-
-
 
     var segmentIndex = input.vert % 6;
     

@@ -7,6 +7,7 @@ const initialState = {
     delta: 8500,
     substeps: 5,
     radiusScaling: 1,
+    semanticScaling: 1,
 };
 
 export type SettingsType = typeof initialState;
@@ -19,6 +20,7 @@ const clusterSlice = createSlice({
             state.delta = action.payload.delta ?? state.delta;
             state.substeps = action.payload.substeps ?? state.substeps;
             state.radiusScaling = action.payload.radiusScaling ?? state.radiusScaling;
+            state.semanticScaling = action.payload.semanticScaling ?? state.semanticScaling;
         },
     },
 });

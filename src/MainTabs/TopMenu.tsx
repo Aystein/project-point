@@ -143,6 +143,20 @@ export function SettingsMenu() {
       </Input.Wrapper>
 
       <Menu.Label>Semantic Zooming</Menu.Label>
+      <Input.Wrapper label="Semantic zoom" description="Determines the scaling factor">
+        <Slider
+          mt={`calc(${theme.spacing.xs} / 2)`}
+          defaultValue={1}
+          min={0.1}
+          max={10}
+          step={0.1}
+          precision={2}
+          value={settings.semanticScaling}
+          onChange={(newVal) => dispatch(setSettings({ semanticScaling: newVal }))}
+        />
+      </Input.Wrapper>
+
+      <Menu.Label>Semantic Zooming</Menu.Label>
       <Button
         mt={`calc(${theme.spacing.xs} / 2)`}
         onClick={() => {

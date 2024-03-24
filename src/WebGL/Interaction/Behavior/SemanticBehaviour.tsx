@@ -16,6 +16,7 @@ export function SemanticBehavior() {
     const activeModel = useAppSelector((state) => state.views.models.entities[state.views.activeModel]);
     const layoutModel = activeModel ? Object.values(activeModel.layoutConfigurations.entities).find((layout) => layout.channel === 'line') : null
     const lineLayout = layoutModel ? layoutModel as LineConfiguration : null;
+    const semanticZoom = useAppSelector((state) => state.settings.semanticScaling);
 
     const Trigger_DBSCAN = () => {
         if (!activeModel || !activeModel.lineFilter || !lineLayout) {
@@ -27,7 +28,7 @@ export function SemanticBehavior() {
         const newPositions = [...positions];
         const input = positions.map((value, i) => ([value.x, value.y, i]));
 
-        const clusters = new DBSCAN().run(input, 0.06 / zoom.s, 2, (a: number[], b: number[]) => {
+        const clusters = new DBSCAN().run(input, (0.05 * semanticZoom) / zoom.s, 2, (a: number[], b: number[]) => {
             const x = a[0] - b[0];
             const y = a[1] - b[1];
 
