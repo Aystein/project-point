@@ -23,7 +23,7 @@ import { getPlugins } from '../Plugins/Util';
 
 const combined = combineReducers({
   data: dataReducer,
-  views: undoable(viewReducer),
+  views: viewReducer,
   datasets: datasetReducer,
   clusters: clusterReducer,
   settings: settingsReducer,
