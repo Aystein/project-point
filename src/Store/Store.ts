@@ -6,6 +6,7 @@ import {
   createReducer,
   nanoid,
 } from '@reduxjs/toolkit';
+import undoable, { includeAction, excludeAction } from 'redux-undo';
 import { Column, Row, dataReducer } from './DataSlice.';
 import viewReducer, { modelAdapter } from './ViewSlice';
 import { datasetReducer } from './FilesSlice';
@@ -22,7 +23,7 @@ import { getPlugins } from '../Plugins/Util';
 
 const combined = combineReducers({
   data: dataReducer,
-  views: viewReducer,
+  views: undoable(viewReducer),
   datasets: datasetReducer,
   clusters: clusterReducer,
   settings: settingsReducer,
@@ -145,7 +146,7 @@ const reducer = createReducer<RootState>(undefined, (builder) => {
 });
 
 export const store = configureStore({
-  reducer,
+  reducer: reducer,
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: false,

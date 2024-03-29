@@ -1,14 +1,19 @@
 import { DBSCAN } from 'density-clustering';
 import { VectorLike } from '../Interfaces';
+import { LineFilter } from '../Store/interfaces';
 
-self.onmessage = ({ data: { X } }: { data: { X: VectorLike[] } }) => {
-    const input = 
+function euclidean(a: number[], b: number[]) {
+    const x = a[0] - b[0];
+    const y = a[1] - b[1];
+    return Math.sqrt(x * x + y * y);
+}
+
+self.onmessage = ({ data: { X } }: { data: { X: VectorLike[], lineFilter: LineFilter } }) => {
+    const input = X.map((x, i) => [x.x, x.y, i]);
+    const delta = 0.05;
     
-    const clusters = new DBSCAN().run(input, (0.05 * semanticZoom) / zoom.s, 2, (a: number[], b: number[]) => {
-        const x = a[0] - b[0];
-        const y = a[1] - b[1];
-    
-        const ai = a[2];
+    const clusters = new DBSCAN().run(input, delta, 3, (a: number[], b: number[]) => {
+        /* const ai = a[2];
         const bi = b[2];
     
         const rowA = rows[ai];
@@ -25,7 +30,7 @@ self.onmessage = ({ data: { X } }: { data: { X: VectorLike[] } }) => {
             return 1000;
         }
     
-        return Math.sqrt(x * x + y * y);
+        return euclidean(a, b); */
     });
 };
 

@@ -13,6 +13,7 @@ import { ZoomBehavior } from './WebGL/Interaction/Behavior/ZoomBehavior';
 import { Scatterplot } from './WebGL/Scatter/Scatterplot';
 import { VisProvider, useVisContext } from './WebGL/VisualizationContext';
 import { SemanticBehavior } from './WebGL/Interaction/Behavior/SemanticBehaviour';
+import { UndoBehavior } from './WebGL/Interaction/Behavior/UndoBehavior';
 
 function MainView({ data }: { data: DataState; }) {
   const dispatch = useDispatch();
@@ -63,6 +64,8 @@ function MainView({ data }: { data: DataState; }) {
 
       <PanBehavior />
       <SemanticBehavior />
+
+      <UndoBehavior />
 
       <Scatterplot
         n={data.rows.length}
