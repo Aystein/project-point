@@ -40,6 +40,7 @@ export function SemanticBehavior() {
 
             const lineA = rowA[lineLayout.column];
             const lineB = rowB[lineLayout.column];
+    
             if (lineA !== lineB) {
                 return 1000;
             }

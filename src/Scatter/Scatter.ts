@@ -1,4 +1,3 @@
-import image from '../Assets/square_white.png';
 import { POINT_RADIUS } from '../Layouts/Globals';
 import { SettingsType } from '../Store/SettingsSlice';
 import { Engine } from '../ts/engine/engine';
@@ -42,12 +41,7 @@ function webGPUTextureFromImageBitmapOrCanvas(
   return texture;
 }
 
-async function webGPUTextureFromImageUrl(gpuDevice, url) {
-  // Note that this is an async function
-  const response = await fetch(url);
-  const blob = await response.blob();
-  const imgBitmap = await createImageBitmap(blob);
-
+async function webGPUTextureFromImageUrl(gpuDevice) {
   return webGPUTextureFromImageBitmapOrCanvas(gpuDevice, await createDefaultTexture());
 }
 
@@ -199,7 +193,7 @@ export class Scatter {
   }
 
   async loadTexturesAsync() {
-    this.texture = await webGPUTextureFromImageUrl(this.device, image);
+    this.texture = await webGPUTextureFromImageUrl(this.device);
 
     this.pointBindGroup = this.device.createBindGroup({
       layout: this.pointRenderPipeline.getBindGroupLayout(0),
