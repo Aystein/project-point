@@ -11,16 +11,16 @@ export const Selectors = {
 /**
 export const selectModelById = (entityId: number) => {
   return createSelector(
-    (state: RootState) => state.views.models,
+    (state: RootState) => state.views.present.models,
     (state) => modelAdapter.getSelectors().selectById(state, entityId)
   );
 };
 */
-const activeModel = (state: RootState) => state.views.models.entities[state.views.activeModel];
+const activeModel = (state: RootState) => state.views.present.models.entities[state.views.present.activeModel];
 
 export const selectActiveModel = createSelector(
   (state: RootState) => state.views,
-  (views) => views.models.entities[views.activeModel],
+  (views) => views.present.models.entities[views.present.activeModel],
 );
 
 export const selectChannelTypes = createSelector(
@@ -41,4 +41,4 @@ export const {
   selectEntities: selectModelEntities,
   selectAll: selectAllModels,
   selectTotal: selectTotalModels,
-} = modelAdapter.getSelectors((state: RootState) => state.views.models)
+} = modelAdapter.getSelectors((state: RootState) => state.views.present.models)

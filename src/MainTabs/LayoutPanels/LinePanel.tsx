@@ -6,7 +6,7 @@ import { removeLayoutConfig, setLayoutConfig } from "../../Store/ViewSlice";
 
 export function LinePanel({ defaultValue }: { defaultValue: ColorConfiguration }) {
     const dispatch = useAppDispatch();
-    const id = useAppSelector((state) => state.views.activeModel);
+    const id = useAppSelector((state) => state.views.present.activeModel);
     const [featureType, setFeatureType] = React.useState(defaultValue?.featureType ?? 'categorical');
 
     const columns = useAppSelector((state) => state.data.columns);

@@ -117,7 +117,7 @@ export function SideMenu() {
   const layoutConfigurations = Object.values(
     useAppSelector(
       (state) =>
-        state.views.models.entities[state.views.activeModel]
+        state.views.present.models.entities[state.views.present.activeModel]
           ?.layoutConfigurations.entities
     ) ?? {}
   ) as LayoutConfiguration[];

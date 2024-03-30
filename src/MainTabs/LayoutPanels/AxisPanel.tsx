@@ -10,7 +10,7 @@ import { CondensePanel } from './CondensePanel';
 function NumericalScalePanel({ channel, defaultValue }: { channel: 'x' | 'y', defaultValue: LinearScaleConfiguration }) {
     const dispatch = useAppDispatch();
     const data = useAppSelector(Selectors.data);
-    const id = useAppSelector((state) => state.views.activeModel);
+    const id = useAppSelector((state) => state.views.present.activeModel);
 
     const [column, setColumn] = React.useState<string>(defaultValue?.column);
 

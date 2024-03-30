@@ -19,8 +19,8 @@ export function getGlobalEngine() {
 }
 
 function HistoryView({ view, active, index }: { view: SpatialModel, active: boolean; index: number }) {
-  const selection = useAppSelector((state) => state.views.selection);
-  const hover = useAppSelector((state) => state.views.hover);
+  const selection = useAppSelector((state) => state.views.present.selection);
+  const hover = useAppSelector((state) => state.views.present.hover);
   const dispatch = useAppDispatch();
   const theme = useMantineTheme();
 
@@ -108,11 +108,11 @@ function HistoryView({ view, active, index }: { view: SpatialModel, active: bool
 }
 
 export function HistoryTab() {
-  const history = useAppSelector((state) => state.views.history);
-  const activeHistory = useAppSelector((state) => state.views.activeHistory);
+  const history = useAppSelector((state) => state.views.present.history);
+  const activeHistory = useAppSelector((state) => state.views.present.activeHistory);
   const dispatch = useAppDispatch()
-  const selection = useAppSelector((state) => state.views.selection);
-  const localSelection = useAppSelector((state) => state.views.localSelection)
+  const selection = useAppSelector((state) => state.views.present.selection);
+  const localSelection = useAppSelector((state) => state.views.present.localSelection)
 
   const handleClick = async () => {
     if (selection && selection.length > 0) {

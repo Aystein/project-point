@@ -57,7 +57,7 @@ export interface ViewsState {
 
   activeModel: EntityId;
 
-  models: EntityState<SpatialModel>,
+  models: EntityState<SpatialModel, EntityId>,
 
   selectedTool: Tool,
 
@@ -483,7 +483,7 @@ export const selectByRegex = createAsyncThunk('layouts/selectbyregex',
     console.log("start");
     const state = getState() as RootState;
 
-    const activeModel = state.views.models.entities[state.views.activeModel];
+    const activeModel = state.views.present.models.entities[state.views.present.activeModel];
 
     console.log({ ...activeModel.lineFilter });
     const totalSelection = [];
@@ -512,7 +512,7 @@ export const selectByRegex = createAsyncThunk('layouts/selectbyregex',
 export const removeLayoutConfigAsync = createAsyncThunk('layouts/addsubembedding',
   async ({ channel }: { channel: string }, { dispatch, getState }) => {
     dispatch(removeLayoutConfig({ channel }))
-    dispatch(rerunLayouts({ id: (getState() as RootState).views.activeModel }))
+    dispatch(rerunLayouts({ id: (getState() as RootState).views.present.activeModel }))
   })
 
 export const addSubEmbeddingAsync = createAsyncThunk('layouts/addsubembedding',
@@ -554,10 +554,10 @@ export const transfer = createAsyncThunk(
     const globalIdsSet = new Set(globalIds);
 
     // Target model
-    const targetModel = state.views.models.entities[target];
+    const targetModel = state.views.present.models.entities[target];
 
     // List of models where items are taken from
-    const sourceModels = Object.values(state.views.models.entities).filter((model) => model.filter.some((value) => globalIdsSet.has(value)) && model !== targetModel);
+    const sourceModels = Object.values(state.views.present.models.entities).filter((model) => model.filter.some((value) => globalIdsSet.has(value)) && model !== targetModel);
 
     // Update filter and shadows of source models
     sourceModels.forEach((model) => {
@@ -567,8 +567,8 @@ export const transfer = createAsyncThunk(
       const shadows = ids.map((id) => {
         return {
           copyOf: id,
-          position: state.views.positions[id],
-          color: state.views.color[id],
+          position: state.views.present.positions[id],
+          color: state.views.present.color[id],
         }
       })
 
@@ -599,7 +599,7 @@ export const rerunLayouts = createAppAsyncThunk(
   'layouts/rerun',
   async ({ id }: { id: EntityId }, { dispatch, getState }) => {
     const state = getState() as RootState;
-    const model = state.views.models.entities[id];
+    const model = state.views.present.models.entities[id];
     const modelRows = model.filter
       .map((i) => state.data.rows[i]);
 
@@ -657,7 +657,7 @@ export const rerunLayouts = createAppAsyncThunk(
               N: model.filter.length,
               area: model.area,
               axis: layoutConfig.channel,
-              Y_in: model.filter.map((i) => state.views.positions[i]),
+              Y_in: model.filter.map((i) => state.views.present.positions[i]),
               X: mapped
             });
 
@@ -673,7 +673,7 @@ export const rerunLayouts = createAppAsyncThunk(
               model.filter.length,
               model.area,
               layoutConfig.channel,
-              model.filter.map((i) => state.views.positions[i])
+              model.filter.map((i) => state.views.present.positions[i])
             );
 
             dispatch(updateLabels({
@@ -749,7 +749,7 @@ export const rerunLayouts = createAppAsyncThunk(
               layoutConfig.columns,
               layoutConfig.timeColumn,
               'y',
-              model.filter.map((i) => state.views.positions[i])
+              model.filter.map((i) => state.views.present.positions[i])
             );
 
             dispatch(updateLabels({ id: model.id, labels }));
@@ -780,7 +780,7 @@ export const rerunLayouts = createAppAsyncThunk(
               D,
               area: model.area,
               axis: 'xy',
-              Y_in: model.filter.map((i) => state.views.positions[i]),
+              Y_in: model.filter.map((i) => state.views.present.positions[i]),
             });
 
             dispatch(

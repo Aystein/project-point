@@ -6,7 +6,7 @@ import { useAppDispatch, useAppSelector } from "../../Store/hooks";
 
 export function CondensePanel({ channel, defaultValue }: { channel: 'x' | 'y', defaultValue: LayoutConfiguration }) {
     const dispatch = useAppDispatch();
-    const id = useAppSelector((state) => state.views.activeModel);
+    const id = useAppSelector((state) => state.views.present.activeModel);
 
     React.useEffect(() => {
         const layoutConfig: LayoutConfiguration = {

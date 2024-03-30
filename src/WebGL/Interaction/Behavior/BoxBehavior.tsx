@@ -30,13 +30,13 @@ export function BoxBehavior() {
   const [rect, setRect] = React.useState<Rectangle>();
   const dispatch = useAppDispatch();
 
-  const positions = useAppSelector((state) => state.views.positions);
+  const positions = useAppSelector((state) => state.views.present.positions);
   const models = Object.values(
-    useAppSelector((state) => state.views.models.entities)
+    useAppSelector((state) => state.views.present.models.entities)
   );
 
-  const activeId = useAppSelector((state) => state.views.activeModel);
-  const activeTool = useAppSelector((state) => state.views.selectedTool);
+  const activeId = useAppSelector((state) => state.views.present.activeModel);
+  const activeTool = useAppSelector((state) => state.views.present.selectedTool);
 
   const handleDelete = () => {
     dispatch(removeEmbedding({ id: activeId }));
@@ -154,7 +154,7 @@ export function BoxBehavior() {
 function SingleBox({ model }: { model: SpatialModel }) {
   const { scaledXDomain, scaledYDomain } = useVisContext();
   const area = model.area;
-  const activeId = useAppSelector((state) => state.views.activeModel);
+  const activeId = useAppSelector((state) => state.views.present.activeModel);
   const dispatch = useDispatch();
 
   return (

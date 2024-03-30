@@ -64,8 +64,8 @@ export function SettingsMenu() {
   const settings = useAppSelector((state) => state.settings);
   const theme = useMantineTheme();
   const rows = useAppSelector((state) => state.data.rows);
-  const positions = useAppSelector((state) => state.views.positions);
-  const filter = useAppSelector((state) => state.views.filter);
+  const positions = useAppSelector((state) => state.views.present.positions);
+  const filter = useAppSelector((state) => state.views.present.filter);
   // 
 
   const Trigger_DBSCAN = () => {
@@ -168,11 +168,11 @@ export function SettingsMenu() {
 }
 
 export function TopMenu() {
-  const activeTool = useAppSelector((state) => state.views.selectedTool);
+  const activeTool = useAppSelector((state) => state.views.present.selectedTool);
   const theme = useMantineTheme();
   const dispatch = useAppDispatch();
-  const selection = useAppSelector((state) => state.views.selection);
-  const positions = useAppSelector((state) => state.views.positions);
+  const selection = useAppSelector((state) => state.views.present.selection);
+  const positions = useAppSelector((state) => state.views.present.positions);
 
   useHotkeys(
     tools.map((tool, i) => {

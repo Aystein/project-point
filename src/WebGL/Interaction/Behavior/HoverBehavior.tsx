@@ -18,7 +18,7 @@ import { getPlugins } from '../../../Plugins/Util';
 
 export function SelectionComponent({ summarize = false }: { summarize?: boolean }) {
   const data = useAppSelector((state) => state.data);
-  const selection = useAppSelector((state) => state.views.selection);
+  const selection = useAppSelector((state) => state.views.present.selection);
 
   const [activePage, setPage] = React.useState(1);
 
@@ -55,9 +55,9 @@ export function HoverBehavior({
   const { scaledXDomain, scaledYDomain } = useVisContext();
   const data = useAppSelector((state) => state.data);
   const dispatch = useAppDispatch();
-  const hover = useAppSelector((state) => state.views.hover);
-  const activeTool = useAppSelector((state) => state.views.selectedTool);
-  const selection = useAppSelector((state) => state.views.selection);
+  const hover = useAppSelector((state) => state.views.present.hover);
+  const activeTool = useAppSelector((state) => state.views.present.selectedTool);
+  const selection = useAppSelector((state) => state.views.present.selection);
 
   useMouseEvent(
     MOUSE_HOVER,

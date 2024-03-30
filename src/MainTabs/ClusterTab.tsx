@@ -31,7 +31,7 @@ let i = 0;
 export function ClusterTab() {
   const clusters = useSelector(selectClusters);
   const dispatch = useDispatch();
-  const selection = useAppSelector((state) => state.views.selection);
+  const selection = useAppSelector((state) => state.views.present.selection);
 
   const handleClick = () => {
     dispatch(addCluster({

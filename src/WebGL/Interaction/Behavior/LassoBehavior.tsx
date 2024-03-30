@@ -75,18 +75,18 @@ export function LassoSelectionPlugin() {
 
   const [drag, setDrag] = React.useState<VectorLike>(null);
   const dispatch = useAppDispatch();
-  const spatial = useAppSelector((state) => state.views.positions);
-  const globalFilter = useAppSelector((state) => state.views.filter);
+  const spatial = useAppSelector((state) => state.views.present.positions);
+  const globalFilter = useAppSelector((state) => state.views.present.filter);
 
   const [ripple, setRipple] = React.useState<VectorLike>();
 
   const [points, setPoints] = React.useState<[number, number][]>([]);
 
   const ref = React.useRef(null);
-  const activeTool = useAppSelector((state) => state.views.selectedTool);
+  const activeTool = useAppSelector((state) => state.views.present.selectedTool);
 
-  const selection = useAppSelector((state) => state.views.selection);
-  const localSelection = useAppSelector((state) => state.views.localSelection);
+  const selection = useAppSelector((state) => state.views.present.selection);
+  const localSelection = useAppSelector((state) => state.views.present.localSelection);
   const activeModel = useAppSelector(selectActiveModel);
 
   const models = useAppSelector(selectAllModels)

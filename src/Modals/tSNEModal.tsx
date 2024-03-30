@@ -31,10 +31,10 @@ export function TSNEModal({
 }>) {
   const data = useSelector(Selectors.data);
   const model = useAppSelector((state) =>
-    state.views.models.entities[innerProps.id]
+    state.views.present.models.entities[innerProps.id]
   );
 
-  const positions = useAppSelector((state) => state.views.positions);
+  const positions = useAppSelector((state) => state.views.present.positions);
 
   const form = useForm({
     initialValues: {

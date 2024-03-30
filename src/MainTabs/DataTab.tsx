@@ -31,6 +31,7 @@ import { faFolder } from '@fortawesome/free-solid-svg-icons';
 // @ts-ignore
 import index from '../../public/datasets/index.json';
 
+// @ts-ignore
 const datasetEntries = JSON.parse(index) as string[];
 
 console.log(datasetEntries);

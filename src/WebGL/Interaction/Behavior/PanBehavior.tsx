@@ -9,7 +9,7 @@ import { Affix } from '@mantine/core';
 
 export function PanBehavior({ button = 0 }: { button?: number }) {
   const { setZoom } = useVisContext();
-  const activeTool = useAppSelector((state) => state.views.selectedTool);
+  const activeTool = useAppSelector((state) => state.views.present.selectedTool);
 
   useMouseEvent(
     MOUSE_DRAGGING,

@@ -7,7 +7,7 @@ import { UmapConfiguration } from '../../Store/interfaces';
 
 export function UMAPPanel({ defaultValue }: { defaultValue; }) {
     const dispatch = useAppDispatch();
-    const id = useAppSelector((state) => state.views.activeModel);
+    const id = useAppSelector((state) => state.views.present.activeModel);
 
     const onFinish = ({ columns }: { columns: string[] }) => {
         const layoutConfig: UmapConfiguration = {

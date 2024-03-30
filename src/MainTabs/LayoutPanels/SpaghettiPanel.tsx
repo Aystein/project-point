@@ -20,7 +20,7 @@ export function SpaghettiPanel({
   const [groups, groupsHandlers] = useListState<string>(defaultValue?.columns);
 
   const dispatch = useAppDispatch();
-  const id = useAppSelector((state) => state.views.activeModel);
+  const id = useAppSelector((state) => state.views.present.activeModel);
 
   const [secondary, setSecondary] = React.useState(defaultValue?.timeColumn);
   const columns = useAppSelector((state) => state.data.columns);

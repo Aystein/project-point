@@ -20,20 +20,26 @@ import { Engine } from '../ts/engine/engine';
 import { parseCSV } from '../DataLoading/CSVLoader';
 import { DEFAULT_COLOR, hexToInt } from '../Utility/ColorScheme';
 import { getPlugins } from '../Plugins/Util';
+import { historySlice } from './HistorySlice';
+import type * as rtk from "@reduxjs/toolkit";
 
 const combined = combineReducers({
   data: dataReducer,
-  views: viewReducer,
+  views: undoable(viewReducer),
   datasets: datasetReducer,
   clusters: clusterReducer,
   settings: settingsReducer,
+  history: historySlice.reducer,
 });
 
 export type RootState = ReturnType<typeof combined>;
 
 export const loadDatasetGlobal = createAction<Row[]>('loadDataset');
 
-const reducer = createReducer<RootState>(undefined, (builder) => {
+export const storess = createAction<any>('storeSS');
+export const loadss = createAction<any>('loadSS');
+
+const reducer = createReducer<RootState>(combined(undefined, { type: 'unknown' }), (builder) => {
   builder.addCase(loadDatasetGlobal, (state, action) => {
     const rows = action.payload;
 
@@ -113,36 +119,37 @@ const reducer = createReducer<RootState>(undefined, (builder) => {
     const A = Math.pow(POINT_RADIUS, 2) * rows.length;
     const r = Math.sqrt(A);
 
-    state.views.positions = rows.map((row) => ({
+    state.views.present.positions = rows.map((row) => ({
       x: spread(Engine.board_size / 2, r),
       y: spread(Engine.board_size / 2, r),
     }));
 
-    state.views.filter = Array.from({ length: rows.length }).map((_, i) => {
+    state.views.present.filter = Array.from({ length: rows.length }).map((_, i) => {
       return i;
     })
-    state.views.filterLookup = {}
-    state.views.filter.forEach((globalIndex, i) => {
-      state.views.filterLookup[globalIndex] = i
+    state.views.present.filterLookup = {}
+    state.views.present.filter.forEach((globalIndex, i) => {
+      state.views.present.filterLookup[globalIndex] = i
     })
 
-    state.views.history = [];
-    state.views.activeHistory = null;
+    state.views.present.history = [];
+    state.views.present.activeHistory = null;
 
-    state.views.selection = null;
-    state.views.localSelection = null;
-    state.views.localHover = null;
-    state.views.hover = null;
+    state.views.present.selection = null;
+    state.views.present.localSelection = null;
+    state.views.present.localHover = null;
+    state.views.present.hover = null;
 
-    state.views.lines = null;
+    state.views.present.lines = null;
 
-    state.views.bounds = rows.map(() => [5, 5, 15, 15]).flat()
-    state.views.models = modelAdapter.getInitialState();
-    state.views.color = rows.map(() => hexToInt(DEFAULT_COLOR));
-    state.views.shape = rows.map(() => 0);
+    state.views.present.bounds = rows.map(() => [5, 5, 15, 15]).flat()
+    state.views.present.models = modelAdapter.getInitialState();
+    state.views.present.color = rows.map(() => hexToInt(DEFAULT_COLOR));
+    state.views.present.shape = rows.map(() => 0);
+  })
+  .addDefaultCase((state, action) => {
+    combined(state, action)
   });
-
-  builder.addDefaultCase(combined);
 });
 
 export const store = configureStore({

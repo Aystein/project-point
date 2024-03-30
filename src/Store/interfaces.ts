@@ -92,8 +92,8 @@ export type UmapConfiguration = {
 
 export type LayoutConfiguration = DualAxisConfiguration | LinearScaleConfiguration | CondenseConfiguration | ColorConfiguration | GroupConfiguration | UmapConfiguration | LineConfiguration | SpaghettiConfiguration | FillRectConfiguration;
 
-export const layoutAdapter = createEntityAdapter<LayoutConfiguration>({
-  selectId: (model) => model.channel
+export const layoutAdapter = createEntityAdapter<LayoutConfiguration, EntityId>({
+  selectId: (model) => model.channel,
 });
 
 export type Shadow = {
@@ -118,6 +118,7 @@ export type LineFilter = {
 
 // Defines a sequence using a set of indices
 export type Sequence = {
+  id: EntityId;
   // Indices from the dataset
   indices: number[];
 }
@@ -152,9 +153,9 @@ export interface SpatialModel extends BaseModel {
   colorFilter?: ColorFilter,
   lineFilter?: LineFilter
 
-  layoutConfigurations: EntityState<LayoutConfiguration>;
+  layoutConfigurations: EntityState<LayoutConfiguration, EntityId>;
 
-  sequences: EntityState<Sequence>;
+  sequences: EntityState<Sequence, EntityId>;
 }
 
 

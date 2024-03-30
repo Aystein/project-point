@@ -17,11 +17,11 @@ export interface SingleFile {
 }
 
 export interface FilesState {
-  files: EntityState<SingleFile>;
+  files: EntityState<SingleFile, EntityId>;
   active: EntityId;
 }
 
-export const fileAdapter = createEntityAdapter<SingleFile>({
+export const fileAdapter = createEntityAdapter<SingleFile, EntityId>({
   selectId: (model: SingleFile) => model.name,
 });
 

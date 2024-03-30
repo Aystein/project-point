@@ -8,15 +8,27 @@ import { LineConfiguration } from "../../../Store/interfaces";
 
 export function SemanticBehavior() {
     const rows = useAppSelector((state) => state.data.rows);
-    const positions = useAppSelector((state) => state.views.positions);
-    const filter = useAppSelector((state) => state.views.filter);
+    const positions = useAppSelector((state) => state.views.present.positions);
+    const filter = useAppSelector((state) => state.views.present.filter);
     const dispatch = useAppDispatch();
     const { zoom } = useVisContext();
     const ref = React.useRef();
-    const activeModel = useAppSelector((state) => state.views.models.entities[state.views.activeModel]);
+    const other = React.useRef();
+    const activeModel = useAppSelector((state) => state.views.present.models.entities[state.views.present.activeModel]);
     const layoutModel = activeModel ? Object.values(activeModel.layoutConfigurations.entities).find((layout) => layout.channel === 'line') : null
     const lineLayout = layoutModel ? layoutModel as LineConfiguration : null;
     const semanticZoom = useAppSelector((state) => state.settings.semanticScaling);
+
+    const worker = React.useMemo(() => {
+        return new Worker(new URL('../../../Workers/clustering.worker.ts', import.meta.url));
+    }, []);
+
+    const Trigger_CLUSTER = () => {
+        if (!activeModel || !activeModel.lineFilter || !lineLayout) {
+            return;
+        }
+        worker.postMessage({ X: positions, lineFilter: activeModel.lineFilter });
+    }
 
     const Trigger_DBSCAN = () => {
         if (!activeModel || !activeModel.lineFilter || !lineLayout) {
@@ -80,8 +92,11 @@ export function SemanticBehavior() {
     }
 
     ref.current = Trigger_DBSCAN;
+    other.current = Trigger_CLUSTER;
+
 
     const interval = useInterval(() => {
+        other.current();
         ref.current();
     }, 1000);
 

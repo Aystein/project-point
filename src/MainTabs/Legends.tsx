@@ -34,7 +34,7 @@ export function LineLegend() {
   ) as LineConfiguration;
   const dispatch = useAppDispatch();
 
-  const selection = useAppSelector((state) => state.views.selection);
+  const selection = useAppSelector((state) => state.views.present.selection);
   const rows = useAppSelector((state) => state.data.rows);
   const activeModel = useAppSelector(selectActiveModel);
 
@@ -211,7 +211,7 @@ export function Legends() {
   const activeModel = useAppSelector(selectActiveModel);
   const layoutConfigurations = useAppSelector(
     (state) =>
-      state.views.models.entities[state.views.activeModel]?.layoutConfigurations
+      state.views.present.models.entities[state.views.present.activeModel]?.layoutConfigurations
         .entities
   );
 

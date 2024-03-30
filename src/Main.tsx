@@ -17,15 +17,15 @@ import { UndoBehavior } from './WebGL/Interaction/Behavior/UndoBehavior';
 
 function MainView({ data }: { data: DataState; }) {
   const dispatch = useDispatch();
-  const hover = useAppSelector((state) => state.views.localHover);
-  const selection = useAppSelector((state) => state.views.localSelection);
-  const line = useAppSelector((state) => state.views.lines);
-  const positions = useAppSelector((state) => state.views.positions);
-  const color = useAppSelector((state) => state.views.color);
-  const shape = useAppSelector((state) => state.views.shape);
-  const bounds = useAppSelector((state) => state.views.bounds);
-  const shadows = useAppSelector((state) => state.views.shadows);
-  const clustering = useAppSelector((state) => state.views.clustering);
+  const hover = useAppSelector((state) => state.views.present.localHover);
+  const selection = useAppSelector((state) => state.views.present.localSelection);
+  const line = useAppSelector((state) => state.views.present.lines);
+  const positions = useAppSelector((state) => state.views.present.positions);
+  const color = useAppSelector((state) => state.views.present.color);
+  const shape = useAppSelector((state) => state.views.present.shape);
+  const bounds = useAppSelector((state) => state.views.present.bounds);
+  const shadows = useAppSelector((state) => state.views.present.shadows);
+  const clustering = useAppSelector((state) => state.views.present.clustering);
 
   const { scaledXDomain, scaledYDomain } = useVisContext();
 

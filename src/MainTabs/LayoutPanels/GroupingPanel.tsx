@@ -10,7 +10,7 @@ export function GroupingPanel({
   defaultValue: GroupConfiguration;
 }) {
   const dispatch = useAppDispatch();
-  const id = useAppSelector((state) => state.views.activeModel);
+  const id = useAppSelector((state) => state.views.present.activeModel);
   const columns = useAppSelector((state) => state.data.columns);
 
   const options = React.useMemo(() => {

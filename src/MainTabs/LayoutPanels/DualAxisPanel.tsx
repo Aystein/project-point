@@ -12,7 +12,7 @@ export function DualAxisPanel({
     const [xColumn, setXColumn] = React.useState(defaultValue?.xColumn);
     const [yColumn, setYColumn] = React.useState(defaultValue?.yColumn);
     const dispatch = useAppDispatch();
-    const id = useAppSelector((state) => state.views.activeModel);
+    const id = useAppSelector((state) => state.views.present.activeModel);
     const columns = useAppSelector((state) => state.data.columns);
 
     const options = React.useMemo(() => {
