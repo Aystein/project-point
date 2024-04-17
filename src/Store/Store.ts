@@ -5,6 +5,7 @@ import {
   createAsyncThunk,
   createReducer,
   nanoid,
+  Reducer,
 } from '@reduxjs/toolkit';
 import undoable, { includeAction, excludeAction } from 'redux-undo';
 import { Column, Row, dataReducer } from './DataSlice.';
@@ -21,11 +22,131 @@ import { parseCSV } from '../DataLoading/CSVLoader';
 import { DEFAULT_COLOR, hexToInt } from '../Utility/ColorScheme';
 import { getPlugins } from '../Plugins/Util';
 import { historySlice } from './HistorySlice';
-import type * as rtk from "@reduxjs/toolkit";
+import { produce } from 'immer';
+import cloneDeep from 'lodash/cloneDeep';
+
+type StateWithHistory<T> = {
+    past: T[];
+    present: T;
+    future: T[];
+};
+
+function createUndoableReducer2<T>(reducer: Reducer<T>): Reducer<StateWithHistory<T>> {
+
+  return createReducer<StateWithHistory<T>>({
+    past: [],
+    present: reducer(undefined, { type: 'unknown' }),
+    future: [],
+  }, (builder) => {
+    builder.addCase('UNDO', (state) => {
+      const { past, present, future } = state;
+      
+      if (past.length === 0) {
+        return state;
+      }
+
+
+
+      const newPresent = past[past.length - 1];
+
+      return {
+        past: past.slice(0, past.length - 1),
+        present: newPresent,
+        future: [present, ...future]
+      };
+    })
+    builder.addCase('REDO', (state) => {
+      const { past, present, future } = state;
+
+      if (future.length === 0) {
+        return state;
+      }
+
+      return {
+        past: [...past, present],
+        present: future[0],
+        future: future.slice(1),
+      };
+    })
+    builder.addDefaultCase((state, action) => {
+      const { past, present, future } = state;
+
+      const newState = produce(state.present, (draft) => {
+        reducer(draft, action);
+      })
+
+      if (action.type === 'views/updatePositionByFilter') {
+        return {
+          past: [...past, present],
+          present: newState,
+          future: [],
+        }
+      }
+
+      state.present = newState;
+    })
+  });
+
+}
+
+function createUndoableReducer<T>(reducer: Reducer<T>): Reducer<StateWithHistory<T>> {
+  return (state, action) => {
+    const { past, present, future } = state;
+
+    if (action.type === 'UNDO') {
+      if (past.length === 0) {
+        return state;
+      }
+
+      return {
+        past: past.slice(0, past.length - 1),
+        present: past[past.length - 1],
+        future: [present, ...future]
+      };
+    }
+    if (action.type === 'REDO') {
+      if (future.length === 0) {
+        return state;
+      }
+
+      return {
+        past: [...past, present],
+        present: future[0],
+        future: future.slice(1),
+      };
+    }
+
+    const newPresent = reducer(present, action);
+
+    if (action.type === 'views/updatePositionByFilter') {
+      return {
+        past: [...past, present],
+        present: newPresent,
+        future: [],
+      };
+    }
+
+    return {
+      past: state.past,
+      present: newPresent,
+      future: state.future,
+    }
+  };
+}
+
+/* const undoableViews = undoable(viewReducer, {
+  ignoreInitialState: true,
+  limit: 10,
+  filter: function filterActions(action, currentState, previousHistory) {
+    return action.type === 'views/updatePositionByFilter';
+  }
+}) */
+
+const undoableViews = createUndoableReducer2(viewReducer);
 
 const combined = combineReducers({
   data: dataReducer,
-  views: undoable(viewReducer),
+  views: createUndoableReducer2(viewReducer),
   datasets: datasetReducer,
   clusters: clusterReducer,
   settings: settingsReducer,
@@ -148,7 +269,9 @@ const reducer = createReducer<RootState>(combined(undefined, { type: 'unknown' }
     state.views.present.shape = rows.map(() => 0);
   })
   .addDefaultCase((state, action) => {
-    combined(state, action)
+    // combined(state, action)
+    // default case that returns combined reducer
+    return combined(state, action);
   });
 });
 

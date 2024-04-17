@@ -32,7 +32,7 @@ function MainView({ data }: { data: DataState; }) {
   const handleHover = (index: number) => {
     dispatch(setHover([index]));
   };
-
+  // console.log(positions);
   const [x, y] = React.useMemo(() => {
     if (!data.id) {
       return [null, null];
