@@ -8,6 +8,7 @@ const initialState = {
     substeps: 5,
     radiusScaling: 1,
     semanticScaling: 1,
+    showBundles: false,
 };
 
 export type SettingsType = typeof initialState;
@@ -21,6 +22,7 @@ const clusterSlice = createSlice({
             state.substeps = action.payload.substeps ?? state.substeps;
             state.radiusScaling = action.payload.radiusScaling ?? state.radiusScaling;
             state.semanticScaling = action.payload.semanticScaling ?? state.semanticScaling;
+            state.showBundles = action.payload.showBundles ?? state.showBundles;
         },
     },
 });

@@ -7,9 +7,11 @@ import {
   Input,
   Menu,
   Paper,
+  Popover,
   rem,
   Slider,
   Stack,
+  Switch,
   Text,
   Tooltip,
   useMantineTheme,
@@ -114,8 +116,8 @@ export function SettingsMenu() {
     dispatch(setClustering(clustering))
   }
 
-  return <Menu shadow="md" width={200} position="bottom-start">
-    <Menu.Target>
+  return <Popover shadow="md" width={200} position="bottom-start">
+    <Popover.Target>
       <ActionIcon
         style={{ pointerEvents: 'initial' }}
         variant="default"
@@ -125,11 +127,12 @@ export function SettingsMenu() {
       >
         <IconSettings style={{ width: '50%', height: '50%' }} stroke={1} />
       </ActionIcon>
-    </Menu.Target>
+    </Popover.Target>
 
-    <Menu.Dropdown>
-      <Menu.Label>Repulsion Force</Menu.Label>
-      <Input.Wrapper label="Radius scaling" description="Determines the relative radius of the marks">
+    <Popover.Dropdown>
+      <Stack>
+      <Input.Wrapper 
+          label="Radius scaling" description="Determines the relative radius of the marks">
         <Slider
           mt={`calc(${theme.spacing.xs} / 2)`}
           defaultValue={1}
@@ -141,9 +144,7 @@ export function SettingsMenu() {
           onChange={(newVal) => dispatch(setSettings({ radiusScaling: newVal }))}
         />
       </Input.Wrapper>
-
-      <Menu.Label>Semantic Zooming</Menu.Label>
-      <Input.Wrapper label="Semantic zoom" description="Determines the scaling factor">
+      <Input.Wrapper  label="Semantic zoom" description="Determines the scaling factor">
         <Slider
           mt={`calc(${theme.spacing.xs} / 2)`}
           defaultValue={1}
@@ -156,15 +157,14 @@ export function SettingsMenu() {
         />
       </Input.Wrapper>
 
-      <Menu.Label>Semantic Zooming</Menu.Label>
-      <Button
-        mt={`calc(${theme.spacing.xs} / 2)`}
-        onClick={() => {
-          Trigger_DBSCAN()
-        }}
-      />
-    </Menu.Dropdown>
-  </Menu>
+      <Switch
+        label="Show bundles"
+        checked={settings.showBundles}
+        onChange={(value) => dispatch(setSettings({ showBundles: value.currentTarget.checked }))}
+        />
+        </Stack>
+    </Popover.Dropdown>
+  </Popover>
 }
 
 export function TopMenu() {

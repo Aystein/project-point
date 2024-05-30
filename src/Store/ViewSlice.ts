@@ -61,7 +61,12 @@ export interface ViewsState {
 
   selectedTool: Tool,
 
-  clustering: ClusteringType
+  clustering: ClusteringType,
+
+  identifiedBundles: number[][],
+  sequenceInput: number[][],
+
+  clusteringResult: { meanStart: VectorLike, meanEnd: VectorLike, indices: number[] }[]
 }
 
 const initialState: ViewsState = {
@@ -95,7 +100,12 @@ const initialState: ViewsState = {
 
   clustering: [],
 
-  selectedTool: 'select' as Tool
+  selectedTool: 'select' as Tool,
+
+  identifiedBundles: [],
+  sequenceInput: [],
+
+  clusteringResult: [],
 };
 
 export const shadowSyncer = (state: ViewsState) => {
@@ -413,6 +423,12 @@ export const viewslice = createSlice({
     },
     syncShadows: (state) => {
       shadowSyncer(state)
+    },
+    setIdentifiedBundles: (state, action: PayloadAction<{ clustering: number[][], sequenceInput: number[][], clusteringResult }>) => {
+      state.identifiedBundles = action.payload.clustering;
+      state.sequenceInput = action.payload.sequenceInput;
+      state.clusteringResult = action.payload.clusteringResult;
+      console.log(structuredClone(action.payload));
     }
   },
 });
@@ -480,12 +496,10 @@ export const selectByRegex = createAsyncThunk('layouts/selectbyregex',
   async ({ pattern }: {
     pattern: Pattern[];
   }, { dispatch, getState }) => {
-    console.log("start");
     const state = getState() as RootState;
 
     const activeModel = state.views.present.models.entities[state.views.present.activeModel];
 
-    console.log({ ...activeModel.lineFilter });
     const totalSelection = [];
     try {
 
@@ -871,6 +885,7 @@ export const {
   updateModel,
   syncShadows,
   Trigger_DBSCAN,
+  setIdentifiedBundles
 } = viewslice.actions;
 
 export default viewslice.reducer;

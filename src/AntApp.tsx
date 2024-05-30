@@ -16,6 +16,7 @@ import { useAppDispatch, useAppSelector } from './Store/hooks';
 import { TopMenu } from './MainTabs/TopMenu';
 import { SideMenu } from './MainTabs/SideMenu';
 import { Legends } from './MainTabs/Legends';
+import { BundlesTab } from './MainTabs/BundlesTab';
 
 /**const useStyles = createStyles((theme) => ({
   wrapper: {
@@ -65,7 +66,7 @@ import { Legends } from './MainTabs/Legends';
 
 
 export function AntApp() {
-  const [active, setActive] = React.useState("dataset");
+  const [active, setActive] = React.useState("container");
   const dispatch = useAppDispatch();
   const dataId = useAppSelector((state) => state.data.id);
   const scheme = useMantineColorScheme();
@@ -91,9 +92,9 @@ export function AntApp() {
       })}
     >
       <AppShell.Main>
-        <Box style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+        <Box style={{ position: 'absolute', top: 0, left: 300, right: 0, bottom: 0 }}>
           <TopMenu />
-          <SideMenu />
+          
           <Legends />
           {
             dataId ? <Main /> : <Center style={{ width: '100%', height: '100%' }}><DataTab /></Center>
@@ -101,21 +102,27 @@ export function AntApp() {
           
         </Box>
       </AppShell.Main>
-      {/**<AppShell.Navbar>
+
+      <AppShell.Navbar>
         <Tabs
           value={active}
           onChange={setActive}
           style={{ flexDirection: 'column', display: 'flex', flex: 1 }}
         >
           <Tabs.List>
-            <Tabs.Tab value="dataset">Data</Tabs.Tab>
+            <Tabs.Tab value="container">Containers</Tabs.Tab>
+            <Tabs.Tab value="bundles">Bundles</Tabs.Tab>
             <Tabs.Tab value="cluster">Cluster</Tabs.Tab>
             <Tabs.Tab value="history">History</Tabs.Tab>
             <Tabs.Tab value="settings">Settings</Tabs.Tab>
           </Tabs.List>
 
-          <Tabs.Panel value="dataset">
-            <DataTab />
+          <Tabs.Panel value="container">
+            <SideMenu />
+          </Tabs.Panel>
+
+          <Tabs.Panel value="bundles">
+            <BundlesTab />
           </Tabs.Panel>
 
           <Tabs.Panel value="cluster">
@@ -130,7 +137,7 @@ export function AntApp() {
             <SettingsTab />
           </Tabs.Panel>
         </Tabs>
-        </AppShell.Navbar>**/}
+        </AppShell.Navbar>
     </AppShell>
   );
 }

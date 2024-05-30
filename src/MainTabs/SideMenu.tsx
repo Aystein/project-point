@@ -33,10 +33,8 @@ export function ModelSideMenu({
 
   return (
     <Paper
-      className={classes.sidemenu}
-      withBorder
+      // className={classes.sidemenu}
       radius="md"
-      shadow="md"
       p="xs"
       key={modelId}
     >

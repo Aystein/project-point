@@ -68,6 +68,7 @@
     "wepack-cli": "^0.0.1-security"
   },
   "dependencies": {
+    "@emotion/css": "^11.11.2",
     "@emotion/react": "^11.10.5",
     "@fortawesome/fontawesome-free": "^6.4.0",
     "@fortawesome/fontawesome-svg-core": "^6.4.0",

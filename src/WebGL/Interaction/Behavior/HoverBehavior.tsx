@@ -26,11 +26,11 @@ export function SelectionComponent({ summarize = false }: { summarize?: boolean 
     {
       selection?.length > 0 ?
         summarize ? <ScrollArea.Autosize mah={300} maw={400} mx="auto">
-          {getPlugins().find((value) => value.type === data.type).createFingerprint(selection)}
+          {getPlugins().find((value) => value.type === data.type)?.createFingerprint(selection)}
         </ScrollArea.Autosize> :
 
           <><Center mb="xs"><Pagination value={activePage} onChange={setPage} total={selection?.length} size="xs" /></Center>
-            {data.type ? getPlugins().find((value) => value.type === data.type).createFingerprint([selection[activePage - 1]])
+            {data.type ? getPlugins().find((value) => value.type === data.type)?.createFingerprint([selection[activePage - 1]])
 
               :
               <ScrollArea.Autosize mah={300} maw={400} mx="auto">

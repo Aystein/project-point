@@ -1,6 +1,7 @@
 import { DBSCAN } from 'density-clustering';
 import { VectorLike } from '../Interfaces';
 import { LineFilter } from '../Store/interfaces';
+import { meanPoint } from './util';
 
 function euclidean(a: number[], b: number[]) {
     const x = a[0] - b[0];
@@ -28,10 +29,7 @@ self.onmessage = ({ data: { X, lineFilter } }: { data: { X: VectorLike[], lineFi
         return subsequences;
     })
 
-    console.log(sequenceInput);
-
-
-    const delta = 0.1;
+    const delta = 0.2;
     
     const clusters = new DBSCAN().run(sequenceInput, delta, 3, (a: number[], b: number[]) => {
         // console.log(a, b)
@@ -57,6 +55,15 @@ self.onmessage = ({ data: { X, lineFilter } }: { data: { X: VectorLike[], lineFi
         return euclidean(lineAStart, lineBStart) + euclidean(lineAEnd, lineBEnd);
     });
 
-    console.log(clusters);
+    const clusteringResult = clusters.filter((bundle) => bundle.length > 5).map((bundle, i) => {
+        const indices = new Set<number>(bundle.map((index) => sequenceInput[index][0]).concat(bundle.map((index) => sequenceInput[index][1])));
+        
+        const meanStart = meanPoint(bundle.map((index) => X[sequenceInput[index][0]]));
+        const meanEnd = meanPoint(bundle.map((index) => X[sequenceInput[index][1]]));
+
+        return { meanStart, meanEnd, indices: Array.from(indices) };
+    })
+
+    self.postMessage({ clustering: clusters, sequenceInput, clusteringResult });
 };
 

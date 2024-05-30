@@ -1,5 +1,5 @@
 import { useInterval } from "@mantine/hooks";
-import { ClusteringType, setClustering } from "../../../Store/ViewSlice";
+import { ClusteringType, setClustering, setIdentifiedBundles } from "../../../Store/ViewSlice";
 import { useAppDispatch, useAppSelector } from "../../../Store/hooks";
 import { DBSCAN } from 'density-clustering';
 import { useVisContext } from "../../VisualizationContext";
@@ -29,6 +29,15 @@ export function SemanticBehavior() {
         }
         worker.postMessage({ X: positions, lineFilter: activeModel.lineFilter });
     }
+
+    worker.onmessage = (event) => {
+        console.log(event.data)
+        const clustering = event.data.clustering as number[][];
+        const sequenceInput = event.data.sequenceInput as number[][];
+        const clusteringResult = event.data.clusteringResult;
+        // console.log(clustering);
+        dispatch(setIdentifiedBundles({ clustering, sequenceInput, clusteringResult }));
+    };
 
     const Trigger_DBSCAN = () => {
         if (!activeModel || !activeModel.lineFilter || !lineLayout) {
@@ -97,8 +106,8 @@ export function SemanticBehavior() {
 
     const interval = useInterval(() => {
         other.current();
-        ref.current();
-    }, 1000);
+        // ref.current();
+    }, 5000);
 
     React.useEffect(() => {
         interval.start();

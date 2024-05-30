@@ -14,6 +14,7 @@ import { Scatterplot } from './WebGL/Scatter/Scatterplot';
 import { VisProvider, useVisContext } from './WebGL/VisualizationContext';
 import { SemanticBehavior } from './WebGL/Interaction/Behavior/SemanticBehaviour';
 import { UndoBehavior } from './WebGL/Interaction/Behavior/UndoBehavior';
+import { BundleBehavior } from './WebGL/Interaction/Behavior/BundleBehavior';
 
 function MainView({ data }: { data: DataState; }) {
   const dispatch = useDispatch();
@@ -81,6 +82,7 @@ function MainView({ data }: { data: DataState; }) {
         shadows={shadows}
       />
 
+      <BundleBehavior />
     </>
   );
 }

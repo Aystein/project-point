@@ -1,3 +1,4 @@
+import { VectorLike } from "../Interfaces";
 import { POINT_RADIUS } from "../Layouts/Globals";
 import { IRectangle, Rectangle } from "../WebGL/Math/Rectangle";
 
@@ -30,4 +31,14 @@ export function fillRect(area: IRectangle, N: number, radius = POINT_RADIUS) {
 
   const Y = Array.from({ length: N }).map((_, i) => ({ x: (i % w) * c, y: Math.floor(i / w) * c }))
   return { Y: Y.map((value) => ({ x: offX + value.x + c / 2, y: offY + value.y + c / 2 })), bounds: Rectangle.deserialize({ x: offX, y: offY, width: (w) * c, height: (h) * c }) as Rectangle };
+}
+
+export function meanPoint(points: VectorLike[]) {
+  const accumulated = points.reduce((acc, point) => {
+    acc.x += point.x;
+    acc.y += point.y;
+    return acc;
+  }, { x: 0, y: 0 });
+
+  return { x: accumulated.x / points.length, y: accumulated.y / points.length };
 }
